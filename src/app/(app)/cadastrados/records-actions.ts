@@ -142,3 +142,14 @@ export async function deleteFollowup(form: FormData): Promise<string> {
   done(id);
   return "ok";
 }
+
+// Apaga o cadastro inicial inteiro (e os acompanhamentos que estão nele).
+export async function deleteCadastro(form: FormData): Promise<string> {
+  const id = String(form.get("record_id"));
+  const { rec, acc } = await open(id);
+  if (!acc.owner && !acc.admin) return "Você não tem permissão para apagar.";
+  const { error } = await createAdminClient().from("intake_records").delete().eq("id", rec.id);
+  if (error) return "Não foi possível apagar. Tente novamente.";
+  revalidatePath("/usuarios", "layout");
+  return "ok";
+}

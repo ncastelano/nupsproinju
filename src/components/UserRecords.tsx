@@ -11,6 +11,7 @@ import { metaOf } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
 import { ExportButton } from "@/components/ExportButton";
 import { FollowupActions } from "@/components/FollowupActions";
+import { RecordActions } from "@/components/RecordActions";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -129,18 +130,12 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
               <p>Proc. {r.answers.processo?.value ?? "—"}</p>
               {r.answers.unidade?.value && <p>{r.answers.unidade.value}</p>}
               {r.answers.data_acolhimento?.value && <p>Acolhido em {formatDate(r.answers.data_acolhimento.value)}</p>}
-              <div className="row" style={{ marginTop: 6 }}>
-                <span className={r.followup ? "badge" : "badge off"}>
-                  {r.followup ? "Com acompanhamento" : "Sem acompanhamento"}
-                </span>
-              </div>
-              <div className="row" style={{ marginTop: 8 }}>
-                <Link href={`/cadastrados/${r.id}`}><button className="ghost"><FolderOpen size={16} /> Ficha</button></Link>
-                {mine && (
-                  <Link href={`/cadastro-inicial?aba=acompanhamento&acolhido=${r.id}`}>
-                    <button className="ghost"><ClipboardPen size={16} /> Acompanhar</button>
-                  </Link>
-                )}
+              <div className="row" style={{ marginTop: 10 }}>
+                <RecordActions
+                  recordId={r.id}
+                  nome={r.answers.nomes?.value ?? "(sem nome)"}
+                  canDelete={mine || me.role === "admin"}
+                />
               </div>
             </article>
           ))}
