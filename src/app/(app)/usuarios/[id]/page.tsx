@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
-import { MODEL_VALUES } from "@/lib/modelRecord";
 import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf } from "@/lib/records";
@@ -35,17 +34,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
       .eq("form_key", FORM_KEY).eq("created_by", id).order("created_at", { ascending: false });
     return (data ?? []) as Rec[];
   };
-  let records = await fetchRecords();
-
-  // Cada pessoa começa com um cadastro de exemplo já salvo.
-  if (mine && records.length === 0 && questions.length > 0) {
-    const signature = [person.name || person.email, person.registry].filter(Boolean).join(" - ");
-    const values: Record<string, string> = { ...MODEL_VALUES, profissional: signature };
-    const answers: Answers = {};
-    for (const q of questions) if (values[q.key]) answers[q.key] = { label: q.label, value: values[q.key] };
-    await supabase.from("intake_records").insert({ form_key: FORM_KEY, created_by: id, answers });
-    records = await fetchRecords();
-  }
+  const records = await fetchRecords();
 
   const first = (person.name || person.email).split(" ")[0];
   const docs = await listDocs(id);

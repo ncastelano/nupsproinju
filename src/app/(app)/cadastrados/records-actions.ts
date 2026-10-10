@@ -105,3 +105,13 @@ export async function unshareRecord(form: FormData) {
   await saveRecord(rec, {}, meta);
   done(id);
 }
+
+export async function deleteRecord(form: FormData) {
+  const id = String(form.get("record_id"));
+  const { me, rec, acc } = await open(id);
+  if (!acc.owner && !acc.admin) return;
+  await createAdminClient().from("intake_records").delete().eq("id", rec.id);
+  revalidatePath("/usuarios", "layout");
+  const { redirect } = await import("next/navigation");
+  redirect(`/usuarios/${me.id}`);
+}

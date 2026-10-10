@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, History, Pencil, UserPlus, X } from "lucide-react";
+import { ArrowLeft, FileText, History, Pencil, Trash2, UserPlus, X } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -10,7 +10,7 @@ import { accessOf, loadRecord, type Ans } from "@/lib/records";
 import { formatDate } from "@/components/RecordView";
 import { ShareMenu } from "@/components/ShareMenu";
 import { RecordSection } from "@/components/RecordSection";
-import { shareRecord, unshareRecord } from "../records-actions";
+import { deleteRecord, shareRecord, unshareRecord } from "../records-actions";
 
 function fmt(a: Ans | null): Ans | null {
   if (!a) return null;
@@ -85,6 +85,12 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
           note="Só abre para quem estiver logado e tiver acesso a este formulário."
         />
         <Link href={`/banco-de-dados/${id}/resumo`}><button className="ghost"><FileText size={16} /> Resumo A4 / Imprimir</button></Link>
+        {(acc.owner || acc.admin) && (
+          <form action={deleteRecord} id="del-record">
+            <input type="hidden" name="record_id" value={id} />
+            <button className="danger" formNoValidate><Trash2 size={16} /> Apagar este formulário</button>
+          </form>
+        )}
       </div>
 
       {acc.canShare && (

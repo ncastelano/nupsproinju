@@ -15,7 +15,7 @@ export function ImportProcess({ kind }: { kind: "formulario" | "acompanhamento" 
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (msg === "ok") { formRef.current?.reset(); setFileName(""); router.refresh(); }
+    if (msg === "ok" || msg?.startsWith("ok:")) { formRef.current?.reset(); setFileName(""); router.refresh(); }
   }, [msg]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function pick(files: FileList | null) {
@@ -33,7 +33,7 @@ export function ImportProcess({ kind }: { kind: "formulario" | "acompanhamento" 
       <div>
         <strong>Exportar {label}</strong>
         <div style={{ color: "var(--muted)" }}>
-          Traga o {label} completo para o banco de dados: cole o link do Google Docs ou envie o arquivo.
+          Traga o {label} para o banco de dados: envie o CSV da planilha (cada linha vira um {label}) ou cole o link de um Google Docs.
         </div>
       </div>
 
@@ -61,18 +61,19 @@ export function ImportProcess({ kind }: { kind: "formulario" | "acompanhamento" 
           <>
             {/* computador: arrastar e soltar; celular: escolher o arquivo */}
             <strong className="only-desktop">Arraste o arquivo aqui</strong>
-            <span className="only-desktop">ou clique para escolher (.docx, .pdf, .txt)</span>
+            <span className="only-desktop">ou clique para escolher (.csv, .docx, .pdf, .txt)</span>
             <strong className="only-touch">Escolher arquivo</strong>
-            <span className="only-touch">.docx, .pdf ou .txt do seu celular</span>
+            <span className="only-touch">.csv, .docx, .pdf ou .txt do seu celular</span>
           </>
         )}
-        <input ref={fileRef} name="file" type="file" accept=".docx,.pdf,.txt,.md" hidden
+        <input ref={fileRef} name="file" type="file" accept=".csv,.docx,.pdf,.txt,.md" hidden
           onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} />
       </div>
 
       <button disabled={pending}>{pending ? "Trazendo o documento..." : `Exportar ${label}`}</button>
       {msg === "ok" && <p className="ok">Pronto. Ele aparece em “Exportados” logo abaixo.</p>}
-      {msg && msg !== "ok" && <p className="error">{msg}</p>}
+      {msg?.startsWith("ok:") && <p className="ok">Importado: {msg.slice(3)}</p>}
+      {msg && msg !== "ok" && !msg.startsWith("ok:") && <p className="error">{msg}</p>}
     </form>
   );
 }
