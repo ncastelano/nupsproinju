@@ -5,12 +5,10 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
-import { loadQuestions } from "@/lib/questions";
 import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
-import { ImportProcess } from "@/components/ImportProcess";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -23,36 +21,43 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
   const showF = view !== "acompanhamentos";
   const showA = view !== "formularios";
 
-  const { data: person } = await createAdminClient()
-    .from("members").select("*").eq("id", id).maybeSingle();
-  if (!person) notFound();
-
+  const admin = createAdminClient();
   const supabase = await createClient();
-  const { questions, personal, typeName } = await loadQuestions(supabase, FORM_KEY, id);
 
-  const fetchRecords = async () => {
-    const { data } = await supabase
+  // tudo em paralelo: cada ida ao banco custa tempo; só buscamos o que a página mostra
+  const [personRes, recordsRes, docs, shared] = await Promise.all([
+    admin.from("members").select("*").eq("id", id).maybeSingle(),
+    supabase
       .from("intake_records").select("id, answers, followup, followup_at, created_at")
-      .eq("form_key", FORM_KEY).eq("created_by", id).order("created_at", { ascending: false });
-    return (data ?? []) as Rec[];
-  };
-  const records = await fetchRecords();
+      .eq("form_key", FORM_KEY).eq("created_by", id).order("created_at", { ascending: false }),
+    listDocs(id),
+    mine && showF
+      ? Promise.all([
+          // só o necessário das fichas dos outros (sem as respostas inteiras)
+          admin.from("intake_records")
+            .select("id, created_by, meta:answers->_meta, nomes:answers->nomes->>value, processo:answers->processo->>value")
+            .eq("form_key", FORM_KEY).neq("created_by", id),
+          admin.from("members").select("id, name"),
+        ])
+      : Promise.resolve(null),
+  ]);
 
+  const person = personRes.data;
+  if (!person) notFound();
+  const records = (recordsRes.data ?? []) as Rec[];
   const first = (person.name || person.email).split(" ")[0];
-  const docs = await listDocs(id);
 
   // formulários de outras pessoas que foram compartilhados comigo para editar
-  let sharedWithMe: { id: string; answers: Answers; owner: string }[] = [];
-  if (mine) {
-    const admin = createAdminClient();
-    const [{ data: all }, { data: ppl }] = await Promise.all([
-      admin.from("intake_records").select("id, created_by, answers").eq("form_key", FORM_KEY).neq("created_by", id),
-      admin.from("members").select("id, name"),
-    ]);
+  let sharedWithMe: { id: string; nomes: string; processo: string; owner: string }[] = [];
+  if (shared) {
+    const [{ data: all }, { data: ppl }] = shared;
     const names = new Map((ppl ?? []).map((p) => [p.id as string, p.name as string]));
     sharedWithMe = (all ?? [])
-      .filter((r) => metaOf(r.answers as Record<string, unknown>).shared.some((s) => s.id === id))
-      .map((r) => ({ id: r.id as string, answers: r.answers as Answers, owner: names.get(r.created_by as string) ?? "" }));
+      .filter((r) => ((r.meta as { shared?: { id: string }[] } | null)?.shared ?? []).some((x) => x.id === id))
+      .map((r) => ({
+        id: r.id as string, nomes: (r.nomes as string) ?? "", processo: (r.processo as string) ?? "",
+        owner: names.get(r.created_by as string) ?? "",
+      }));
   }
   // um cartão por acompanhamento (um formulário pode ter vários, um por reavaliação)
   const entries = records.flatMap((r) => {
@@ -77,13 +82,6 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
             : `${person.name || person.email}${person.registry ? ` · ${person.registry}` : ""}. Toque em um item para abrir a ficha completa.`}
         </p>
       </div>
-
-      {mine && (
-        <div className="user-grid">
-          {showF && <ImportProcess kind="formulario" />}
-          {showA && <ImportProcess kind="acompanhamento" />}
-        </div>
-      )}
 
       {(["formulario", "acompanhamento"] as const).map((k) => {
         const list = docs.filter((d) => (d.kind ?? "formulario") === k);
@@ -144,8 +142,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
           <div className="user-grid">
             {sharedWithMe.map((r) => (
               <article key={r.id} className="card user-card clickable">
-                <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
-                <p>Proc. {r.answers.processo?.value ?? "—"}</p>
+                <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.nomes || "(sem nome)"}</Link></h3>
+                <p>Proc. {r.processo || "—"}</p>
                 <p>Compartilhado por {r.owner || "—"}</p>
                 <div className="row" style={{ marginTop: 6 }}>
                   <span className="badge">Você pode editar</span>

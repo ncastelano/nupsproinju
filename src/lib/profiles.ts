@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Páginas que já existem e não podem virar endereço de perfil.
@@ -23,7 +24,7 @@ export function slugError(slug: string) {
 type AuthUser = { id: string; user_metadata?: Record<string, unknown> | null };
 
 // Perfis ficam nos metadados da conta (registro, foto, endereço), então a busca percorre as contas.
-export async function listAuthUsers(): Promise<AuthUser[]> {
+export const listAuthUsers = cache(async (): Promise<AuthUser[]> => {
   const admin = createAdminClient();
   const all: AuthUser[] = [];
   for (let page = 1; page <= 20; page++) {
@@ -33,7 +34,7 @@ export async function listAuthUsers(): Promise<AuthUser[]> {
     if (users.length < 200) break;
   }
   return all;
-}
+});
 
 export async function findBySlug(slug: string) {
   const users = await listAuthUsers();

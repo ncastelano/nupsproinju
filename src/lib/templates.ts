@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listAuthUsers } from "@/lib/profiles";
+import { metaStore } from "@/lib/reqcache";
 import type { Question } from "@/lib/forms";
 
 // Modelo de formulário = as perguntas do modelo padrão + o que a pessoa acrescentou/ajustou.
@@ -31,8 +32,13 @@ export function baseTemplate(): Template {
 
 type Meta = Record<string, unknown>;
 async function metaOf(userId: string): Promise<Meta> {
+  const store = metaStore();
+  const hit = store.get(userId);
+  if (hit) return hit;
   const { data } = await createAdminClient().auth.admin.getUserById(userId);
-  return (data.user?.user_metadata ?? {}) as Meta;
+  const m = (data.user?.user_metadata ?? {}) as Meta;
+  store.set(userId, m);
+  return m;
 }
 async function writeMeta(userId: string, patch: (m: Meta) => Meta) {
   const admin = createAdminClient();

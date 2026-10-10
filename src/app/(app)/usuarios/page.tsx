@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin, type Member } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { createUser, updateUser, deleteUser, setStatus } from "./actions";
+import { updateUser, deleteUser, setStatus } from "./actions";
 import { PasswordInput } from "@/components/PasswordInput";
 
 const STATUS_LABEL = { pending: "Aguardando", approved: "Aprovado", rejected: "Recusado" } as const;
@@ -44,17 +44,6 @@ export default async function UsuariosPage() {
             </div>
           </div>
         ))}
-
-        <form action={createUser} className="card grid">
-          <strong>Adicionar pessoa direto (já aprovada)</strong>
-          <div className="row">
-            <input name="name" placeholder="Nome" />
-            <input name="email" type="email" placeholder="E-mail" required />
-            <PasswordInput name="password" placeholder="Senha (mín. 6)" minLength={6} required />
-            <select name="role"><option value="member">Membro</option><option value="admin">Administrador</option></select>
-            <button>Criar</button>
-          </div>
-        </form>
 
         <strong>Demais pessoas ({others.length})</strong>
         {others.map((m) => (

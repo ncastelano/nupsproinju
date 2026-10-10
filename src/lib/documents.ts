@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listAuthUsers } from "@/lib/profiles";
+import { metaStore } from "@/lib/reqcache";
 
 // Processos exportados: arquivo original + texto completo no Storage do Supabase (bucket privado);
 // a lista (título, origem, data) fica nos dados da conta de quem importou.
@@ -22,8 +23,13 @@ export async function ensureBucket() {
 }
 
 export async function listDocs(userId: string): Promise<DocMeta[]> {
-  const { data } = await createAdminClient().auth.admin.getUserById(userId);
-  const docs = (data.user?.user_metadata?.documents ?? []) as DocMeta[];
+  let meta = metaStore().get(userId);
+  if (!meta) {
+    const { data } = await createAdminClient().auth.admin.getUserById(userId);
+    meta = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
+    metaStore().set(userId, meta);
+  }
+  const docs = (meta.documents ?? []) as DocMeta[];
   return [...docs].sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 

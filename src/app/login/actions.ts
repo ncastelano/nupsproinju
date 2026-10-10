@@ -10,7 +10,7 @@ export async function login(_: string | null, form: FormData) {
     password: String(form.get("password") ?? ""),
   });
   if (error) return "E-mail ou senha incorretos.";
-  redirect("/"); // a página inicial decide: aprovado entra, pendente/recusado vai pra /acesso
+  redirect("/modelos-de-formularios"); // aprovado entra; pendente/recusado cai em /acesso pela própria checagem
 }
 
 export async function signup(_: string | null, form: FormData) {
@@ -36,7 +36,7 @@ export async function signup(_: string | null, form: FormData) {
   await createAdminClient().from("members").update({ registry }).eq("email", email);
   const supabase = await createClient();
   await supabase.auth.signInWithPassword({ email, password });
-  redirect("/");
+  redirect("/modelos-de-formularios");
 }
 
 export async function logout() {
