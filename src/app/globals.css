@@ -483,3 +483,14 @@ button.light-brand:hover { background: var(--brand); color: #fff; border-color: 
 .export-ok { color: #0b6b3a; font-size: 14px; font-weight: 600; }
 .export-err { color: var(--danger); font-size: 14px; max-width: 46ch; }
 .confirm-del { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 600; }
+
+/* Modelo do relatório (prévia) */
+.modelo { display: grid; gap: 6px; max-height: 70vh; overflow: auto; }
+.modelo-note { background: var(--brand-soft); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 14px; color: var(--brand-dark); }
+.modelo p { margin: 0; line-height: 1.55; }
+.modelo-h { font-weight: 700; color: var(--brand-dark); margin-top: 10px !important; }
+.modelo-p { overflow-wrap: anywhere; }
+.ph {
+  display: inline-block; background: #fff6df; border: 1px dashed #e0a93b; color: #7a5200;
+  border-radius: 8px; padding: 0 8px; font-size: 13px; font-weight: 600; cursor: help;
+}

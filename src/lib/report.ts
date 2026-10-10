@@ -89,3 +89,39 @@ export async function fillDocx(template: Buffer, values: Record<string, string>)
   zip.file("word/document.xml", xml);
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }
+
+// De onde vem cada marcador (para mostrar o modelo ao usuário).
+export const PLACEHOLDER_SOURCE: Record<string, string> = {
+  PROCESSO: "2. Número do processo",
+  NOME_ACOLHIDO: "3. Nome completo da(s) criança(s)/adolescente(s)",
+  DATA_NASCIMENTO: "4. Data de nascimento",
+  IDADE: "Calculada pela data de nascimento",
+  DATA_ACOLHIMENTO: "7. Data do acolhimento",
+  CONSELHO_TUTELAR: "7.1 Conselho Tutelar responsável",
+  MODALIDADE: "8. Modalidade atual de acolhimento",
+  UNIDADE: "9. Unidade/serviço de acolhimento",
+  PROFISSIONAIS: "1. Profissional responsável pelo acompanhamento",
+  NOME_GENITORA: "5. Nome da genitora",
+  ENDERECO_GENITORA: "5.1 Endereço da genitora",
+  CONTATO_GENITORA: "5.2 Telefone/Contato da genitora",
+  NOME_GENITOR: "6. Nome do genitor",
+  ENDERECO_GENITOR: "6.1 Endereço do genitor",
+  CONTATO_GENITOR: "6.2 Telefone/Contato do genitor",
+  FAMILIA_EXTENSA_CONTATOS: "21.1 Identificação e contato dos familiares",
+  PROCESSOS_RELACIONADOS: "Outros processos judiciais relacionados (e números)",
+  CONTEXTO_ACOLHIMENTO: "11. Situação(ões) do acolhimento + 12. Síntese",
+  PROCEDIMENTOS: "10. Procedimentos realizados na avaliação inicial",
+  ACOLHIMENTO_ADAPTACAO: "13. Acolhimento e adaptação + 13.1",
+  EDUCACAO: "14. Educação + 14.1",
+  SAUDE: "15. Saúde + 15.1",
+  ASPECTOS_EMOCIONAIS: "16. Aspectos emocionais/comportamentais + 16.1",
+  CONVIVENCIA_FAMILIAR: "17. Convivência familiar + 17.1",
+  CONVIVENCIA_COMUNITARIA: "18. Convivência comunitária + 18.1",
+  SITUACAO_GENITORA: "19. Situação da genitora + 19.1",
+  SITUACAO_GENITOR: "20. Situação do genitor + 20.1",
+  SITUACAO_FAMILIA_EXTENSA: "21. Situação da família extensa + 21.2",
+  ANALISE_TECNICA: "22. Fatores de risco + 23. Fatores de proteção",
+  PERSPECTIVA: "24. Perspectiva de encaminhamento",
+  QUESTOES_PROXIMO_ACOMPANHAMENTO: "25. Questões pendentes e/ou aspectos a acompanhar",
+  LOCAL_DATA: "Gerado automaticamente (cidade e data de hoje)",
+};

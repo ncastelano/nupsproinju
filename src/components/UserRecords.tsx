@@ -12,6 +12,7 @@ import { listDocs } from "@/lib/documents";
 import { ExportButton } from "@/components/ExportButton";
 import { FollowupActions } from "@/components/FollowupActions";
 import { RecordActions } from "@/components/RecordActions";
+import { ModeloRelatorio } from "@/components/ModeloRelatorio";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -118,6 +119,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
           </section>
         );
       })}
+
+      {mine && showF && <ModeloRelatorio />}
 
       {showF && <h2 className="section" style={{ margin: 0 }}>PROCESSOS ({records.length})</h2>}
       {showF && (records.length === 0 ? (
