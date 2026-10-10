@@ -58,11 +58,12 @@ function Field({ q }: { q: Question }) {
 }
 
 export function IntakeForm({
-  formKey, questions, acolhidos,
+  formKey, questions, acolhidos, selected,
 }: {
   formKey: string;
   questions: Question[];
   acolhidos?: Acolhido[]; // só no acompanhamento
+  selected?: string;
 }) {
   const [msg, action, pending] = useActionState(saveIntake, null);
 
@@ -84,7 +85,7 @@ export function IntakeForm({
         <div className="card q">
           <label className="q-label">Acolhido (do cadastro inicial)<span className="req"> *</span></label>
           <div className="help">O acompanhamento fica vinculado ao cadastro inicial da criança, adolescente ou grupo de irmãos.</div>
-          <select name="parent_id" required defaultValue="">
+          <select name="parent_id" required defaultValue={selected ?? ""}>
             <option value="" disabled>Selecione...</option>
             {acolhidos.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
           </select>

@@ -8,10 +8,11 @@ import { IntakeForm, type Acolhido } from "./IntakeForm";
 export default async function FormularioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string }>;
+  searchParams: Promise<{ aba?: string; acolhido?: string }>;
 }) {
   const me = await requireMember();
-  const acomp = (await searchParams).aba === "acompanhamento";
+  const sp = await searchParams;
+  const acomp = sp.aba === "acompanhamento";
   const formKey = acomp ? FORM_ACOMP : FORM_KEY;
 
   const supabase = await createClient();
@@ -62,7 +63,7 @@ export default async function FormularioPage({
       ) : questions.length === 0 ? (
         <div className="card empty">Nenhuma pergunta cadastrada ainda.</div>
       ) : (
-        <IntakeForm key={formKey} formKey={formKey} questions={questions} acolhidos={acolhidos} />
+        <IntakeForm key={formKey} formKey={formKey} questions={questions} acolhidos={acolhidos} selected={sp.acolhido} />
       )}
     </div>
   );

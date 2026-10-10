@@ -189,3 +189,14 @@ h2.section { margin: 10px 0 0; font-size: 13px; letter-spacing: .08em; color: va
 .chip:hover span { border-color: var(--brand); }
 .chip input:checked + span { background: var(--brand); border-color: var(--brand); color: #fff; }
 .chip input:focus-visible + span { box-shadow: 0 0 0 4px var(--brand-soft); }
+
+/* Banco de dados / visualização de registros */
+.ans { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.ans-q { color: var(--muted); font-size: 13px; }
+.ans-a { white-space: pre-wrap; font-weight: 500; }
+h3.section { font-size: 12px; letter-spacing: .08em; color: var(--brand); }
+details.acomp { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; }
+details.acomp summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 10px; }
+details.acomp summary::-webkit-details-marker { display: none; }
+details.acomp[open] summary { margin-bottom: 10px; }
+.search { display: flex; gap: 8px; }
