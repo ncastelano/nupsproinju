@@ -27,9 +27,6 @@ export function Header({ userId, name, email, avatarUrl, registry, profileslug, 
     return () => ro.disconnect();
   }, []);
 
-  // Ao entrar, o perfil já abre sozinho (e fica aberto até a pessoa informar o registro).
-  useEffect(() => { const t = setTimeout(() => setOpen(true), 80); return () => clearTimeout(t); }, []);
-
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
