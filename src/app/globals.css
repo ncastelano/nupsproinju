@@ -1,0 +1,14 @@
+:root { --azul:#1f3a5f; --borda:#d6dbe3; --fundo:#f5f7fa; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: system-ui, sans-serif; background:var(--fundo); color:#1b2430; }
+main { max-width: 960px; margin: 0 auto; padding: 16px; }
+nav { background:var(--azul); color:#fff; padding:12px 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+nav a { color:#fff; text-decoration:none; }
+nav .sair { margin-left:auto; }
+.card { background:#fff; border:1px solid var(--borda); border-radius:8px; padding:16px; margin:12px 0; }
+input, select, button { font:inherit; padding:8px 10px; border:1px solid var(--borda); border-radius:6px; }
+button { background:var(--azul); color:#fff; border:0; cursor:pointer; }
+label { display:block; margin:8px 0 4px; font-size:14px; }
+table { width:100%; border-collapse:collapse; }
+td, th { text-align:left; padding:8px; border-bottom:1px solid var(--borda); }
+.erro { color:#b00020; }
