@@ -22,18 +22,20 @@ export default async function FormularioPage({
   const questions = (data ?? []) as Question[];
 
   let acolhidos: Acolhido[] | undefined;
+  let cadastroQuestions: Question[] = [];
   if (acomp) {
+    const { data: cq } = await supabase
+      .from("form_questions").select("*")
+      .eq("form_key", FORM_KEY).order("position");
+    cadastroQuestions = (cq ?? []) as Question[];
     const { data: recs } = await supabase
       .from("intake_records").select("id, answers, followup, created_at")
       .eq("form_key", FORM_KEY).order("created_at", { ascending: false });
-    acolhidos = (recs ?? []).map((r) => {
-      const a = r.answers as Record<string, { value: string }>;
-      return {
-        id: r.id as string,
-        label: `${a.nomes?.value ?? "(sem nome)"} — Proc. ${a.processo?.value ?? "?"}${r.followup ? " (acompanhamento preenchido)" : ""}`,
-        followup: r.followup as Acolhido["followup"],
-      };
-    });
+    acolhidos = (recs ?? []).map((r) => ({
+      id: r.id as string,
+      answers: r.answers as Acolhido["answers"],
+      followup: r.followup as Acolhido["followup"],
+    }));
   }
 
   return (
@@ -67,7 +69,7 @@ export default async function FormularioPage({
       ) : questions.length === 0 ? (
         <div className="card empty">Nenhuma pergunta cadastrada ainda.</div>
       ) : (
-        <IntakeForm key={formKey} formKey={formKey} questions={questions} acolhidos={acolhidos} selected={sp.acolhido} />
+        <IntakeForm key={formKey} formKey={formKey} questions={questions} acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
       )}
     </div>
   );

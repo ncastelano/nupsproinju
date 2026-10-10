@@ -1,10 +1,12 @@
 "use client";
 import { Fragment, useActionState, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Check } from "lucide-react";
+import { RecordView, formatDate } from "@/components/RecordView";
 import { OTHER_PREFIX, type Question } from "@/lib/forms";
 import { saveIntake } from "./actions";
 
-export type Acolhido = { id: string; label: string; followup?: Record<string, { value: string }> | null };
+type Answers = Record<string, { label: string; value: string }>;
+export type Acolhido = { id: string; answers: Answers; followup: Answers | null };
 
 function Field({ q, initial = "" }: { q: Question; initial?: string }) {
   const isOther = q.type === "radio_other" && initial.startsWith(OTHER_PREFIX);
@@ -60,10 +62,11 @@ function Field({ q, initial = "" }: { q: Question; initial?: string }) {
 }
 
 export function IntakeForm({
-  formKey, questions, acolhidos, selected,
+  formKey, questions, acolhidos, selected, cadastroQuestions = [],
 }: {
   formKey: string;
   questions: Question[];
+  cadastroQuestions?: Question[];
   acolhidos?: Acolhido[]; // só no acompanhamento
   selected?: string;
 }) {
@@ -86,17 +89,56 @@ export function IntakeForm({
       <input type="hidden" name="form_key" value={formKey} />
 
       {acolhidos && (
-        <div className="card q">
-          <label className="q-label">Acolhido (do cadastro inicial)<span className="req"> *</span></label>
-          <div className="help">O acompanhamento é salvo na mesma ficha do cadastro inicial. Se já houver um, ele abre para edição.</div>
-          <select name="record_id" required value={sel} onChange={(e) => setSel(e.target.value)}>
-            <option value="" disabled>Selecione...</option>
-            {acolhidos.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
-          </select>
-        </div>
+        <>
+          <h2 className="section">ESCOLHA O ACOLHIDO</h2>
+          <div className="acolhido-grid">
+            {acolhidos.map((a) => {
+              const checked = a.id === sel;
+              return (
+                <label key={a.id} className={`acolhido-card${checked ? " on" : ""}`}>
+                  <input type="radio" name="record_id" value={a.id} required checked={checked}
+                    onChange={() => setSel(a.id)} />
+                  <div className="ac-top">
+                    <strong>{a.answers.nomes?.value ?? "(sem nome)"}</strong>
+                    {checked && <span className="ac-check"><Check size={16} /></span>}
+                  </div>
+                  <div className="ac-line">Proc. {a.answers.processo?.value ?? "—"}</div>
+                  {a.answers.unidade?.value && <div className="ac-line">{a.answers.unidade.value}</div>}
+                  {a.answers.data_acolhimento?.value && (
+                    <div className="ac-line">Acolhido em {formatDate(a.answers.data_acolhimento.value)}</div>
+                  )}
+                  <span className={a.followup ? "badge" : "badge off"} style={{ marginTop: 8 }}>
+                    {a.followup ? "Acompanhamento preenchido" : "Sem acompanhamento"}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+
+          {current ? (
+            <details className="card" open>
+              <summary style={{ cursor: "pointer", fontWeight: 700 }}>
+                Cadastro inicial de {current.answers.nomes?.value ?? "(sem nome)"}
+              </summary>
+              <div style={{ marginTop: 10 }}>
+                <RecordView
+                  answers={{
+                    ...current.answers,
+                    ...(current.answers.data_acolhimento && {
+                      data_acolhimento: { ...current.answers.data_acolhimento, value: formatDate(current.answers.data_acolhimento.value) },
+                    }),
+                  }}
+                  questions={cadastroQuestions}
+                />
+              </div>
+            </details>
+          ) : (
+            <div className="card empty" style={{ padding: 20 }}>Selecione um acolhido acima para preencher o acompanhamento.</div>
+          )}
+        </>
       )}
 
-      {questions.map((q) => {
+      {(!acolhidos || current) && questions.map((q) => {
         const showSection = q.section && q.section !== lastSection;
         lastSection = q.section || lastSection;
         return (
@@ -113,7 +155,7 @@ export function IntakeForm({
         );
       })}
       {msg && msg !== "ok" && <p className="error">{msg}</p>}
-      <button disabled={pending}>{pending ? "Salvando..." : "Salvar"}</button>
+      {(!acolhidos || current) && <button disabled={pending}>{pending ? "Salvando..." : "Salvar"}</button>}
     </form>
   );
 }
