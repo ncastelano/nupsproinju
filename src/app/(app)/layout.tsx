@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Header, type MyRecord } from "@/components/Header";
 import { NavTabs } from "@/components/NavTabs";
+import { NavProgress } from "@/components/NavProgress";
 import { FORM_KEY } from "@/lib/forms";
 import { ensureSlug } from "@/lib/profiles";
 
@@ -21,6 +22,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <Suspense fallback={null}><NavProgress /></Suspense>
       <Header
         userId={m.id}
         name={m.name || m.email}
