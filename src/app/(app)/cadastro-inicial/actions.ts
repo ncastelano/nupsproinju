@@ -52,6 +52,7 @@ export async function saveIntake(_: string | null, form: FormData) {
     answers._template_id = { label: "Modelo", value: template.id };
   }
 
+  let newId: string | null = null;
   const before = formKey === FORM_ACOMP && recordId ? await loadRecord(recordId) : null;
 
   if (formKey === FORM_ACOMP) {
@@ -78,11 +79,13 @@ export async function saveIntake(_: string | null, form: FormData) {
       }
     }
   } else {
-    const { error } = await supabase
-      .from("intake_records").insert({ form_key: FORM_KEY, created_by: me.id, answers });
-    if (error) return "Não foi possível salvar. Tente novamente.";
+    const { data: ins, error } = await supabase
+      .from("intake_records").insert({ form_key: FORM_KEY, created_by: me.id, answers }).select("id").single();
+    if (error || !ins) return "Não foi possível salvar. Tente novamente.";
+    newId = ins.id as string;
   }
   revalidatePath("/banco-de-dados");
   revalidatePath("/banco-de-dados", "layout");
-  return "ok";
+  revalidatePath("/processos");
+  return newId ? `ok:${newId}` : "ok";
 }

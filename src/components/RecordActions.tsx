@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Download, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
 import { deleteCadastro } from "@/app/(app)/cadastrados/records-actions";
 
@@ -30,6 +30,9 @@ export function RecordActions({ recordId, nome, canDelete }: { recordId: string;
         className="ghost"
         note="Só abre para quem estiver logado e tiver acesso."
       />
+      <a href={`/cadastrados/${recordId}/relatorio`}>
+        <button type="button" className="ghost"><Download size={16} /> Relatório</button>
+      </a>
       {canDelete && (!ask ? (
         <button type="button" className="danger" onClick={() => { setErr(null); setAsk(true); }}>
           <Trash2 size={16} /> Deletar

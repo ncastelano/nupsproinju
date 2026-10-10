@@ -91,14 +91,16 @@ export function IntakeForm({
   const [sel, setSel] = useState(selected ?? "");
   const current = acolhidos?.find((a) => a.id === sel);
 
-  if (msg === "ok")
+  const okId = msg?.startsWith("ok:") ? msg.slice(3) : null;
+  if (msg === "ok" || okId)
     return (
       <div className="card empty">
         <div className="ico"><CheckCircle2 size={44} /></div>
         <h2>Registro salvo</h2>
         <p>O processo já aparece em <b>Processos</b>.</p>
         <div className="row" style={{ justifyContent: "center" }}>
-          <a href="/processos"><button type="button">Ver em Processos</button></a>
+          {okId && <a href={`/cadastrados/${okId}/relatorio`}><button type="button">Baixar relatório (.docx)</button></a>}
+          <a href="/processos"><button type="button" className="ghost">Ver em Processos</button></a>
           <button type="button" className="ghost" onClick={() => location.reload()}>Fazer outro cadastro</button>
         </div>
       </div>
@@ -194,7 +196,7 @@ export function IntakeForm({
 
     {(!acolhidos || current) && extra}
 
-    {msg && msg !== "ok" && <p className="error">{msg}</p>}
+    {msg && msg !== "ok" && !msg.startsWith("ok:") && <p className="error">{msg}</p>}
     <div className="row">
       {(!acolhidos || current) && (
         <button type="submit" form="intake-form" disabled={pending}>{pending ? "Salvando..." : "Salvar"}</button>
