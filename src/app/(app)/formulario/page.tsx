@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings2 } from "lucide-react";
+import { LayoutTemplate } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
@@ -18,7 +18,9 @@ export default async function FormularioPage({
   const formKey = acomp ? FORM_ACOMP : FORM_KEY;
 
   const supabase = await createClient();
-  const { questions, typeName } = await loadQuestions(supabase, formKey, me.id, true);
+  const { questions, typeName, template, personal } = await loadQuestions(supabase, formKey, me.id, true);
+  const owned = personal && template.owner_id === me.id;
+  const first = (me.name || me.email).split(" ")[0];
   const professional = [me.name || me.email, me.registry].filter(Boolean).join(" - ");
 
   let acolhidos: Acolhido[] | undefined;
@@ -37,6 +39,10 @@ export default async function FormularioPage({
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <span className="badge">Formulário em uso: {typeName}{personal && template.owner_id !== me.id ? ` · de ${template.owner_name}` : ""}</span>
+        <Link href="/modelos-de-formularios" className="row" style={{ fontSize: 14 }}><LayoutTemplate size={14} /> Trocar formulário</Link>
+      </div>
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
           <h2>Nenhum acolhido registrado</h2>
@@ -46,7 +52,8 @@ export default async function FormularioPage({
         <div className="card empty">Nenhuma pergunta cadastrada ainda.</div>
       ) : (
         <IntakeForm key={formKey} formKey={formKey} professional={professional} hasRegistry={!!me.registry} questions={questions}
-          extra={<CustomEditor formKey={formKey} typeName={typeName} extras={questions.filter((q) => q.key.startsWith("x_"))} />} acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
+          owned={owned}
+          extra={<CustomEditor formKey={formKey} activeName={typeName} owned={owned} suggestedName={`${typeName} · ${first}`} extras={questions.filter((q) => q.key.startsWith("x_"))} />} acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
       )}
     </div>
   );

@@ -63,9 +63,10 @@ function Field({ q, initial = "" }: { q: Question; initial?: string }) {
 }
 
 export function IntakeForm({
-  formKey, questions, acolhidos, selected, cadastroQuestions = [], professional, hasRegistry, extra,
+  formKey, questions, acolhidos, selected, cadastroQuestions = [], professional, hasRegistry, extra, owned = false,
 }: {
   formKey: string;
+  owned?: boolean;
   extra?: ReactNode;
   professional: string;
   hasRegistry: boolean;
@@ -164,7 +165,7 @@ export function IntakeForm({
               ) : (
               <Field key={`${sel}-${q.id}`} q={q} initial={formKey === "acompanhamento" ? current?.followup?.[q.key]?.value ?? "" : ""} />
               )}
-              {!PROFESSIONAL_KEYS.includes(q.key) && <QuestionEdit key={`${q.key}-${q.label}-${q.help}`} q={q} formKey={formKey} />}
+              {!PROFESSIONAL_KEYS.includes(q.key) && <QuestionEdit key={`${q.key}-${q.label}-${q.help}`} q={q} formKey={formKey} owned={owned} />}
             </div>
           </Fragment>
         );

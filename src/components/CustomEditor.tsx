@@ -17,8 +17,8 @@ const HOW: Partial<Record<QuestionType, string>> = {
 
 // "Editar": a pessoa acrescenta perguntas ao cadastro e dá um nome para o tipo de cadastro dela.
 export function CustomEditor({
-  formKey, typeName, extras,
-}: { formKey: string; typeName: string; extras: Question[] }) {
+  formKey, activeName, owned, suggestedName, extras,
+}: { formKey: string; activeName: string; owned: boolean; suggestedName: string; extras: Question[] }) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<QuestionType>("text");
   const [msg, action, pending] = useActionState(addCustomQuestion, null);
@@ -32,7 +32,6 @@ export function CustomEditor({
         <button type="button" className="ghost" onClick={() => setOpen((o) => !o)}>
           {open ? <X size={16} /> : <Plus size={16} />} {open ? "Fechar" : "Adicionar uma pergunta"}
         </button>
-        {typeName && <span className="badge">Formulário: {typeName}</span>}
       </div>
 
       {open && (
@@ -57,10 +56,19 @@ export function CustomEditor({
 
           <form ref={ref} action={action} className="grid" style={{ gap: 12 }}>
             <input type="hidden" name="form_key" value={formKey} />
-            <label className="field"><span>Nome do formulário *</span>
-              <input name="type_name" defaultValue={typeName} placeholder="Ex.: Formulário da Gessiane" required />
-              <small>É o nome com que este formulário fica salvo.</small>
-            </label>
+            {owned ? (
+              <small style={{ color: "var(--muted)" }}>
+                Esta pergunta será acrescentada ao seu formulário “{activeName}”.
+              </small>
+            ) : (
+              <label className="field"><span>Nome do seu novo formulário *</span>
+                <input name="new_name" defaultValue={suggestedName} required />
+                <small>
+                  Você está usando “{activeName}”. Ao adicionar uma pergunta, isso vira um novo
+                  formulário seu, que as outras pessoas também poderão ver e usar.
+                </small>
+              </label>
+            )}
             <label className="field"><span>Pergunta *</span>
               <input name="label" required placeholder="Ex.: Situação escolar" /></label>
             <label className="field"><span>Frase de apoio (opcional)</span>

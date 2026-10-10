@@ -1,114 +1,155 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { randomBytes } from "node:crypto";
 import { requireMember } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEYS, FORM_KEY, type Question, type QuestionType } from "@/lib/forms";
-import { getCustomForms } from "@/lib/questions";
+import {
+  BASE_ID, emptyDelta, getActiveTemplate, newTemplateId, removeTemplate, saveTemplate,
+  setActiveTemplate, findTemplate, type Template,
+} from "@/lib/templates";
 
 const TYPES: QuestionType[] = ["text", "textarea", "date", "select", "radio", "radio_other", "checkbox"];
+const NEEDS = ["select", "radio", "radio_other", "checkbox"];
 const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
+const refresh = () => {
+  revalidatePath("/formulario");
+  revalidatePath("/modelos-de-formularios", "layout");
+  revalidatePath("/usuarios", "layout");
+};
+const formKeyOf = (f: FormData) => {
+  const k = String(f.get("form_key"));
+  return (FORM_KEYS as readonly string[]).includes(k) ? k : FORM_KEY;
+};
 
-async function save(userId: string, forms: Record<string, unknown>) {
-  const admin = createAdminClient();
-  const { data } = await admin.auth.admin.getUserById(userId);
-  return admin.auth.admin.updateUserById(userId, {
-    user_metadata: { ...(data.user?.user_metadata ?? {}), custom_forms: forms },
-  });
+// Formulário em que a pessoa mexe: o dela mesmo, ou uma cópia nova (se estava usando o de outra pessoa).
+async function workingTemplate(
+  me: { id: string; name: string; email: string }, name?: string,
+): Promise<Template> {
+  const active = await getActiveTemplate(me.id);
+  if (active.id !== BASE_ID && active.owner_id === me.id) return structuredClone(active);
+  const first = (me.name || me.email).split(" ")[0];
+  const copy: Template = {
+    id: newTemplateId(),
+    name: name?.trim() || `${active.name} · ${first}`,
+    owner_id: me.id,
+    owner_name: me.name || me.email,
+    parent_name: active.name,
+    created_at: new Date().toISOString(),
+    forms: structuredClone(active.forms),
+  };
+  return copy;
+}
+
+async function commit(me: { id: string }, tpl: Template) {
+  const r = await saveTemplate(tpl);
+  if (r.error) return false;
+  await setActiveTemplate(me.id, tpl.id);
+  refresh();
+  return true;
 }
 
 export async function addCustomQuestion(_: string | null, form: FormData) {
   const me = await requireMember();
-  const k = String(form.get("form_key"));
-  const formKey = (FORM_KEYS as readonly string[]).includes(k) ? k : FORM_KEY;
-  const typeName = String(form.get("type_name") ?? "").trim();
+  const formKey = formKeyOf(form);
   const label = String(form.get("label") ?? "").trim();
   const type = String(form.get("type")) as QuestionType;
   const options = lines(String(form.get("options") ?? ""));
+  const newName = String(form.get("new_name") ?? "").trim();
 
-  if (!typeName) return "Dê um nome para este formulário.";
+  const active = await getActiveTemplate(me.id);
+  const forking = active.id === BASE_ID || active.owner_id !== me.id;
+  if (forking && !newName) return "Dê um nome para o seu novo formulário.";
   if (!label) return "Escreva a pergunta.";
-  if (!TYPES.includes(type)) return "Escolha o tipo de resposta.";
-  if (["select", "radio", "radio_other", "checkbox"].includes(type) && options.length < 2) {
-    return "Informe pelo menos 2 opções, uma por linha.";
-  }
+  if (!TYPES.includes(type)) return "Escolha como a pessoa responde.";
+  if (NEEDS.includes(type) && options.length < 2) return "Informe pelo menos 2 opções, uma por linha.";
 
-  const forms = await getCustomForms(me.id);
-  const cur = forms[formKey] ?? { name: typeName, questions: [] };
+  const tpl = await workingTemplate(me, newName);
+  const delta = tpl.forms[formKey] ?? emptyDelta();
   const key = "x_" + randomBytes(4).toString("hex");
-  const q: Question = {
-    id: `custom-${key}`, form_key: formKey, key,
-    position: 10000 + cur.questions.length,
-    section: "PERGUNTAS ADICIONAIS",
-    label, help: String(form.get("help") ?? "").trim(), type,
-    options: ["select", "radio", "radio_other", "checkbox"].includes(type) ? options : [],
-    required: form.get("required") === "on", active: true,
-  };
-  forms[formKey] = { name: typeName, questions: [...cur.questions, q] };
-  const { error } = await save(me.id, forms);
-  if (error) return "Não foi possível salvar a pergunta.";
-  revalidatePath("/formulario");
-  revalidatePath("/usuarios", "layout");
-  return "ok";
+  delta.questions.push({
+    id: `custom-${key}`, form_key: formKey, key, position: 10000 + delta.questions.length,
+    section: "PERGUNTAS ADICIONAIS", label, help: String(form.get("help") ?? "").trim(), type,
+    options: NEEDS.includes(type) ? options : [], required: form.get("required") === "on", active: true,
+  });
+  tpl.forms[formKey] = delta;
+  return (await commit(me, tpl)) ? "ok" : "Não foi possível salvar a pergunta.";
 }
 
 export async function deleteCustomQuestion(form: FormData) {
   const me = await requireMember();
-  const formKey = String(form.get("form_key"));
+  const formKey = formKeyOf(form);
   const key = String(form.get("key"));
-  const forms = await getCustomForms(me.id);
-  if (!forms[formKey]) return;
-  forms[formKey] = { ...forms[formKey], questions: forms[formKey].questions.filter((q) => q.key !== key) };
-  if (forms[formKey].questions.length === 0) delete forms[formKey];
-  await save(me.id, forms);
-  revalidatePath("/formulario");
-  revalidatePath("/usuarios", "layout");
+  const tpl = await workingTemplate(me);
+  const delta = tpl.forms[formKey] ?? emptyDelta();
+  delta.questions = delta.questions.filter((q: Question) => q.key !== key);
+  tpl.forms[formKey] = delta;
+  await commit(me, tpl);
 }
 
-const NEEDS = ["select", "radio", "radio_other", "checkbox"];
-
-// Edita uma pergunta só para quem está logado: as do modelo ficam como "ajuste" pessoal;
-// as que a própria pessoa criou (x_...) são alteradas direto.
 export async function saveQuestionEdit(form: FormData) {
   const me = await requireMember();
-  const formKey = String(form.get("form_key"));
+  const formKey = formKeyOf(form);
   const key = String(form.get("key"));
   const label = String(form.get("label") ?? "").trim();
-  if (!(FORM_KEYS as readonly string[]).includes(formKey) || !key) return "Pergunta inválida.";
+  if (!key) return "Pergunta inválida.";
   if (!label) return "A pergunta não pode ficar vazia.";
+  const hasOptions = form.get("has_options") === "1";
   const options = lines(String(form.get("options") ?? ""));
+  if (hasOptions && options.length < 2) return "Informe pelo menos 2 opções, uma por linha.";
   const patch = {
     label, help: String(form.get("help") ?? "").trim(),
-    required: form.get("required") === "on",
-    ...(form.get("has_options") === "1" ? { options } : {}),
+    required: form.get("required") === "on", ...(hasOptions ? { options } : {}),
   };
-  if (form.get("has_options") === "1" && options.length < 2) return "Informe pelo menos 2 opções, uma por linha.";
 
-  const forms = await getCustomForms(me.id);
-  const cur = forms[formKey] ?? { name: "", questions: [] };
-  if (key.startsWith("x_")) {
-    cur.questions = cur.questions.map((q) => (q.key === key ? { ...q, ...patch } : q));
-  } else {
-    cur.overrides = { ...(cur.overrides ?? {}), [key]: patch };
-  }
-  forms[formKey] = cur;
-  const { error } = await save(me.id, forms);
-  if (error) return "Não foi possível salvar a pergunta.";
-  revalidatePath("/formulario");
-  return "ok";
+  const tpl = await workingTemplate(me);
+  const delta = tpl.forms[formKey] ?? emptyDelta();
+  if (key.startsWith("x_")) delta.questions = delta.questions.map((q) => (q.key === key ? { ...q, ...patch } : q));
+  else delta.overrides = { ...delta.overrides, [key]: patch };
+  tpl.forms[formKey] = delta;
+  return (await commit(me, tpl)) ? "ok" : "Não foi possível salvar a pergunta.";
 }
 
 export async function resetQuestionEdit(form: FormData) {
   const me = await requireMember();
-  const formKey = String(form.get("form_key"));
+  const formKey = formKeyOf(form);
   const key = String(form.get("key"));
-  const forms = await getCustomForms(me.id);
-  const cur = forms[formKey];
-  if (!cur?.overrides?.[key]) return "ok";
-  const { [key]: _drop, ...rest } = cur.overrides;
-  cur.overrides = rest;
-  const { error } = await save(me.id, forms);
-  if (error) return "Não foi possível restaurar.";
-  revalidatePath("/formulario");
-  return "ok";
+  const tpl = await workingTemplate(me);
+  const delta = tpl.forms[formKey] ?? emptyDelta();
+  const { [key]: _d, ...rest } = delta.overrides;
+  delta.overrides = rest;
+  tpl.forms[formKey] = delta;
+  return (await commit(me, tpl)) ? "ok" : "Não foi possível restaurar.";
+}
+
+// ---- Modelos de formulários ----
+
+export async function useTemplate(form: FormData) {
+  const me = await requireMember();
+  const id = String(form.get("id"));
+  if (!(await findTemplate(id))) return;
+  await setActiveTemplate(me.id, id);
+  refresh();
+  redirect("/formulario");
+}
+
+export async function createTemplate(_: string | null, form: FormData) {
+  const me = await requireMember();
+  const name = String(form.get("name") ?? "").trim();
+  if (!name) return "Dê um nome ao novo formulário.";
+  const tpl: Template = {
+    id: newTemplateId(), name, owner_id: me.id, owner_name: me.name || me.email,
+    parent_name: "Modelo padrão", created_at: new Date().toISOString(), forms: {},
+  };
+  if (!(await commit(me, tpl))) return "Não foi possível criar o formulário.";
+  redirect("/formulario");
+}
+
+export async function deleteTemplate(form: FormData) {
+  const me = await requireMember();
+  const id = String(form.get("id"));
+  const active = await getActiveTemplate(me.id);
+  await removeTemplate(me.id, id);
+  if (active.id === id) await setActiveTemplate(me.id, BASE_ID);
+  refresh();
 }

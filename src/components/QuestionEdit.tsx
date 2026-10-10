@@ -8,7 +8,7 @@ import { resetQuestionEdit, saveQuestionEdit } from "@/app/(app)/formulario/cust
 const HAS_OPTIONS = ["select", "radio", "radio_other", "checkbox"];
 
 // Botão "Editar pergunta" de cada cartão. Fica fora de <form>: envia por conta própria.
-export function QuestionEdit({ q, formKey }: { q: Question; formKey: string }) {
+export function QuestionEdit({ q, formKey, owned }: { q: Question; formKey: string; owned: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState(q.label);
@@ -75,7 +75,7 @@ export function QuestionEdit({ q, formKey }: { q: Question; formKey: string }) {
           </div>
           {msg && <p className="error">{msg}</p>}
           <small style={{ color: "var(--muted)" }}>
-            A alteração vale só para você e não muda os formulários já salvos.
+            {owned ? "A alteração vale para o seu formulário e não muda os já salvos." : "Como este formulário não é seu, a alteração cria um novo formulário seu (cópia), sem mexer no original."}
           </small>
         </div>
       )}

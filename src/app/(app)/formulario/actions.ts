@@ -17,7 +17,7 @@ export async function saveIntake(_: string | null, form: FormData) {
     if (!recordId) return "Escolha o acolhido do acompanhamento.";
   }
 
-  const { questions } = await loadQuestions(supabase, formKey, me.id, true);
+  const { questions, typeName } = await loadQuestions(supabase, formKey, me.id, true);
   const signature = [me.name || me.email, me.registry].filter(Boolean).join(" - ");
 
   const answers: Record<string, { label: string; value: string }> = {};
@@ -39,6 +39,8 @@ export async function saveIntake(_: string | null, form: FormData) {
     if (q.required && !value) return `Preencha: ${q.label}`;
     if (value) answers[q.key] = { label: q.label, value };
   }
+
+  if (formKey === FORM_KEY) answers._template = { label: "Modelo de formulário", value: typeName };
 
   if (formKey === FORM_ACOMP) {
     const { data: upd, error } = await supabase
