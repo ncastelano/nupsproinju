@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { login } from "./actions";
 import { Brand } from "@/components/Brand";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function LoginPage() {
   const [error, action, pending] = useActionState(login, null);
@@ -16,7 +17,7 @@ export default function LoginPage() {
             <span style={{ color: "var(--muted)" }}>Acesse com o seu e-mail e senha.</span>
           </div>
           <input name="email" type="email" placeholder="E-mail" autoComplete="email" required />
-          <input name="password" type="password" placeholder="Senha" autoComplete="current-password" required />
+          <PasswordInput name="password" placeholder="Senha" autoComplete="current-password" required />
           <button disabled={pending}>{pending ? "Entrando..." : "Entrar"}</button>
           {error && <p className="error">{error}</p>}
           <div style={{ textAlign: "center" }}>

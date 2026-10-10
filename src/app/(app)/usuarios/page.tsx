@@ -1,6 +1,7 @@
 import { requireAdmin, type Member } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createUser, updateUser, deleteUser, setStatus } from "./actions";
+import { PasswordInput } from "@/components/PasswordInput";
 
 const STATUS_LABEL = { pending: "Aguardando", approved: "Aprovado", rejected: "Recusado" } as const;
 
@@ -47,7 +48,7 @@ export default async function UsuariosPage() {
           <div className="row">
             <input name="name" placeholder="Nome" />
             <input name="email" type="email" placeholder="E-mail" required />
-            <input name="password" placeholder="Senha (mín. 6)" minLength={6} required />
+            <PasswordInput name="password" placeholder="Senha (mín. 6)" minLength={6} required />
             <select name="role"><option value="member">Membro</option><option value="admin">Administrador</option></select>
             <button>Criar</button>
           </div>
@@ -66,7 +67,7 @@ export default async function UsuariosPage() {
               <input type="hidden" name="id" value={m.id} />
               <input name="name" defaultValue={m.name} placeholder="Nome" />
               <select name="role" defaultValue={m.role}><option value="member">Membro</option><option value="admin">Administrador</option></select>
-              <input name="password" placeholder="Nova senha (opcional)" />
+              <PasswordInput name="password" placeholder="Nova senha (opcional)" />
               <button className="ghost">Salvar</button>
             </form>
             {m.id !== me.id && (

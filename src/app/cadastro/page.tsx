@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { signup } from "../login/actions";
 import { Brand } from "@/components/Brand";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function CadastroPage() {
   const [error, action, pending] = useActionState(signup, null);
@@ -19,7 +20,7 @@ export default function CadastroPage() {
           </div>
           <input name="name" placeholder="Nome completo" autoComplete="name" required />
           <input name="email" type="email" placeholder="E-mail" autoComplete="email" required />
-          <input name="password" type="password" placeholder="Senha (mín. 6 caracteres)" minLength={6} autoComplete="new-password" required />
+          <PasswordInput name="password" placeholder="Senha (mín. 6 caracteres)" minLength={6} autoComplete="new-password" required />
           <button disabled={pending}>{pending ? "Enviando..." : "Pedir acesso"}</button>
           {error && <p className="error">{error}</p>}
           <div style={{ textAlign: "center" }}>
