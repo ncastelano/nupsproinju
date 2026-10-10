@@ -36,7 +36,7 @@ export default async function UsuariosPage() {
           <div key={m.id} className="card row" style={{ justifyContent: "space-between" }}>
             <div>
               <strong>{m.name || "(sem nome)"}</strong>
-              <div style={{ color: "var(--muted)" }}>{m.email}</div>
+              <div style={{ color: "var(--muted)" }}>{m.email} · {m.registry || "sem CRP/CRESS"}</div>
             </div>
             <div className="row">
               <StatusButton id={m.id} status="approved" label="Aceitar" />
@@ -60,7 +60,10 @@ export default async function UsuariosPage() {
         {others.map((m) => (
           <div key={m.id} className="card grid">
             <div className="row" style={{ justifyContent: "space-between" }}>
-              <strong>{m.email}</strong>
+              <div>
+                <strong>{m.name || m.email}</strong>
+                <div style={{ color: "var(--muted)" }}>{m.email} · {m.registry || "sem CRP/CRESS"}</div>
+              </div>
               <span className={m.status === "approved" ? "badge" : "badge off"}>
                 {m.role === "admin" ? "Administrador" : "Membro"} · {STATUS_LABEL[m.status]}
               </span>
@@ -68,6 +71,7 @@ export default async function UsuariosPage() {
             <form action={updateUser} className="row">
               <input type="hidden" name="id" value={m.id} />
               <input name="name" defaultValue={m.name} placeholder="Nome" />
+              <input name="registry" defaultValue={m.registry} placeholder="CRP ou CRESS" />
               <select name="role" defaultValue={m.role}><option value="member">Membro</option><option value="admin">Administrador</option></select>
               <PasswordInput name="password" placeholder="Nova senha (opcional)" />
               <button className="ghost">Salvar</button>

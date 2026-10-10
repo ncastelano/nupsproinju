@@ -37,6 +37,7 @@ export async function updateUser(form: FormData) {
   const patch: Record<string, unknown> = {
     name: String(form.get("name") ?? "").trim(),
     role: form.get("role") === "admin" ? "admin" : "member",
+    registry: String(form.get("registry") ?? "").trim(),
   };
   if (id === me.id) patch.role = "admin"; // não se trancar pra fora
   const admin = createAdminClient();

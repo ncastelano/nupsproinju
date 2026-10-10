@@ -18,8 +18,8 @@ export function AcolhimentoForm({
   if (!professional) {
     return (
       <div className="card empty">
-        <h3>Falta ligar o seu perfil a um profissional</h3>
-        <p>Escolha o seu nome na lista do NUPS para assinar os formulários.</p>
+        <h3>Falta o seu CRP ou CRESS</h3>
+        <p>Informe o seu registro profissional no perfil para assinar os formulários.</p>
         <button type="button" onClick={goProfile}>Abrir meu perfil</button>
       </div>
     );

@@ -5,7 +5,7 @@ import { updateProfile, uploadAvatar } from "@/app/(app)/actions";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Avatar } from "@/components/Avatar";
 
-export type Professional = { id: string; name: string; registry: string };
+export type Professional = { name: string; registry: string };
 
 // Reduz a foto no navegador (256x256, recorte central) antes de enviar.
 async function resize(file: File): Promise<Blob> {
@@ -21,17 +21,13 @@ async function resize(file: File): Promise<Blob> {
 }
 
 export function ProfileForm({
-  name, avatarUrl, linked, available,
-}: { name: string; avatarUrl: string | null; linked: Professional | null; available: Professional[] }) {
+  name, avatarUrl, registry,
+}: { name: string; avatarUrl: string | null; registry: string }) {
   const [msg, action, pending] = useActionState(updateProfile, null);
-  const [typed, setTyped] = useState("");
   const [pw, setPw] = useState(false);
   const [photoMsg, setPhotoMsg] = useState<string | null>(null);
   const [uploading, startUpload] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const isNew =
-    typed.trim() !== "" && !available.some((p) => p.name.toLowerCase() === typed.trim().toLowerCase());
 
   function onPhoto(file?: File) {
     if (!file) return;
@@ -63,36 +59,17 @@ export function ProfileForm({
         <input name="name" defaultValue={name} placeholder="Nome completo" required />
       </label>
 
-      {linked ? (
-        <div className="field">
-          <span>Profissional do NUPS</span>
-          <div className="linked">{linked.name} · {linked.registry}</div>
-        </div>
-      ) : (
-        <>
-          <label className="field">
-            <span>Quem é você no NUPS?</span>
-            <input
-              name="professional_name"
-              list="nups-list"
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              placeholder="Escolha da lista ou escreva o seu nome"
-              autoComplete="off"
-            />
-            <datalist id="nups-list">
-              {available.map((p) => <option key={p.id} value={p.name}>{p.registry}</option>)}
-            </datalist>
-          </label>
-          {isNew && (
-            <label className="field">
-              <span>Registro profissional (CRP/CRESS)</span>
-              <input name="professional_registry" placeholder="Ex.: CRP 24/00000" />
-              <small className="sheet-sub">Esse nome será adicionado à lista do NUPS.</small>
-            </label>
-          )}
-        </>
-      )}
+      <label className="field">
+        <span>Registro profissional (CRP ou CRESS)</span>
+        <input
+          name="registry"
+          defaultValue={registry}
+          placeholder="Ex.: CRP 24/00000 ou CRESS 0000/RO"
+          autoFocus={!registry}
+          required
+        />
+        {!registry && <small className="sheet-sub">Informe o seu registro para liberar o formulário.</small>}
+      </label>
 
       <button type="button" className="light pw-trigger" aria-expanded={pw} onClick={() => setPw((v) => !v)}>
         Trocar senha? <ChevronDown size={18} style={{ transform: pw ? "rotate(180deg)" : undefined, transition: "transform .3s" }} />

@@ -7,35 +7,18 @@ import { createClient } from "@/lib/supabase/server";
 export async function updateProfile(_: string | null, form: FormData) {
   const me = await requireMember();
   const name = String(form.get("name") ?? "").trim();
+  const registry = String(form.get("registry") ?? "").trim();
   const password = String(form.get("password") ?? "");
   const confirm = String(form.get("confirm_password") ?? "");
-  const typed = String(form.get("professional_name") ?? "").trim();
-  const registry = String(form.get("professional_registry") ?? "").trim();
   if (!name) return "Informe o seu nome.";
+  if (!registry) return "Informe o seu CRP ou CRESS.";
   if (password || confirm) {
     if (password.length < 6) return "A nova senha precisa ter pelo menos 6 caracteres.";
     if (password !== confirm) return "A confirmação não é igual à nova senha.";
   }
 
   const admin = createAdminClient();
-  const patch: Record<string, unknown> = { name };
-
-  if (typed && !me.professional_id) {
-    // escolhe um nome que já existe ou cadastra um novo na lista do NUPS
-    const { data: all } = await admin.from("professionals").select("id,name");
-    const found = (all ?? []).find((p) => p.name.trim().toLowerCase() === typed.toLowerCase());
-    let id = found?.id as string | undefined;
-    if (!id) {
-      const { data: created, error } = await admin
-        .from("professionals").insert({ name: typed, registry }).select("id").single();
-      if (error || !created) return "Não foi possível cadastrar esse nome na lista do NUPS.";
-      id = created.id;
-    }
-    patch.professional_id = id;
-  }
-
-  const { error } = await admin.from("members").update(patch).eq("id", me.id);
-  if (error) return "Esse profissional já está ligado a outra conta.";
+  await admin.from("members").update({ name, registry }).eq("id", me.id);
   if (password) await admin.auth.admin.updateUserById(me.id, { password });
   revalidatePath("/", "layout");
   return "ok";
@@ -62,14 +45,15 @@ export async function uploadAvatar(form: FormData) {
 
 export async function createAcolhimento(_: string | null, form: FormData) {
   const me = await requireMember();
-  if (!me.professional_id) return "Ligue o seu perfil a um profissional do NUPS antes de preencher.";
+  if (!me.registry) return "Informe o seu CRP ou CRESS no perfil antes de preencher.";
 
   const s = (k: string) => String(form.get(k) ?? "").trim();
   const modality = s("modality") === "Outro" ? `Outro: ${s("modality_other")}` : s("modality");
   const has = s("has_related_processes");
   const row = {
     created_by: me.id,
-    professional_id: me.professional_id,
+    professional_name: me.name,
+    professional_registry: me.registry,
     process_number: s("process_number"),
     children_names: s("children_names"),
     children_birthdates: s("children_birthdates"),

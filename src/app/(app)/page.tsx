@@ -2,44 +2,35 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { buildNarrative, type AcolhimentoRow } from "@/lib/narrative";
 import { AppShell } from "@/components/AppShell";
-import type { Professional } from "@/components/ProfileForm";
+
+type Row = AcolhimentoRow & { professional_name: string; professional_registry: string };
 
 export default async function Home() {
   const m = await requireMember();
   const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("acolhimentos").select("*").order("created_at", { ascending: false });
 
-  const [{ data: profs }, { data: taken }, { data: rows }] = await Promise.all([
-    supabase.from("professionals").select("id,name,registry").order("name"),
-    supabase.from("members").select("professional_id").not("professional_id", "is", null),
-    supabase.from("acolhimentos").select("*").order("created_at", { ascending: false }),
-  ]);
+  const cards = ((rows ?? []) as Row[]).map((r) => ({
+    id: r.id,
+    created_at: r.created_at,
+    process_number: r.process_number,
+    children_names: r.children_names,
+    text: buildNarrative(
+      r,
+      [r.professional_name, r.professional_registry].filter(Boolean).join(", "),
+    ),
+  }));
 
-  const all = (profs ?? []) as Professional[];
-  const byId = new Map(all.map((p) => [p.id, p]));
-  const takenIds = new Set((taken ?? []).map((t) => t.professional_id as string));
-  // quem não é admin só enxerga a própria linha em members; o unique do banco garante o resto
-  const available = all.filter((p) => !takenIds.has(p.id));
-  const professional = m.professional_id ? byId.get(m.professional_id) ?? null : null;
-
-  const cards = ((rows ?? []) as (AcolhimentoRow & { professional_id: string | null })[]).map((r) => {
-    const p = r.professional_id ? byId.get(r.professional_id) : null;
-    return {
-      id: r.id,
-      created_at: r.created_at,
-      process_number: r.process_number,
-      children_names: r.children_names,
-      text: buildNarrative(r, p ? `${p.name}, ${p.registry}` : ""),
-    };
-  });
-
+  const name = m.name || m.email;
   return (
     <AppShell
-      name={m.name || m.email}
+      name={name}
       email={m.email}
-      avatarUrl={m.avatar_url}
       isAdmin={m.role === "admin"}
-      professional={professional}
-      available={available}
+      avatarUrl={m.avatar_url}
+      registry={m.registry}
+      professional={m.registry ? { name, registry: m.registry } : null}
       cards={cards}
     />
   );

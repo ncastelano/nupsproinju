@@ -5,7 +5,7 @@ import { signup } from "../login/actions";
 import { Brand } from "@/components/Brand";
 import { PasswordInput } from "@/components/PasswordInput";
 
-export function CadastroForm({ available }: { available: { id: string; name: string }[] }) {
+export function CadastroForm() {
   const [error, action, pending] = useActionState(signup, null);
   return (
     <div className="login-wrap">
@@ -18,12 +18,8 @@ export function CadastroForm({ available }: { available: { id: string; name: str
               Seu pedido será analisado pelo administrador antes da liberação.
             </span>
           </div>
-          <select name="professional_id" defaultValue="" required>
-            <option value="" disabled>Selecione o seu nome do NUPS</option>
-            {available.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            <option value="outro">Não estou na lista</option>
-          </select>
           <input name="name" placeholder="Nome completo" autoComplete="name" required />
+          <input name="registry" placeholder="CRP ou CRESS (ex.: CRP 24/00000)" required />
           <input name="email" type="email" placeholder="E-mail" autoComplete="email" required />
           <PasswordInput name="password" placeholder="Senha (mín. 6 caracteres)" minLength={6} autoComplete="new-password" required />
           <button disabled={pending}>{pending ? "Enviando..." : "Pedir acesso"}</button>

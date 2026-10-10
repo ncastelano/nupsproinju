@@ -20,13 +20,8 @@ export async function signup(_: string | null, form: FormData) {
   if (!name || !email) return "Preencha nome e e-mail.";
   if (password.length < 6) return "A senha precisa ter pelo menos 6 caracteres.";
 
-  const professionalId = String(form.get("professional_id") ?? "");
-  const link = professionalId && professionalId !== "outro" ? professionalId : null;
-  if (link) {
-    const { data: taken } = await createAdminClient()
-      .from("members").select("id").eq("professional_id", link).maybeSingle();
-    if (taken) return "Esse profissional já tem uma conta. Fale com o administrador.";
-  }
+  const registry = String(form.get("registry") ?? "").trim();
+  if (!registry) return "Informe o seu CRP ou CRESS.";
 
   // Cria já confirmado (sem e-mail de verificação); a barreira é a aprovação do administrador.
   const { error } = await createAdminClient().auth.admin.createUser({
@@ -37,10 +32,8 @@ export async function signup(_: string | null, form: FormData) {
       ? "Este e-mail já tem cadastro. Use a tela de entrar."
       : "Não foi possível criar o cadastro. Tente novamente.";
   }
-  if (link) {
-    // o trigger já criou a linha em members; aqui só ligamos ao profissional do NUPS
-    await createAdminClient().from("members").update({ professional_id: link }).eq("email", email);
-  }
+  // o trigger já criou a linha em members; aqui gravamos o registro profissional
+  await createAdminClient().from("members").update({ registry }).eq("email", email);
   const supabase = await createClient();
   await supabase.auth.signInWithPassword({ email, password });
   redirect("/");

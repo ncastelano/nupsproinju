@@ -10,10 +10,10 @@ import { Avatar } from "./Avatar";
 
 type Props = {
   name: string; email: string; isAdmin: boolean; avatarUrl: string | null;
-  professional: Professional | null; available: Professional[]; cards: Card[];
+  registry: string; professional: Professional | null; cards: Card[];
 };
 
-export function AppShell({ name, email, isAdmin, avatarUrl, professional, available, cards }: Props) {
+export function AppShell({ name, email, isAdmin, avatarUrl, registry, professional, cards }: Props) {
   const [tab, setTab] = useState<"novo" | "acompanhamento">("novo");
   const [open, setOpen] = useState(false);
   const [headH, setHeadH] = useState(72);
@@ -55,7 +55,7 @@ export function AppShell({ name, email, isAdmin, avatarUrl, professional, availa
         <div className="expander" aria-hidden={!open}>
           <div className="expander-inner">
             <span className="sheet-sub">{email}</span>
-            <ProfileForm name={name} avatarUrl={avatarUrl} linked={professional} available={available} />
+            <ProfileForm name={name} avatarUrl={avatarUrl} registry={registry} />
             <div className="row" style={{ justifyContent: "center" }}>
               <form action={logout}><button className="light"><LogOut size={18} /> Sair</button></form>
               <button type="button" className="light" onClick={() => setOpen(false)}><ChevronUp size={18} /> Fechar</button>
