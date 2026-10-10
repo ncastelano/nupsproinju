@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronUp, LogOut, ShieldCheck } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ProfileForm, type Professional } from "./ProfileForm";
 import { AcolhimentoForm } from "./AcolhimentoForm";
@@ -13,50 +13,45 @@ type Props = {
 };
 
 export function AppShell({ name, email, isAdmin, professional, available, cards }: Props) {
-  const [tab, setTab] = useState<"perfil" | "novo" | "acompanhamento">("perfil");
-  const [dropped, setDropped] = useState(false);
-  const rowRef = useRef<HTMLDivElement>(null);
-  const [pad, setPad] = useState(90);
+  const [tab, setTab] = useState<"novo" | "acompanhamento">("novo");
+  const [open, setOpen] = useState(false);
 
-  // O card do perfil "cai" ao entrar e sobe quando a pessoa sai do perfil.
-  useEffect(() => { const t = setTimeout(() => setDropped(true), 60); return () => clearTimeout(t); }, []);
-  const open = dropped && tab === "perfil";
-
-  // Com o perfil aberto o header some e o painel cobre a página toda; as abas ficam por cima.
-  useLayoutEffect(() => {
-    const measure = () => rowRef.current && setPad(rowRef.current.offsetHeight + 48);
-    if (tab === "perfil") window.scrollTo(0, 0);
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [tab]);
+  // O perfil "cai" ao entrar na página.
+  useEffect(() => { const t = setTimeout(() => setOpen(true), 60); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, [open]);
 
   return (
     <>
-      <header className={`topbar${open ? " collapsed" : ""}`}>
+      <header className="topbar">
         <div className="inner">
           <strong>Núcleo Psicossocial · VPIJ Porto Velho</strong>
-          <button type="button" className="who-btn" aria-expanded={open} onClick={() => setTab("perfil")}>
+          <button type="button" className="who-btn" aria-expanded={open} onClick={() => setOpen(true)}>
             <span>{name}</span>
-            <ChevronDown size={18} className="chev" style={{ transform: open ? "rotate(180deg)" : undefined }} />
+            <ChevronDown size={18} className="chev" />
           </button>
         </div>
       </header>
 
-      <section className={`profile-sheet${open ? " open" : ""}`} style={{ paddingTop: pad }} aria-hidden={!open}>
+      <section className={`profile-sheet${open ? " open" : ""}`} aria-hidden={!open}>
         <div className="profile-inner">
-          <div className="grid" style={{ gap: 16 }}>
-            <div>
+          <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
+            <div style={{ minWidth: 0 }}>
               <h2 style={{ margin: 0 }}>{name}</h2>
               <span className="sheet-sub">{email}</span>
             </div>
-            <ProfileForm name={name} linked={professional} available={available} />
+            <button type="button" className="light" onClick={() => setOpen(false)}>
+              <ChevronUp size={18} /> Fechar
+            </button>
           </div>
+
+          <ProfileForm name={name} linked={professional} available={available} />
+
           <div className="row" style={{ justifyContent: "center" }}>
             {isAdmin && (
               <Link href="/usuarios"><button type="button" className="light"><ShieldCheck size={18} /> Gerenciar usuários</button></Link>
@@ -67,18 +62,17 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
       </section>
 
       <main className="container grid" style={{ gap: 16 }}>
-        <div ref={rowRef} className={`subtabs${open ? " on-dark" : ""}`}>
-          <button type="button" className={tab === "perfil" ? "on" : ""} onClick={() => setTab("perfil")}>Meu perfil</button>
+        <div className="subtabs">
           <button type="button" className={tab === "novo" ? "on" : ""} onClick={() => setTab("novo")}>Novo acolhimento</button>
           <button type="button" className={tab === "acompanhamento" ? "on" : ""} onClick={() => setTab("acompanhamento")}>
             Acompanhamento ({cards.length})
           </button>
         </div>
-        {tab !== "acompanhamento" ? (
+        {tab === "novo" ? (
           <AcolhimentoForm
             professional={professional}
             onSaved={() => setTab("acompanhamento")}
-            goProfile={() => setTab("perfil")}
+            goProfile={() => setOpen(true)}
           />
         ) : (
           <AcompanhamentoList cards={cards} />

@@ -335,3 +335,8 @@ textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 4p
 .topbar { max-height: 140px; overflow: hidden; transition: max-height .45s cubic-bezier(.2,.8,.2,1), opacity .3s; }
 .topbar.collapsed { max-height: 0; opacity: 0; }
 .profile-sheet { top: 0; }
+
+/* Perfil cobre a tela toda (inclusive o header e as abas) */
+.profile-sheet { top: 0; z-index: 70; padding: 24px 16px 40px; }
+.profile-inner { max-width: 560px; }
+.topbar.collapsed { max-height: 140px; opacity: 1; }
