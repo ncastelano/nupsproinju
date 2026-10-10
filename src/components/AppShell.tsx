@@ -15,23 +15,16 @@ type Props = {
 export function AppShell({ name, email, isAdmin, professional, available, cards }: Props) {
   const [tab, setTab] = useState<"perfil" | "novo" | "acompanhamento">("perfil");
   const [dropped, setDropped] = useState(false);
-  const headRef = useRef<HTMLElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
-  const [top, setTop] = useState(64);
   const [pad, setPad] = useState(90);
 
   // O card do perfil "cai" ao entrar e sobe quando a pessoa sai do perfil.
   useEffect(() => { const t = setTimeout(() => setDropped(true), 60); return () => clearTimeout(t); }, []);
   const open = dropped && tab === "perfil";
 
-  // O painel nasce logo abaixo do header e cobre tudo; a linha de abas fica por cima dele.
+  // Com o perfil aberto o header some e o painel cobre a página toda; as abas ficam por cima.
   useLayoutEffect(() => {
-    const measure = () => {
-      if (!headRef.current || !rowRef.current) return;
-      const head = headRef.current.getBoundingClientRect().bottom;
-      setTop(head);
-      setPad(rowRef.current.getBoundingClientRect().bottom - head + 24);
-    };
+    const measure = () => rowRef.current && setPad(rowRef.current.offsetHeight + 48);
     if (tab === "perfil") window.scrollTo(0, 0);
     measure();
     window.addEventListener("resize", measure);
@@ -45,7 +38,7 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
 
   return (
     <>
-      <header ref={headRef} className="topbar">
+      <header className={`topbar${open ? " collapsed" : ""}`}>
         <div className="inner">
           <strong>Núcleo Psicossocial · VPIJ Porto Velho</strong>
           <button type="button" className="who-btn" aria-expanded={open} onClick={() => setTab("perfil")}>
@@ -55,7 +48,7 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
         </div>
       </header>
 
-      <section className={`profile-sheet${open ? " open" : ""}`} style={{ top, paddingTop: pad }} aria-hidden={!open}>
+      <section className={`profile-sheet${open ? " open" : ""}`} style={{ paddingTop: pad }} aria-hidden={!open}>
         <div className="profile-inner">
           <div className="grid" style={{ gap: 16 }}>
             <div>

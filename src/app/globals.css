@@ -330,3 +330,8 @@ textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 4p
 .profile-sheet button.pw-toggle { background: transparent; color: #fff; }
 .profile-sheet .ok { background: rgba(255,255,255,.16); color: #fff; }
 .profile-sheet .error { background: rgba(255,255,255,.16); color: #ffd7d3; }
+
+/* Header some quando o perfil abre; o painel continua a cor do topo e vira a página */
+.topbar { max-height: 140px; overflow: hidden; transition: max-height .45s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+.topbar.collapsed { max-height: 0; opacity: 0; }
+.profile-sheet { top: 0; }
