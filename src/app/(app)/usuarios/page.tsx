@@ -1,6 +1,5 @@
 import { requireAdmin, type Member } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Topbar } from "@/components/Topbar";
 import { createUser, updateUser, deleteUser, setStatus } from "./actions";
 
 const STATUS_LABEL = { pending: "Aguardando", approved: "Aprovado", rejected: "Recusado" } as const;
@@ -25,8 +24,7 @@ export default async function UsuariosPage() {
 
   return (
     <>
-      <Topbar name={me.name || me.email} isAdmin />
-      <div className="container grid" style={{ gap: 16 }}>
+      <div className="grid" style={{ gap: 16 }}>
         <h1 style={{ margin: "8px 0 0" }}>Usuários</h1>
 
         <strong>Pedidos de acesso ({pending.length})</strong>
