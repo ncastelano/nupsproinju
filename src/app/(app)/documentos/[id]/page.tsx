@@ -18,7 +18,7 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <Link href={`/usuarios/${found.ownerId}`} className="row"><ArrowLeft size={16} /> Voltar aos meus formulários</Link>
+      <Link href={`/formularios`} className="row"><ArrowLeft size={16} /> Voltar aos formulários</Link>
 
       <section className="hero">
         <h1 style={{ fontSize: 22 }}>{doc.title}</h1>

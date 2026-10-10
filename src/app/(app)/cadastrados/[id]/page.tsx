@@ -57,7 +57,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <Link href={`/usuarios/${me.id}`} className="row"><ArrowLeft size={16} /> Voltar aos meus formulários</Link>
+      <Link href="/formularios" className="row"><ArrowLeft size={16} /> Voltar aos formulários</Link>
 
       <section className="hero">
         <h1 style={{ fontSize: 24 }}>{nome}</h1>

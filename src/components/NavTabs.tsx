@@ -6,8 +6,9 @@ export function NavTabs({ userId, isAdmin }: { userId: string; isAdmin: boolean 
   const path = usePathname();
   const items = [
     { href: "/modelos-de-formularios", label: "Modelos de formulários", on: path.startsWith("/modelos-de-formularios") || path.startsWith("/cadastrar-pessoa") },
-    { href: `/usuarios/${userId}`, label: "Meus formulários", on: path === `/usuarios/${userId}` || path.startsWith("/cadastrados") },
-    ...(isAdmin ? [{ href: "/usuarios", label: "Usuários", on: path === "/usuarios" }] : []),
+    { href: "/formularios", label: "Formulários", on: path === "/formularios" || path.startsWith("/cadastrados") || path.startsWith("/documentos") },
+    { href: "/acompanhamentos", label: "Acompanhamentos", on: path === "/acompanhamentos" },
+    ...(isAdmin ? [{ href: "/usuarios", label: "Usuários", on: path.startsWith("/usuarios") }] : []),
   ];
   return (
     <nav className="subtabs main-nav">

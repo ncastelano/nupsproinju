@@ -57,7 +57,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
           {canSeeRecords && (
             <div className="grid" style={{ gap: 8 }}>
               <strong>
-                {viewer!.id === p.id ? "Meus formulários" : `Formulários de ${p.name.split(" ")[0]}`} ({records.length})
+                {viewer!.id === p.id ? "Formulários" : `Formulários de ${p.name.split(" ")[0]}`} ({records.length})
               </strong>
               {records.length === 0 && <span style={{ color: "var(--muted)" }}>Nenhum formulário ainda.</span>}
               {records.slice(0, 8).map((r) => (

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 
-// A lista de cadastrados agora vive em "Meus formulários".
+// A lista agora vive em Formulários.
 export default async function CadastradosPage() {
-  const me = await requireMember();
-  redirect(`/usuarios/${me.id}`);
+  await requireMember();
+  redirect("/formularios");
 }
