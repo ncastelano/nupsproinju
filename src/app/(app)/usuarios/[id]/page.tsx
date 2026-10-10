@@ -49,23 +49,13 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      <section className="hero">
-        <div className="row" style={{ flexWrap: "nowrap", gap: 14 }}>
-          <Avatar url={person.avatar_url ?? null} size={64} />
-          <div>
-            <h1 style={{ fontSize: 24 }}>{mine ? "Meus formulários" : `Formulários de ${first}`}</h1>
-            <p>{person.name || person.email}{person.registry ? ` · ${person.registry}` : ""}</p>
-          </div>
-        </div>
-      </section>
-
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <span className={personal ? "badge" : "badge off"}>
-          {personal ? typeName || `Formulário de ${first}` : "Formulário modelo"}
-        </span>
-        {mine && (
-          <Link href="/cadastrar-pessoa"><button><Plus size={16} /> Novo formulário</button></Link>
-        )}
+      <div>
+        <h1 style={{ margin: "8px 0 0" }}>{mine ? "Meus formulários" : `Formulários de ${first}`}</h1>
+        <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
+          {mine
+            ? "Os formulários e acompanhamentos que você preencheu. Toque em um para abrir a ficha completa."
+            : `${person.name || person.email}${person.registry ? ` · ${person.registry}` : ""}. Toque em um formulário para abrir a ficha completa.`}
+        </p>
       </div>
 
       <h2 className="section" style={{ margin: 0 }}>FORMULÁRIOS ({records.length})</h2>
