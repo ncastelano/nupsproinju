@@ -15,7 +15,7 @@ export function Topbar({ name }: { name: string }) {
   return (
     <header className="topbar">
       <div className="inner">
-        <Link href="/" className="brand-link">
+        <Link href="/formulario" className="brand-link">
           <strong>Núcleo Psicossocial · VPIJ Porto Velho</strong>
         </Link>
         <nav className="nav">
