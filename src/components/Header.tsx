@@ -9,11 +9,11 @@ import { Avatar } from "./Avatar";
 export type MyRecord = { id: string; nome: string; processo: string };
 type Props = {
   userId: string; name: string; email: string; avatarUrl: string | null;
-  registry: string; records: MyRecord[];
+  registry: string; profileslug: string; records: MyRecord[];
 };
 
 // Header fixo que se expande (como um bloco só) até quase cobrir a tela.
-export function Header({ userId, name, email, avatarUrl, registry, records }: Props) {
+export function Header({ userId, name, email, avatarUrl, registry, profileslug, records }: Props) {
   const [open, setOpen] = useState(false);
   const [headH, setHeadH] = useState(72);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -53,13 +53,13 @@ export function Header({ userId, name, email, avatarUrl, registry, records }: Pr
         <div className="expander" aria-hidden={!open}>
           <div className="expander-inner">
             <span className="sheet-sub">{email}</span>
-            <ProfileForm name={name} avatarUrl={avatarUrl} registry={registry} />
+            <ProfileForm name={name} avatarUrl={avatarUrl} registry={registry} profileslug={profileslug} />
 
             <div className="grid" style={{ gap: 8 }}>
               <span className="sheet-sub">Meus cadastros ({records.length})</span>
               {records.length === 0 && <span className="sheet-sub">Nenhum cadastro ainda.</span>}
               {records.slice(0, 5).map((r) => (
-                <Link key={r.id} href={`/banco-de-dados/${r.id}`} className="mini-rec" onClick={() => setOpen(false)}>
+                <Link key={r.id} href={`/cadastrados/${r.id}`} className="mini-rec" onClick={() => setOpen(false)}>
                   <FolderOpen size={16} />
                   <span><strong>{r.nome}</strong>{r.processo ? ` · Proc. ${r.processo}` : ""}</span>
                 </Link>

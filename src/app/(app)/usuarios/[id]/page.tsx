@@ -85,7 +85,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
                 </span>
               </div>
               <div className="row" style={{ marginTop: 8 }}>
-                <Link href={`/banco-de-dados/${r.id}`}><button className="ghost"><FolderOpen size={16} /> Ficha</button></Link>
+                <Link href={`/cadastrados/${r.id}`}><button className="ghost"><FolderOpen size={16} /> Ficha</button></Link>
                 {mine && (
                   <Link href={`/formulario?aba=acompanhamento&acolhido=${r.id}`}>
                     <button className="ghost"><ClipboardPen size={16} /> Acompanhar</button>
@@ -109,7 +109,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
                 Reavaliação {r.followup?.acomp_2?.value ? formatDate(r.followup.acomp_2.value) : "—"}
               </p>
               <div className="row" style={{ marginTop: 8 }}>
-                <Link href={`/banco-de-dados/${r.id}`}><button className="ghost"><FileText size={16} /> Ver acompanhamento</button></Link>
+                <Link href={`/cadastrados/${r.id}`}><button className="ghost"><FileText size={16} /> Ver acompanhamento</button></Link>
                 <Link href={`/banco-de-dados/${r.id}/resumo`}><button className="ghost">Resumo A4</button></Link>
               </div>
             </article>

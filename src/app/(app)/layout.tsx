@@ -25,6 +25,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         email={m.email}
         avatarUrl={m.avatar_url ?? null}
         registry={m.registry ?? ""}
+        profileslug={m.profileslug ?? ""}
         records={records}
       />
       <div className="container grid" style={{ gap: 16 }}>

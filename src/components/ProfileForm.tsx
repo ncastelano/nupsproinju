@@ -4,6 +4,8 @@ import { Camera, ChevronDown } from "lucide-react";
 import { updateProfile, uploadAvatar } from "@/app/(app)/profile-actions";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Avatar } from "@/components/Avatar";
+import { ShareMenu } from "@/components/ShareMenu";
+import Link from "next/link";
 
 export type Professional = { name: string; registry: string };
 
@@ -20,10 +22,17 @@ async function resize(file: File): Promise<Blob> {
   return new Promise((res) => canvas.toBlob((b) => res(b!), "image/jpeg", 0.85));
 }
 
+const slugify = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9-]+/g, "-");
+
 export function ProfileForm({
-  name, avatarUrl, registry,
-}: { name: string; avatarUrl: string | null; registry: string }) {
+  name, avatarUrl, registry, profileslug,
+}: { name: string; avatarUrl: string | null; registry: string; profileslug: string }) {
   const [msg, action, pending] = useActionState(updateProfile, null);
+  // Campos controlados: o React limpa o formulário depois de enviar, então o valor digitado fica no estado.
+  const [vName, setVName] = useState(name);
+  const [vSlug, setVSlug] = useState(profileslug);
+  const [vReg, setVReg] = useState(registry);
   const [pw, setPw] = useState(false);
   const [photoMsg, setPhotoMsg] = useState<string | null>(null);
   const [uploading, startUpload] = useTransition();
@@ -43,6 +52,19 @@ export function ProfileForm({
 
   return (
     <form action={action} className="grid" style={{ gap: 14 }}>
+      <div className="row" style={{ gap: 10 }}>
+        {profileslug ? (
+          <Link href={`/${profileslug}`} target="_blank"><button type="button" className="light">Ver perfil</button></Link>
+        ) : (
+          <button type="button" className="light" disabled title="Defina o endereço do perfil abaixo e salve">Ver perfil</button>
+        )}
+        {profileslug ? (
+          <ShareMenu path={`/${profileslug}`} text={`Perfil de ${name} no Núcleo Psicossocial (VPIJ Porto Velho):`} label="Compartilhar meu perfil" />
+        ) : (
+          <button type="button" className="light" disabled title="Defina o endereço do perfil abaixo e salve">Compartilhar meu perfil</button>
+        )}
+      </div>
+
       <div className="row" style={{ gap: 14, flexWrap: "nowrap" }}>
         <Avatar url={avatarUrl} size={72} />
         <div className="grid" style={{ gap: 4 }}>
@@ -56,16 +78,30 @@ export function ProfileForm({
 
       <label className="field">
         <span>Nome</span>
-        <input name="name" defaultValue={name} placeholder="Nome completo" required />
+        <input name="name" value={vName} onChange={(e) => setVName(e.target.value)} placeholder="Nome completo" required />
+      </label>
+
+      <label className="field">
+        <span>Endereço do perfil (profileslug)</span>
+        <input
+          name="profileslug"
+          value={vSlug}
+          onChange={(e) => setVSlug(slugify(e.target.value))}
+          placeholder="ex.: gessiane-santos"
+          autoCapitalize="none"
+          autoComplete="off"
+          maxLength={30}
+        />
+        <small className="sheet-sub">Seu perfil fica em /{vSlug || "seu-endereco"}</small>
       </label>
 
       <label className="field">
         <span>Registro profissional (CRP ou CRESS)</span>
         <input
           name="registry"
-          defaultValue={registry}
+          value={vReg}
+          onChange={(e) => setVReg(e.target.value)}
           placeholder="Ex.: CRP 24/00000 ou CRESS 0000/RO"
-          autoFocus={!registry}
           required
         />
         {!registry && <small className="sheet-sub">Informe o seu registro para liberar o formulário.</small>}

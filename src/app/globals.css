@@ -375,3 +375,23 @@ button.who-btn { padding: 6px 14px 6px 6px; flex: 0 1 auto; }
 .user-card { display: grid; gap: 6px; align-content: start; }
 .user-card h3 { margin: 0; }
 .user-card p { margin: 0; color: var(--muted); }
+
+/* Compartilhar */
+.share { position: relative; display: inline-block; }
+.share-pop {
+  position: absolute; z-index: 90; top: calc(100% + 8px); left: 0; min-width: 240px; max-width: 86vw;
+  background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(7,63,73,.2); padding: 8px; display: grid; gap: 2px;
+}
+.share-pop a, .share-pop button {
+  display: flex; gap: 10px; align-items: center; justify-content: flex-start;
+  padding: 10px 12px; border-radius: var(--radius-sm); background: transparent; color: var(--text);
+  font-weight: 600; text-align: left; box-shadow: none;
+}
+.share-pop a:hover, .share-pop button:hover { background: var(--brand-soft); text-decoration: none; box-shadow: none; }
+.share-url { font-size: 12px; color: var(--muted); padding: 6px 12px; word-break: break-all; }
+.share-note { font-size: 12px; color: var(--muted); padding: 0 12px 8px; }
+.expander .share-pop { left: 0; }
+.slug-prefix { display: flex; align-items: center; gap: 0; }
+.slug-prefix > span { padding: 12px 0 12px 14px; color: rgba(255,255,255,.7); white-space: nowrap; }
+.slug-prefix input { border-left: 0; }

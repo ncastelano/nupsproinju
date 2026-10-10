@@ -8,6 +8,7 @@ export type Member = {
   professional_id: string | null;
   registry: string;
   avatar_url: string | null;
+  profileslug: string;
 };
 
 export async function getMember(): Promise<Member | null> {
@@ -15,7 +16,15 @@ export async function getMember(): Promise<Member | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data } = await supabase.from("members").select("*").eq("id", user.id).maybeSingle();
-  return (data as Member) ?? null;
+  if (!data) return null;
+  // registro, foto e endereço do perfil ficam nos metadados da conta
+  const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>;
+  return {
+    ...(data as Member),
+    registry: meta.registry ?? (data as Member).registry ?? "",
+    avatar_url: meta.avatar_url ?? (data as Member).avatar_url ?? null,
+    profileslug: meta.profileslug ?? "",
+  };
 }
 
 // Só passa quem está aprovado; pendente/recusado vai pra tela de status.
