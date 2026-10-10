@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 // Volta para a página anterior; se a pessoa chegou direto pelo link, vai para a lista.
-export function BackButton({ fallback = "/cadastros", label = "Voltar" }: { fallback?: string; label?: string }) {
+export function BackButton({ fallback = "/processos", label = "Voltar" }: { fallback?: string; label?: string }) {
   const router = useRouter();
   return (
     <button

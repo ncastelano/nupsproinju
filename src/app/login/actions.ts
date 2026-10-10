@@ -10,7 +10,7 @@ export async function login(_: string | null, form: FormData) {
     password: String(form.get("password") ?? ""),
   });
   if (error) return "E-mail ou senha incorretos.";
-  redirect("/cadastros"); // aprovado entra; pendente/recusado cai em /acesso pela própria checagem
+  redirect("/cadastro-inicial"); // aprovado entra; pendente/recusado cai em /acesso pela própria checagem
 }
 
 export async function signup(_: string | null, form: FormData) {
@@ -36,7 +36,7 @@ export async function signup(_: string | null, form: FormData) {
   await createAdminClient().from("members").update({ registry }).eq("email", email);
   const supabase = await createClient();
   await supabase.auth.signInWithPassword({ email, password });
-  redirect("/cadastros");
+  redirect("/cadastro-inicial");
 }
 
 export async function logout() {

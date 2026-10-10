@@ -20,7 +20,7 @@ type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at
 export async function UserRecords({ id, view }: { id: string; view: "formularios" | "acompanhamentos" | "todos" }) {
   const me = await requireMember();
   const mine = id === me.id;
-  if (!mine && me.role !== "admin") redirect(view === "acompanhamentos" ? "/acompanhamentos" : "/formularios");
+  if (!mine && me.role !== "admin") redirect("/processos");
   const showF = view !== "acompanhamentos";
   const showA = view !== "formularios";
 
@@ -74,15 +74,15 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
       <div>
         <h1 style={{ margin: "8px 0 0" }}>
-          {view === "formularios" ? (mine ? "Cadastro inicial" : `Cadastros iniciais de ${first}`)
+          {view === "formularios" ? (mine ? "Processos" : `Processos de ${first}`)
             : view === "acompanhamentos" ? (mine ? "Acompanhamentos" : `Acompanhamentos de ${first}`)
-            : `Cadastros e acompanhamentos de ${first}`}
+            : `Processos de ${first}`}
         </h1>
         <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
           {mine
             ? view === "acompanhamentos"
               ? "Os acompanhamentos que você preencheu. Toque em um para abrir a ficha completa."
-              : "Os cadastros iniciais que você preencheu. Toque em um para abrir a ficha completa."
+              : "Os processos cadastrados pelo Cadastro inicial. Toque em um para abrir a ficha completa."
             : `${person.name || person.email}${person.registry ? ` · ${person.registry}` : ""}. Toque em um item para abrir a ficha completa.`}
         </p>
       </div>
@@ -101,7 +101,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         return (
           <section key={k} className="grid" style={{ gap: 12 }}>
             <h2 className="section" style={{ margin: 0 }}>
-              {k === "formulario" ? "CADASTROS INICIAIS EXPORTADOS" : "ACOMPANHAMENTOS EXPORTADOS"} ({list.length})
+              {k === "formulario" ? "PROCESSOS EXPORTADOS" : "ACOMPANHAMENTOS EXPORTADOS"} ({list.length})
             </h2>
             <div className="user-grid">
               {list.map((d) => (
@@ -119,9 +119,9 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         );
       })}
 
-      {showF && <h2 className="section" style={{ margin: 0 }}>CADASTROS INICIAIS ({records.length})</h2>}
+      {showF && <h2 className="section" style={{ margin: 0 }}>PROCESSOS ({records.length})</h2>}
       {showF && (records.length === 0 ? (
-        <div className="card empty"><p>Nenhum cadastro inicial ainda.</p></div>
+        <div className="card empty"><p>Nenhum processo cadastrado ainda.</p></div>
       ) : (
         <div className="user-grid">
           {records.map((r) => (

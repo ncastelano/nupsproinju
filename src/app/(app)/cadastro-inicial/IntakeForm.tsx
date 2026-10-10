@@ -97,7 +97,11 @@ export function IntakeForm({
       <div className="card empty">
         <div className="ico"><CheckCircle2 size={44} /></div>
         <h2>Registro salvo</h2>
-        <button onClick={() => location.reload()}>Fazer outro registro</button>
+        <p>O processo já aparece em <b>Processos</b>.</p>
+        <div className="row" style={{ justifyContent: "center" }}>
+          <a href="/processos"><button type="button">Ver em Processos</button></a>
+          <button type="button" className="ghost" onClick={() => location.reload()}>Fazer outro cadastro</button>
+        </div>
       </div>
     );
 

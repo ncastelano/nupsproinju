@@ -57,7 +57,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <Link href="/cadastros" className="row"><ArrowLeft size={16} /> Voltar ao cadastro inicial</Link>
+      <Link href="/processos" className="row"><ArrowLeft size={16} /> Voltar aos processos</Link>
 
       <section className="hero">
         <h1 style={{ fontSize: 24 }}>{nome}</h1>
