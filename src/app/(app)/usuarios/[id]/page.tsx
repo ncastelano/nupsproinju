@@ -10,6 +10,8 @@ import { MODEL_VALUES } from "@/lib/modelRecord";
 import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf } from "@/lib/records";
+import { listDocs } from "@/lib/documents";
+import { ImportProcess } from "@/components/ImportProcess";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -46,6 +48,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   }
 
   const first = (person.name || person.email).split(" ")[0];
+  const docs = await listDocs(id);
 
   // formulários de outras pessoas que foram compartilhados comigo para editar
   let sharedWithMe: { id: string; answers: Answers; owner: string }[] = [];
@@ -72,6 +75,26 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
             : `${person.name || person.email}${person.registry ? ` · ${person.registry}` : ""}. Toque em um formulário para abrir a ficha completa.`}
         </p>
       </div>
+
+      {mine && <ImportProcess />}
+
+      {docs.length > 0 && (
+        <>
+          <h2 className="section" style={{ margin: 0 }}>PROCESSOS EXPORTADOS ({docs.length})</h2>
+          <div className="user-grid">
+            {docs.map((d) => (
+              <article key={d.id} className="card user-card clickable">
+                <h3><Link href={`/documentos/${d.id}`} className="stretch">{d.title}</Link></h3>
+                <p>{d.source === "google" ? "Google Docs" : `Arquivo .${d.ext}`} · {d.chars.toLocaleString("pt-BR")} caracteres</p>
+                <p>Exportado em {new Date(d.created_at).toLocaleDateString("pt-BR")}</p>
+                <div className="row" style={{ marginTop: 6 }}>
+                  <span className="badge">Documento completo no banco</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="section" style={{ margin: 0 }}>FORMULÁRIOS ({records.length})</h2>
       {records.length === 0 ? (

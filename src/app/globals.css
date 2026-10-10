@@ -458,3 +458,20 @@ button.light-brand:hover { background: var(--brand); color: #fff; border-color: 
 .hist-line .from { color: var(--muted); text-decoration: line-through; overflow-wrap: anywhere; }
 .hist-line .to { color: var(--brand-dark); font-weight: 600; overflow-wrap: anywhere; }
 .hist-line .arrow { color: var(--muted); }
+
+/* Arrastar e soltar */
+.dropzone {
+  display: grid; gap: 4; justify-items: center; text-align: center; cursor: pointer;
+  border: 2px dashed #bcdde2; border-radius: var(--radius); padding: 22px 16px; color: var(--brand-dark);
+  background: #f6fafb; transition: background .15s, border-color .15s;
+}
+.dropzone:hover, .dropzone.over { background: var(--brand-soft); border-color: var(--brand); }
+.dropzone span { color: var(--muted); font-size: 14px; }
+
+/* Arrastar só faz sentido com mouse; no celular mostra "Escolher arquivo" */
+.only-touch { display: none; }
+@media (hover: none), (pointer: coarse) {
+  .only-desktop { display: none; }
+  .only-touch { display: block; }
+  .dropzone { padding: 26px 16px; }
+}
