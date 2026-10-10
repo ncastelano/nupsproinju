@@ -20,7 +20,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   if (!mine && me.role !== "admin") redirect(`/usuarios/${me.id}`);
 
   const { data: person } = await createAdminClient()
-    .from("members").select("id, name, email, registry, avatar_url").eq("id", id).maybeSingle();
+    .from("members").select("*").eq("id", id).maybeSingle();
   if (!person) notFound();
 
   const supabase = await createClient();
