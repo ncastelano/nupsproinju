@@ -16,8 +16,8 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
   const [tab, setTab] = useState<"novo" | "acompanhamento">("novo");
   const [open, setOpen] = useState(false);
 
-  // O perfil "cai" ao entrar na página.
-  useEffect(() => { const t = setTimeout(() => setOpen(true), 60); return () => clearTimeout(t); }, []);
+  // O header expande sozinho ao entrar na página.
+  useEffect(() => { const t = setTimeout(() => setOpen(true), 80); return () => clearTimeout(t); }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -28,38 +28,30 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
 
   return (
     <>
-      <header className="topbar">
+      <div className="topbar-spacer" />
+      <header className={`topbar${open ? " open" : ""}`}>
         <div className="inner">
           <strong>Núcleo Psicossocial · VPIJ Porto Velho</strong>
-          <button type="button" className="who-btn" aria-expanded={open} onClick={() => setOpen(true)}>
+          <button type="button" className="who-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
             <span>{name}</span>
             <ChevronDown size={18} className="chev" />
           </button>
         </div>
-      </header>
 
-      <section className={`profile-sheet${open ? " open" : ""}`} aria-hidden={!open}>
-        <div className="profile-inner">
-          <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
-            <div style={{ minWidth: 0 }}>
-              <h2 style={{ margin: 0 }}>{name}</h2>
-              <span className="sheet-sub">{email}</span>
+        <div className="expander" aria-hidden={!open}>
+          <div className="expander-inner">
+            <span className="sheet-sub" style={{ textAlign: "right" }}>{email}</span>
+            <ProfileForm name={name} linked={professional} available={available} />
+            <div className="row" style={{ justifyContent: "center" }}>
+              {isAdmin && (
+                <Link href="/usuarios"><button type="button" className="light"><ShieldCheck size={18} /> Gerenciar usuários</button></Link>
+              )}
+              <button type="button" className="light" onClick={() => setOpen(false)}><ChevronUp size={18} /> Fechar</button>
+              <form action={logout}><button className="light"><LogOut size={18} /> Sair</button></form>
             </div>
-            <button type="button" className="light" onClick={() => setOpen(false)}>
-              <ChevronUp size={18} /> Fechar
-            </button>
-          </div>
-
-          <ProfileForm name={name} linked={professional} available={available} />
-
-          <div className="row" style={{ justifyContent: "center" }}>
-            {isAdmin && (
-              <Link href="/usuarios"><button type="button" className="light"><ShieldCheck size={18} /> Gerenciar usuários</button></Link>
-            )}
-            <form action={logout}><button className="light"><LogOut size={18} /> Sair</button></form>
           </div>
         </div>
-      </section>
+      </header>
 
       <main className="container grid" style={{ gap: 16 }}>
         <div className="subtabs">
