@@ -162,3 +162,30 @@ button.pw-toggle { display: grid; place-items: center; color: var(--muted); }
 .empty .ico, .card .ico { display: grid; place-items: center; color: var(--brand); margin-bottom: 8px; }
 .tile .ico { color: var(--brand); }
 button.pw-toggle { display: grid; place-items: center; color: var(--muted); }
+
+/* Formulário */
+textarea {
+  font: inherit; color: inherit; background: #fff; width: 100%;
+  border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px;
+  resize: vertical; transition: border-color .15s, box-shadow .15s;
+}
+textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+.tabs { display: inline-flex; gap: 6px; background: var(--brand-soft); padding: 5px; border-radius: 999px; width: fit-content; flex-wrap: wrap; }
+.tabs a { padding: 9px 18px; border-radius: 999px; color: var(--brand-dark); font-weight: 600; }
+.tabs a:hover { text-decoration: none; background: rgba(255,255,255,.55); }
+.tabs a.active { background: var(--brand); color: #fff; }
+h2.section { margin: 10px 0 0; font-size: 13px; letter-spacing: .08em; color: var(--brand); }
+.card.q { display: grid; gap: 8px; }
+.q-label { font-weight: 600; }
+.req { color: var(--danger); }
+.help { color: var(--muted); font-size: 14px; margin-top: -4px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip { cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip span {
+  display: inline-block; padding: 10px 18px; border-radius: 999px;
+  border: 1.5px solid var(--line); background: #fff; font-weight: 600; transition: all .15s;
+}
+.chip:hover span { border-color: var(--brand); }
+.chip input:checked + span { background: var(--brand); border-color: var(--brand); color: #fff; }
+.chip input:focus-visible + span { box-shadow: 0 0 0 4px var(--brand-soft); }
