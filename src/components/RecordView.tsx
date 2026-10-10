@@ -7,7 +7,7 @@ export function RecordView({ answers, questions }: { answers: Answers; questions
   const known = new Set(questions.map((q) => q.key));
   const rows = [
     ...questions.filter((q) => answers[q.key]).map((q) => ({ section: q.section, ...answers[q.key] })),
-    ...Object.entries(answers).filter(([k]) => !known.has(k) && !k.startsWith("_meta")).map(([, a]) => ({ section: "", ...a })),
+    ...Object.entries(answers).filter(([k]) => !known.has(k) && !k.startsWith("_meta") && k !== "_template_id").map(([, a]) => ({ section: "", ...a })),
   ];
   let last = "\0";
   return (

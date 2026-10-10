@@ -104,7 +104,7 @@ export async function saveQuestionEdit(form: FormData) {
 
   const tpl = await workingTemplate(me);
   const delta = tpl.forms[formKey] ?? emptyDelta();
-  if (key.startsWith("x_")) delta.questions = delta.questions.map((q) => (q.key === key ? { ...q, ...patch } : q));
+  if (key.startsWith("x_") || delta.replaceBase) delta.questions = delta.questions.map((q) => (q.key === key ? { ...q, ...patch } : q));
   else delta.overrides = { ...delta.overrides, [key]: patch };
   tpl.forms[formKey] = delta;
   return (await commit(me, tpl)) ? "ok" : "Não foi possível salvar a pergunta.";

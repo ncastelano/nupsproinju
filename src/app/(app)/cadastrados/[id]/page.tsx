@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, History, Pencil, Trash2, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Download, FileText, History, Pencil, Trash2, UserPlus, X } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -85,6 +85,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
           note="Só abre para quem estiver logado e tiver acesso a este formulário."
         />
         <Link href={`/banco-de-dados/${id}/resumo`}><button className="ghost"><FileText size={16} /> Resumo A4 / Imprimir</button></Link>
+        <a href={`/cadastrados/${id}/relatorio`}><button className="ghost"><Download size={16} /> Baixar relatório (.docx)</button></a>
         {(acc.owner || acc.admin) && (
           <form action={deleteRecord} id="del-record">
             <input type="hidden" name="record_id" value={id} />

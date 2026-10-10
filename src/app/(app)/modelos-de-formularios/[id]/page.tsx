@@ -32,9 +32,9 @@ export default async function ModeloPage({ params }: { params: Promise<{ id: str
       {FORM_KEYS.map((fk) => {
         const delta = tpl.forms[fk] ?? emptyDelta();
         const list: (Question & { tag?: string })[] = [
-          ...model.filter((q) => q.form_key === fk).map((q) =>
-            delta.overrides[q.key] ? { ...q, ...delta.overrides[q.key], tag: "ajustada" } : q),
-          ...delta.questions.map((q) => ({ ...q, tag: "acrescentada" })),
+          ...(delta.replaceBase ? [] : model.filter((q) => q.form_key === fk).map((q) =>
+            delta.overrides[q.key] ? { ...q, ...delta.overrides[q.key], tag: "ajustada" } : q)),
+          ...delta.questions.map((q) => (delta.replaceBase ? q : { ...q, tag: "acrescentada" })),
         ];
         let last = "";
         return (

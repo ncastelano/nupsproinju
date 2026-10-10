@@ -9,7 +9,11 @@ import type { Question } from "@/lib/forms";
 export const BASE_ID = "base";
 
 export type QuestionOverride = { label?: string; help?: string; options?: string[]; required?: boolean };
-export type FormDelta = { questions: Question[]; overrides: Record<string, QuestionOverride> };
+export type FormDelta = {
+  questions: Question[];
+  overrides: Record<string, QuestionOverride>;
+  replaceBase?: boolean; // usa só estas perguntas (um modelo completo, não um ajuste do padrão)
+};
 export type Template = {
   id: string;
   name: string;
@@ -18,6 +22,8 @@ export type Template = {
   parent_name: string | null;
   created_at: string;
   forms: Record<string, FormDelta>;
+  // modelo de relatório (.docx) guardado no Supabase Storage; map: {{MARCADOR}} -> chave da pergunta
+  report?: { bucket: string; path: string; map: Record<string, string> };
 };
 
 export const emptyDelta = (): FormDelta => ({ questions: [], overrides: {} });

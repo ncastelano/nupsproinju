@@ -14,7 +14,7 @@ export async function loadQuestions(
   const model = ((data ?? []) as Question[])
     .filter((q) => !q.owner_id)
     .map((q) => (delta.overrides[q.key] ? { ...q, ...delta.overrides[q.key], overridden: true } : q));
-  const all = [...model, ...delta.questions];
+  const all = delta.replaceBase ? [...delta.questions] : [...model, ...delta.questions];
   return {
     questions: onlyActive ? all.filter((q) => q.active) : all,
     personal: template.id !== BASE_ID,
