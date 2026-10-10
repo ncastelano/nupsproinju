@@ -3,7 +3,6 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
-import { BackButton } from "@/components/BackButton";
 import { IntakeForm, type Acolhido } from "./IntakeForm";
 
 export default async function FormularioPage({
@@ -36,7 +35,6 @@ export default async function FormularioPage({
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <div><BackButton /></div>
       <div>
         <h1 style={{ margin: "8px 0 0" }}>{acomp ? "Novo acompanhamento" : "Cadastro inicial"}</h1>
         <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>

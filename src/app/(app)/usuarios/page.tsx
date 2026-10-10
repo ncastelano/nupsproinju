@@ -27,7 +27,6 @@ export default async function UsuariosPage() {
   return (
     <>
       <div className="container grid" style={{ gap: 16 }}>
-        <Link href="/"><button type="button" className="ghost" style={{ justifySelf: "start" }}>← Voltar</button></Link>
         <h1 style={{ margin: "8px 0 0" }}>Usuários</h1>
 
         <strong>Pedidos de acesso ({pending.length})</strong>
