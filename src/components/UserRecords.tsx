@@ -9,6 +9,7 @@ import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
+import { ExportButton } from "@/components/ExportButton";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -68,6 +69,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
 
   return (
     <div className="grid" style={{ gap: 16 }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
       <div>
         <h1 style={{ margin: "8px 0 0" }}>
           {view === "formularios" ? (mine ? "Formulários" : `Formulários de ${first}`)
@@ -81,6 +83,13 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
               : "Os formulários que você preencheu. Toque em um para abrir a ficha completa."
             : `${person.name || person.email}${person.registry ? ` · ${person.registry}` : ""}. Toque em um item para abrir a ficha completa.`}
         </p>
+      </div>
+      {mine && (
+        <div className="row">
+          {showF && <ExportButton kind="formulario" />}
+          {showA && <ExportButton kind="acompanhamento" />}
+        </div>
+      )}
       </div>
 
       {(["formulario", "acompanhamento"] as const).map((k) => {
