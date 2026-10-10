@@ -6,6 +6,7 @@ export type Member = {
   role: "admin" | "member";
   status: "pending" | "approved" | "rejected";
   professional_id: string | null;
+  avatar_url: string | null;
 };
 
 export async function getMember(): Promise<Member | null> {

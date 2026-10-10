@@ -1,20 +1,33 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, LogOut, ShieldCheck } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ProfileForm, type Professional } from "./ProfileForm";
 import { AcolhimentoForm } from "./AcolhimentoForm";
 import { AcompanhamentoList, type Card } from "./AcompanhamentoList";
+import { Avatar } from "./Avatar";
 
 type Props = {
-  name: string; email: string; isAdmin: boolean;
+  name: string; email: string; isAdmin: boolean; avatarUrl: string | null;
   professional: Professional | null; available: Professional[]; cards: Card[];
 };
 
-export function AppShell({ name, email, isAdmin, professional, available, cards }: Props) {
+export function AppShell({ name, email, isAdmin, avatarUrl, professional, available, cards }: Props) {
   const [tab, setTab] = useState<"novo" | "acompanhamento">("novo");
   const [open, setOpen] = useState(false);
+  const [headH, setHeadH] = useState(72);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  // Altura real da barra fechada (a barra pode quebrar em 2 linhas no celular).
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeadH(el.offsetHeight));
+    ro.observe(el);
+    setHeadH(el.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
 
   // O header expande sozinho ao entrar na página.
   useEffect(() => { const t = setTimeout(() => setOpen(true), 80); return () => clearTimeout(t); }, []);
@@ -28,11 +41,12 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
 
   return (
     <>
-      <div className="topbar-spacer" />
-      <header className={`topbar${open ? " open" : ""}`}>
-        <div className="inner">
-          <strong>Núcleo Psicossocial · VPIJ Porto Velho</strong>
+      <div style={{ height: headH }} />
+      <header className={`topbar${open ? " open" : ""}`} style={{ ["--head-h" as string]: `${headH}px` }}>
+        <div ref={innerRef} className="inner">
+          <strong className="brand">Núcleo Psicossocial · VPIJ Porto Velho</strong>
           <button type="button" className="who-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            <Avatar url={avatarUrl} size={30} />
             <span>{name}</span>
             <ChevronDown size={18} className="chev" />
           </button>
@@ -40,14 +54,11 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
 
         <div className="expander" aria-hidden={!open}>
           <div className="expander-inner">
-            <span className="sheet-sub" style={{ textAlign: "right" }}>{email}</span>
-            <ProfileForm name={name} linked={professional} available={available} />
+            <span className="sheet-sub">{email}</span>
+            <ProfileForm name={name} avatarUrl={avatarUrl} linked={professional} available={available} />
             <div className="row" style={{ justifyContent: "center" }}>
-              {isAdmin && (
-                <Link href="/usuarios"><button type="button" className="light"><ShieldCheck size={18} /> Gerenciar usuários</button></Link>
-              )}
-              <button type="button" className="light" onClick={() => setOpen(false)}><ChevronUp size={18} /> Fechar</button>
               <form action={logout}><button className="light"><LogOut size={18} /> Sair</button></form>
+              <button type="button" className="light" onClick={() => setOpen(false)}><ChevronUp size={18} /> Fechar</button>
             </div>
           </div>
         </div>
@@ -59,6 +70,11 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
           <button type="button" className={tab === "acompanhamento" ? "on" : ""} onClick={() => setTab("acompanhamento")}>
             Acompanhamento ({cards.length})
           </button>
+          {isAdmin && (
+            <Link href="/usuarios">
+              <button type="button"><ShieldCheck size={16} style={{ verticalAlign: "-3px" }} /> Gerenciar usuários</button>
+            </Link>
+          )}
         </div>
         {tab === "novo" ? (
           <AcolhimentoForm

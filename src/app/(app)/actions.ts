@@ -8,16 +8,54 @@ export async function updateProfile(_: string | null, form: FormData) {
   const me = await requireMember();
   const name = String(form.get("name") ?? "").trim();
   const password = String(form.get("password") ?? "");
-  const professionalId = String(form.get("professional_id") ?? "");
+  const confirm = String(form.get("confirm_password") ?? "");
+  const typed = String(form.get("professional_name") ?? "").trim();
+  const registry = String(form.get("professional_registry") ?? "").trim();
   if (!name) return "Informe o seu nome.";
-  if (password && password.length < 6) return "A nova senha precisa ter pelo menos 6 caracteres.";
+  if (password || confirm) {
+    if (password.length < 6) return "A nova senha precisa ter pelo menos 6 caracteres.";
+    if (password !== confirm) return "A confirmação não é igual à nova senha.";
+  }
 
   const admin = createAdminClient();
   const patch: Record<string, unknown> = { name };
-  if (professionalId && !me.professional_id) patch.professional_id = professionalId;
+
+  if (typed && !me.professional_id) {
+    // escolhe um nome que já existe ou cadastra um novo na lista do NUPS
+    const { data: all } = await admin.from("professionals").select("id,name");
+    const found = (all ?? []).find((p) => p.name.trim().toLowerCase() === typed.toLowerCase());
+    let id = found?.id as string | undefined;
+    if (!id) {
+      const { data: created, error } = await admin
+        .from("professionals").insert({ name: typed, registry }).select("id").single();
+      if (error || !created) return "Não foi possível cadastrar esse nome na lista do NUPS.";
+      id = created.id;
+    }
+    patch.professional_id = id;
+  }
+
   const { error } = await admin.from("members").update(patch).eq("id", me.id);
   if (error) return "Esse profissional já está ligado a outra conta.";
   if (password) await admin.auth.admin.updateUserById(me.id, { password });
+  revalidatePath("/", "layout");
+  return "ok";
+}
+
+export async function uploadAvatar(form: FormData) {
+  const me = await requireMember();
+  const file = form.get("avatar");
+  if (!(file instanceof File) || file.size === 0) return "Escolha uma imagem.";
+  if (!file.type.startsWith("image/")) return "O arquivo precisa ser uma imagem.";
+  if (file.size > 1_500_000) return "Imagem muito grande.";
+
+  const admin = createAdminClient();
+  const path = `${me.id}/${Date.now()}.jpg`;
+  const { error } = await admin.storage
+    .from("avatars")
+    .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: "image/jpeg" });
+  if (error) return "Não foi possível enviar a foto.";
+  const { data } = admin.storage.from("avatars").getPublicUrl(path);
+  await admin.from("members").update({ avatar_url: data.publicUrl }).eq("id", me.id);
   revalidatePath("/", "layout");
   return "ok";
 }

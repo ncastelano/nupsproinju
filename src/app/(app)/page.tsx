@@ -36,6 +36,7 @@ export default async function Home() {
     <AppShell
       name={m.name || m.email}
       email={m.email}
+      avatarUrl={m.avatar_url}
       isAdmin={m.role === "admin"}
       professional={professional}
       available={available}
