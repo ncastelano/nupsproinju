@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function login(_: string | null, form: FormData) {
   const supabase = await createClient();
@@ -9,12 +10,27 @@ export async function login(_: string | null, form: FormData) {
     password: String(form.get("password") ?? ""),
   });
   if (error) return "E-mail ou senha incorretos.";
-  const { data: { user } } = await supabase.auth.getUser();
-  const { data: m } = await supabase.from("members").select("active").eq("id", user!.id).maybeSingle();
-  if (!m?.active) {
-    await supabase.auth.signOut();
-    return "Este e-mail não tem acesso liberado.";
+  redirect("/"); // a página inicial decide: aprovado entra, pendente/recusado vai pra /acesso
+}
+
+export async function signup(_: string | null, form: FormData) {
+  const name = String(form.get("name") ?? "").trim();
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  if (!name || !email) return "Preencha nome e e-mail.";
+  if (password.length < 6) return "A senha precisa ter pelo menos 6 caracteres.";
+
+  // Cria já confirmado (sem e-mail de verificação); a barreira é a aprovação do administrador.
+  const { error } = await createAdminClient().auth.admin.createUser({
+    email, password, email_confirm: true, user_metadata: { name },
+  });
+  if (error) {
+    return /already|registered|exists/i.test(error.message)
+      ? "Este e-mail já tem cadastro. Use a tela de entrar."
+      : "Não foi possível criar o cadastro. Tente novamente.";
   }
+  const supabase = await createClient();
+  await supabase.auth.signInWithPassword({ email, password });
   redirect("/");
 }
 
