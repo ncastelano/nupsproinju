@@ -15,16 +15,23 @@ type Props = {
 export function AppShell({ name, email, isAdmin, professional, available, cards }: Props) {
   const [tab, setTab] = useState<"perfil" | "novo" | "acompanhamento">("perfil");
   const [dropped, setDropped] = useState(false);
+  const headRef = useRef<HTMLElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
-  const [top, setTop] = useState(110);
+  const [top, setTop] = useState(64);
+  const [pad, setPad] = useState(90);
 
   // O card do perfil "cai" ao entrar e sobe quando a pessoa sai do perfil.
   useEffect(() => { const t = setTimeout(() => setDropped(true), 60); return () => clearTimeout(t); }, []);
   const open = dropped && tab === "perfil";
 
-  // O painel começa logo abaixo da linha de abas, que fica sempre visível.
+  // O painel nasce logo abaixo do header e cobre tudo; a linha de abas fica por cima dele.
   useLayoutEffect(() => {
-    const measure = () => rowRef.current && setTop(rowRef.current.getBoundingClientRect().bottom);
+    const measure = () => {
+      if (!headRef.current || !rowRef.current) return;
+      const head = headRef.current.getBoundingClientRect().bottom;
+      setTop(head);
+      setPad(rowRef.current.getBoundingClientRect().bottom - head + 24);
+    };
     if (tab === "perfil") window.scrollTo(0, 0);
     measure();
     window.addEventListener("resize", measure);
@@ -38,7 +45,7 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
 
   return (
     <>
-      <header className="topbar">
+      <header ref={headRef} className="topbar">
         <div className="inner">
           <strong>Núcleo Psicossocial · VPIJ Porto Velho</strong>
           <button type="button" className="who-btn" aria-expanded={open} onClick={() => setTab("perfil")}>
@@ -48,12 +55,12 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
         </div>
       </header>
 
-      <section className={`profile-sheet${open ? " open" : ""}`} style={{ top }} aria-hidden={!open}>
+      <section className={`profile-sheet${open ? " open" : ""}`} style={{ top, paddingTop: pad }} aria-hidden={!open}>
         <div className="profile-inner">
-          <div className="card grid" style={{ gap: 16 }}>
+          <div className="grid" style={{ gap: 16 }}>
             <div>
-              <h2 style={{ margin: 0 }}>Meu perfil</h2>
-              <span style={{ color: "var(--muted)" }}>{email}</span>
+              <h2 style={{ margin: 0 }}>{name}</h2>
+              <span className="sheet-sub">{email}</span>
             </div>
             <ProfileForm name={name} linked={professional} available={available} />
           </div>
@@ -67,7 +74,7 @@ export function AppShell({ name, email, isAdmin, professional, available, cards 
       </section>
 
       <main className="container grid" style={{ gap: 16 }}>
-        <div ref={rowRef} className="subtabs">
+        <div ref={rowRef} className={`subtabs${open ? " on-dark" : ""}`}>
           <button type="button" className={tab === "perfil" ? "on" : ""} onClick={() => setTab("perfil")}>Meu perfil</button>
           <button type="button" className={tab === "novo" ? "on" : ""} onClick={() => setTab("novo")}>Novo acolhimento</button>
           <button type="button" className={tab === "acompanhamento" ? "on" : ""} onClick={() => setTab("acompanhamento")}>
