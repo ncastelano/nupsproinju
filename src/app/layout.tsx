@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
+import "./globals.css";
 
-export const metadata = { title: "NUPS Pro Injur" };
+export const metadata = {
+  title: "Núcleo Psicossocial | Vara de Proteção à Infância e Juventude de Porto Velho",
+};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body style={{ fontFamily: "system-ui, sans-serif", margin: 0, background: "#f6f7f9", color: "#111" }}>
-        <main style={{ maxWidth: 880, margin: "0 auto", padding: 24 }}>{children}</main>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
