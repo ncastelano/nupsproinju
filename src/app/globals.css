@@ -253,7 +253,6 @@ dialog.big::backdrop { background: rgba(7,40,46,.55); backdrop-filter: blur(2px)
 
 /* Topo + perfil que desce cobrindo a página */
 .topbar { position: sticky; top: 0; z-index: 60; }
-.topbar.open { border-radius: 0; }
 button.who-btn {
   display: inline-flex; align-items: center; gap: 8px;
   background: rgba(255,255,255,.16); max-width: 60vw;
