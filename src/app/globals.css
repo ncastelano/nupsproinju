@@ -200,3 +200,31 @@ details.acomp summary { cursor: pointer; font-weight: 700; list-style: none; dis
 details.acomp summary::-webkit-details-marker { display: none; }
 details.acomp[open] summary { margin-bottom: 10px; }
 .search { display: flex; gap: 8px; }
+
+/* Resumo A4 */
+.a4 {
+  background: #fff; color: #111; width: 210mm; max-width: 100%; min-height: 297mm;
+  margin: 0 auto; padding: 14mm 14mm 12mm; border-radius: var(--radius);
+  border: 1px solid var(--line); font-size: 9.5pt; line-height: 1.35;
+  box-shadow: 0 6px 24px rgba(7,63,73,.1);
+}
+.a4-org { font-size: 8.5pt; color: #444; text-transform: uppercase; letter-spacing: .04em; }
+.a4 h1 { font-size: 13pt; margin: 4px 0 10px; color: var(--brand-dark); }
+.a4-head { border-bottom: 2px solid var(--brand); margin-bottom: 8px; }
+.a4-box { border: 1px solid #c9d6d9; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; }
+.a4-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+.a4-grid b { display: block; font-size: 7.5pt; text-transform: uppercase; color: #5d7278; letter-spacing: .04em; }
+.a4-cols { column-count: 2; column-gap: 8mm; }
+.a4-sec { break-inside: avoid; margin-bottom: 6px; }
+.a4-sec h2 { font-size: 8pt; letter-spacing: .06em; color: var(--brand); margin: 0 0 2px; border-bottom: 1px solid #d5e0e3; }
+.a4-sec p { margin: 0 0 3px; white-space: pre-wrap; }
+.a4-sec p b { font-weight: 700; }
+.a4-foot { margin-top: 16px; display: flex; justify-content: space-between; gap: 12px; font-size: 9pt; }
+
+@page { size: A4; margin: 0; }
+@media print {
+  .topbar, .no-print { display: none !important; }
+  body { background: #fff; }
+  .container { padding: 0; max-width: none; }
+  .a4 { border: 0; box-shadow: none; border-radius: 0; width: 210mm; min-height: 0; }
+}

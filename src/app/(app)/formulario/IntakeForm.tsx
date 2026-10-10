@@ -1,22 +1,24 @@
 "use client";
 import { Fragment, useActionState, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import type { Question } from "@/lib/forms";
+import { OTHER_PREFIX, type Question } from "@/lib/forms";
 import { saveIntake } from "./actions";
 
-export type Acolhido = { id: string; label: string };
+export type Acolhido = { id: string; label: string; followup?: Record<string, { value: string }> | null };
 
-function Field({ q }: { q: Question }) {
-  const [choice, setChoice] = useState("");
+function Field({ q, initial = "" }: { q: Question; initial?: string }) {
+  const isOther = q.type === "radio_other" && initial.startsWith(OTHER_PREFIX);
+  const [choice, setChoice] = useState(isOther ? "__outro__" : initial);
   const name = q.key;
+  const picked = q.type === "checkbox" ? initial.split("; ") : [];
 
   if (q.type === "textarea")
-    return <textarea name={name} required={q.required} rows={5} />;
+    return <textarea name={name} required={q.required} rows={5} defaultValue={initial} />;
   if (q.type === "date")
-    return <input name={name} type="date" required={q.required} />;
+    return <input name={name} type="date" required={q.required} defaultValue={initial} />;
   if (q.type === "select")
     return (
-      <select name={name} required={q.required} defaultValue="">
+      <select name={name} required={q.required} defaultValue={initial}>
         <option value="" disabled>Selecione...</option>
         {q.options.map((o) => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -26,7 +28,7 @@ function Field({ q }: { q: Question }) {
       <div className="chips">
         {q.options.map((o) => (
           <label key={o} className="chip">
-            <input type="checkbox" name={name} value={o} />
+            <input type="checkbox" name={name} value={o} defaultChecked={picked.includes(o)} />
             <span>{o}</span>
           </label>
         ))}
@@ -37,24 +39,24 @@ function Field({ q }: { q: Question }) {
       <div className="chips">
         {q.options.map((o) => (
           <label key={o} className="chip">
-            <input type="radio" name={name} value={o} required={q.required} onChange={() => setChoice(o)} />
+            <input type="radio" name={name} value={o} required={q.required} defaultChecked={choice === o} onChange={() => setChoice(o)} />
             <span>{o}</span>
           </label>
         ))}
         {q.type === "radio_other" && (
           <>
             <label className="chip">
-              <input type="radio" name={name} value="__outro__" required={q.required} onChange={() => setChoice("__outro__")} />
+              <input type="radio" name={name} value="__outro__" required={q.required} defaultChecked={choice === "__outro__"} onChange={() => setChoice("__outro__")} />
               <span>Outro</span>
             </label>
             {choice === "__outro__" && (
-              <input name={`${name}__outro`} placeholder="Qual?" style={{ flexBasis: "100%" }} autoFocus />
+              <input name={`${name}__outro`} placeholder="Qual?" style={{ flexBasis: "100%" }} defaultValue={isOther ? initial.slice(OTHER_PREFIX.length) : ""} autoFocus />
             )}
           </>
         )}
       </div>
     );
-  return <input name={name} type="text" required={q.required} />;
+  return <input name={name} type="text" required={q.required} defaultValue={initial} />;
 }
 
 export function IntakeForm({
@@ -66,6 +68,8 @@ export function IntakeForm({
   selected?: string;
 }) {
   const [msg, action, pending] = useActionState(saveIntake, null);
+  const [sel, setSel] = useState(selected ?? "");
+  const current = acolhidos?.find((a) => a.id === sel);
 
   if (msg === "ok")
     return (
@@ -84,8 +88,8 @@ export function IntakeForm({
       {acolhidos && (
         <div className="card q">
           <label className="q-label">Acolhido (do cadastro inicial)<span className="req"> *</span></label>
-          <div className="help">O acompanhamento fica vinculado ao cadastro inicial da criança, adolescente ou grupo de irmãos.</div>
-          <select name="parent_id" required defaultValue={selected ?? ""}>
+          <div className="help">O acompanhamento é salvo na mesma ficha do cadastro inicial. Se já houver um, ele abre para edição.</div>
+          <select name="record_id" required value={sel} onChange={(e) => setSel(e.target.value)}>
             <option value="" disabled>Selecione...</option>
             {acolhidos.map((a) => <option key={a.id} value={a.id}>{a.label}</option>)}
           </select>
@@ -103,7 +107,7 @@ export function IntakeForm({
                 {q.label}{q.required && <span className="req"> *</span>}
               </label>
               {q.help && <div className="help">{q.help}</div>}
-              <Field q={q} />
+              <Field key={`${sel}-${q.id}`} q={q} initial={formKey === "acompanhamento" ? current?.followup?.[q.key]?.value ?? "" : ""} />
             </div>
           </Fragment>
         );

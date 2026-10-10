@@ -24,11 +24,15 @@ export default async function FormularioPage({
   let acolhidos: Acolhido[] | undefined;
   if (acomp) {
     const { data: recs } = await supabase
-      .from("intake_records").select("id, answers, created_at")
+      .from("intake_records").select("id, answers, followup, created_at")
       .eq("form_key", FORM_KEY).order("created_at", { ascending: false });
     acolhidos = (recs ?? []).map((r) => {
       const a = r.answers as Record<string, { value: string }>;
-      return { id: r.id as string, label: `${a.nomes?.value ?? "(sem nome)"} — Proc. ${a.processo?.value ?? "?"}` };
+      return {
+        id: r.id as string,
+        label: `${a.nomes?.value ?? "(sem nome)"} — Proc. ${a.processo?.value ?? "?"}${r.followup ? " (acompanhamento preenchido)" : ""}`,
+        followup: r.followup as Acolhido["followup"],
+      };
     });
   }
 
@@ -50,7 +54,7 @@ export default async function FormularioPage({
 
       <p style={{ margin: 0, color: "var(--muted)" }}>
         {acomp
-          ? "Registro periódico do acompanhamento e da reavaliação da situação da criança, adolescente ou grupo de irmãos em medida de acolhimento."
+          ? "Acompanhamento e reavaliação da situação da criança, adolescente ou grupo de irmãos em medida de acolhimento. Fica salvo na mesma ficha do cadastro inicial."
           : "Cadastro inicial para acompanhamento de criança ou adolescente acolhido."}{" "}
         Campos com * são obrigatórios.
       </p>

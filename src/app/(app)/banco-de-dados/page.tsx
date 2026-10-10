@@ -2,12 +2,13 @@ import Link from "next/link";
 import { Database, Search, ChevronRight } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { FORM_ACOMP, FORM_KEY } from "@/lib/forms";
+import { FORM_KEY } from "@/lib/forms";
 import { formatDate } from "@/components/RecordView";
 
 type Rec = {
-  id: string; form_key: string; parent_id: string | null; created_at: string;
+  id: string;
   answers: Record<string, { value: string }>;
+  followup: Record<string, { value: string }> | null;
 };
 
 export default async function BancoDeDadosPage({
@@ -19,16 +20,11 @@ export default async function BancoDeDadosPage({
   const q = ((await searchParams).q ?? "").trim().toLowerCase();
   const supabase = await createClient();
   const { data } = await supabase
-    .from("intake_records").select("id, form_key, parent_id, created_at, answers")
-    .order("created_at", { ascending: false });
+    .from("intake_records").select("id, answers, followup")
+    .eq("form_key", FORM_KEY).order("created_at", { ascending: false });
   const all = (data ?? []) as Rec[];
 
-  const cadastros = all.filter((r) => r.form_key === FORM_KEY);
-  const acomps = all.filter((r) => r.form_key === FORM_ACOMP);
-  const byParent = new Map<string, Rec[]>();
-  for (const a of acomps) if (a.parent_id) byParent.set(a.parent_id, [...(byParent.get(a.parent_id) ?? []), a]);
-
-  const list = cadastros.filter((c) =>
+  const list = all.filter((c) =>
     !q || [c.answers.nomes?.value, c.answers.processo?.value, c.answers.unidade?.value]
       .some((v) => v?.toLowerCase().includes(q)));
 
@@ -49,9 +45,7 @@ export default async function BancoDeDadosPage({
         </div>
       ) : list.map((c) => {
         const a = c.answers;
-        const filhos = (byParent.get(c.id) ?? []).sort((x, y) =>
-          (y.answers.acomp_2?.value ?? "").localeCompare(x.answers.acomp_2?.value ?? ""));
-        const ultima = filhos[0]?.answers.acomp_2?.value;
+        const reav = c.followup?.acomp_2?.value;
         return (
           <Link key={c.id} href={`/banco-de-dados/${c.id}`} className="tile">
             <div className="row" style={{ justifyContent: "space-between", flexWrap: "nowrap" }}>
@@ -59,8 +53,9 @@ export default async function BancoDeDadosPage({
                 <h3>{a.nomes?.value ?? "(sem nome)"}</h3>
                 <p>Proc. {a.processo?.value ?? "—"}{a.unidade?.value ? ` · ${a.unidade.value}` : ""}</p>
                 <div className="row" style={{ marginTop: 10 }}>
-                  <span className="badge">{filhos.length} acompanhamento{filhos.length === 1 ? "" : "s"}</span>
-                  {ultima && <span className="badge off">Última reavaliação: {formatDate(ultima)}</span>}
+                  {c.followup
+                    ? <span className="badge">Acompanhamento{reav ? ` · reavaliação ${formatDate(reav)}` : ""}</span>
+                    : <span className="badge off">Sem acompanhamento</span>}
                 </div>
               </div>
               <ChevronRight />

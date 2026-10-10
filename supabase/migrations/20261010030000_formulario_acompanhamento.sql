@@ -1,10 +1,15 @@
--- Aba Acompanhamento: novo tipo "checkbox" (múltipla escolha), vínculo com o cadastro inicial e as perguntas.
+-- Aba Acompanhamento: novo tipo "checkbox" (múltipla escolha), acompanhamento na mesma ficha e as perguntas.
 alter table public.form_questions drop constraint if exists form_questions_type_check;
 alter table public.form_questions add constraint form_questions_type_check
   check (type in ('text', 'textarea', 'date', 'select', 'radio', 'radio_other', 'checkbox'));
 
--- cada acompanhamento aponta para o cadastro inicial do acolhido
-alter table public.intake_records add column if not exists parent_id uuid references public.intake_records(id) on delete cascade;
+-- um registro único por acolhido: o acompanhamento fica na mesma ficha do cadastro inicial
+alter table public.intake_records add column if not exists followup jsonb;
+alter table public.intake_records add column if not exists followup_at timestamptz;
+
+create policy "edita os proprios cadastros ou todos se admin" on public.intake_records
+  for update using (created_by = auth.uid() or public.is_admin())
+  with check (created_by = auth.uid() or public.is_admin());
 
 insert into public.form_questions (form_key, key, position, section, label, help, type, options, required)
 select 'acompanhamento', v.* from (values
