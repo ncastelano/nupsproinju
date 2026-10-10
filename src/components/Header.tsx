@@ -1,60 +1,67 @@
 "use client";
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, LogOut } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, FolderOpen, LogOut } from "lucide-react";
 import { logout } from "@/app/login/actions";
 import { ProfileForm } from "./ProfileForm";
 import { Avatar } from "./Avatar";
 
+export type MyRecord = { id: string; nome: string; processo: string };
 type Props = {
   userId: string; name: string; email: string; avatarUrl: string | null;
-  registry: string; profileslug: string;
+  registry: string; profileslug: string; records: MyRecord[];
 };
 
-// O início ("/") é o perfil aberto. Ao ir para uma página, o bloco do perfil sobe
-// (e a página nova sobe junto, empurrada); ao tocar no nome, o perfil desce de novo.
-export function Header({ userId, name, email, avatarUrl, registry, profileslug }: Props) {
-  const path = usePathname();
-  const router = useRouter();
-  const isHome = path === "/";
+// Header fixo que se expande (como um bloco só) até quase cobrir a tela.
+export function Header({ userId, name, email, avatarUrl, registry, profileslug, records }: Props) {
   const [open, setOpen] = useState(false);
+  const [headH, setHeadH] = useState(72);
+  const innerRef = useRef<HTMLDivElement>(null);
 
-  // pequeno atraso para o perfil "cair" ao entrar
+  useLayoutEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeadH(el.offsetHeight));
+    ro.observe(el);
+    setHeadH(el.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
+
+  // Ao entrar, o perfil já abre sozinho (e fica aberto até a pessoa informar o registro).
+  useEffect(() => { const t = setTimeout(() => setOpen(true), 80); return () => clearTimeout(t); }, []);
+
   useEffect(() => {
-    const t = setTimeout(() => setOpen(isHome), 60);
-    return () => clearTimeout(t);
-  }, [isHome]);
-
-  const toForms = () => router.push(`/usuarios/${userId}`);
+    document.body.style.overflow = open ? "hidden" : "";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [open]);
 
   return (
-    <header className={`topbar${open ? " open" : ""}`}>
-      <div className="inner">
-        <strong className="brand">Núcleo Psicossocial · VPIJ Porto Velho</strong>
-        <button
-          type="button"
-          className="who-btn"
-          aria-expanded={open}
-          onClick={() => (isHome ? toForms() : router.push("/"))}
-        >
-          <Avatar url={avatarUrl} size={30} />
-          <span>{name}</span>
-          <ChevronDown size={18} className="chev" />
-        </button>
-      </div>
+    <>
+      <div style={{ height: headH }} />
+      <header className={`topbar${open ? " open" : ""}`} style={{ ["--head-h" as string]: `${headH}px` }}>
+        <div ref={innerRef} className="inner">
+          <strong className="brand">Núcleo Psicossocial · VPIJ Porto Velho</strong>
+          <button type="button" className="who-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            <Avatar url={avatarUrl} size={30} />
+            <span>{name}</span>
+            <ChevronDown size={18} className="chev" />
+          </button>
+        </div>
 
-      <div className="expander" aria-hidden={!open} {...(!open ? { inert: true } : {})}>
-        <div className="expander-clip">
+        <div className="expander" aria-hidden={!open}>
           <div className="expander-inner">
             <span className="sheet-sub">{email}</span>
             <ProfileForm name={name} avatarUrl={avatarUrl} registry={registry} profileslug={profileslug} />
+
             <div className="row" style={{ justifyContent: "center" }}>
               <form action={logout}><button className="light"><LogOut size={18} /> Sair</button></form>
-              <button type="button" className="light" onClick={toForms}><ChevronUp size={18} /> Fechar</button>
+              <button type="button" className="light" onClick={() => setOpen(false)}><ChevronUp size={18} /> Fechar</button>
             </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }
