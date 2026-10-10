@@ -3,6 +3,7 @@ import { Fragment, useActionState, useState, type ReactNode } from "react";
 import { CheckCircle2, Check } from "lucide-react";
 import { RecordView, formatDate } from "@/components/RecordView";
 import { OTHER_PREFIX, PROFESSIONAL_KEYS, type Question } from "@/lib/forms";
+import { QuestionEdit } from "@/components/QuestionEdit";
 import { saveIntake } from "./actions";
 
 type Answers = Record<string, { label: string; value: string }>;
@@ -163,6 +164,7 @@ export function IntakeForm({
               ) : (
               <Field key={`${sel}-${q.id}`} q={q} initial={formKey === "acompanhamento" ? current?.followup?.[q.key]?.value ?? "" : ""} />
               )}
+              {!PROFESSIONAL_KEYS.includes(q.key) && <QuestionEdit key={`${q.key}-${q.label}-${q.help}`} q={q} formKey={formKey} />}
             </div>
           </Fragment>
         );

@@ -409,3 +409,6 @@ button.who-btn { padding: 6px 14px 6px 6px; flex: 0 1 auto; }
 .user-card .stretch::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius); }
 .user-card .stretch:hover { text-decoration: none; }
 .user-card .row, .user-card .badge { position: relative; z-index: 1; }
+
+.q-edit { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px; }
+button.small { padding: 6px 12px; font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }

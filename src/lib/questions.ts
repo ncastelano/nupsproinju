@@ -3,7 +3,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Question } from "./forms";
 
 // Perguntas que a pessoa acrescentou ao modelo (ficam nos dados da própria conta).
-export type CustomForm = { name: string; questions: Question[] };
+export type QuestionOverride = { label?: string; help?: string; options?: string[]; required?: boolean };
+export type CustomForm = {
+  name: string;
+  questions: Question[];
+  overrides?: Record<string, QuestionOverride>;
+};
 export type CustomForms = Record<string, CustomForm>;
 
 export async function getCustomForms(ownerId: string): Promise<CustomForms> {
@@ -17,13 +22,17 @@ export async function loadQuestions(
 ): Promise<{ questions: Question[]; personal: boolean; typeName: string }> {
   const { data } = await sb
     .from("form_questions").select("*").eq("form_key", formKey).order("position");
-  const model = ((data ?? []) as Question[]).filter((q) => !q.owner_id);
   const custom = (await getCustomForms(ownerId))[formKey];
   const extras = custom?.questions ?? [];
+  const overrides = custom?.overrides ?? {};
+  // ajustes que a própria pessoa fez nas perguntas do modelo
+  const model = ((data ?? []) as Question[])
+    .filter((q) => !q.owner_id)
+    .map((q) => (overrides[q.key] ? { ...q, ...overrides[q.key], overridden: true } : q));
   const all = [...model, ...extras];
   return {
     questions: onlyActive ? all.filter((q) => q.active) : all,
-    personal: extras.length > 0,
+    personal: extras.length > 0 || Object.keys(overrides).length > 0,
     typeName: custom?.name ?? "",
   };
 }

@@ -13,6 +13,7 @@ export type Question = {
   required: boolean;
   active: boolean;
   owner_id?: string | null;
+  overridden?: boolean; // texto/opções ajustados pela própria pessoa
 };
 
 export const TYPE_LABEL: Record<QuestionType, string> = {

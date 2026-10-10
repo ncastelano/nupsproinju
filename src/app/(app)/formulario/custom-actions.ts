@@ -64,3 +64,51 @@ export async function deleteCustomQuestion(form: FormData) {
   revalidatePath("/formulario");
   revalidatePath("/usuarios", "layout");
 }
+
+const NEEDS = ["select", "radio", "radio_other", "checkbox"];
+
+// Edita uma pergunta só para quem está logado: as do modelo ficam como "ajuste" pessoal;
+// as que a própria pessoa criou (x_...) são alteradas direto.
+export async function saveQuestionEdit(form: FormData) {
+  const me = await requireMember();
+  const formKey = String(form.get("form_key"));
+  const key = String(form.get("key"));
+  const label = String(form.get("label") ?? "").trim();
+  if (!(FORM_KEYS as readonly string[]).includes(formKey) || !key) return "Pergunta inválida.";
+  if (!label) return "A pergunta não pode ficar vazia.";
+  const options = lines(String(form.get("options") ?? ""));
+  const patch = {
+    label, help: String(form.get("help") ?? "").trim(),
+    required: form.get("required") === "on",
+    ...(form.get("has_options") === "1" ? { options } : {}),
+  };
+  if (form.get("has_options") === "1" && options.length < 2) return "Informe pelo menos 2 opções, uma por linha.";
+
+  const forms = await getCustomForms(me.id);
+  const cur = forms[formKey] ?? { name: "", questions: [] };
+  if (key.startsWith("x_")) {
+    cur.questions = cur.questions.map((q) => (q.key === key ? { ...q, ...patch } : q));
+  } else {
+    cur.overrides = { ...(cur.overrides ?? {}), [key]: patch };
+  }
+  forms[formKey] = cur;
+  const { error } = await save(me.id, forms);
+  if (error) return "Não foi possível salvar a pergunta.";
+  revalidatePath("/formulario");
+  return "ok";
+}
+
+export async function resetQuestionEdit(form: FormData) {
+  const me = await requireMember();
+  const formKey = String(form.get("form_key"));
+  const key = String(form.get("key"));
+  const forms = await getCustomForms(me.id);
+  const cur = forms[formKey];
+  if (!cur?.overrides?.[key]) return "ok";
+  const { [key]: _drop, ...rest } = cur.overrides;
+  cur.overrides = rest;
+  const { error } = await save(me.id, forms);
+  if (error) return "Não foi possível restaurar.";
+  revalidatePath("/formulario");
+  return "ok";
+}
