@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { FolderOpen } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { ShareMenu } from "@/components/ShareMenu";
-import { cleanSlug, findBySlug } from "@/lib/profiles";
+import { cleanSlug, findBySlug, professionOf } from "@/lib/profiles";
 import { getMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_KEY } from "@/lib/forms";
@@ -41,7 +41,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
     <div className="login-wrap">
       <section className="login-brand">
         <h1>Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho</h1>
-        <p>Equipe técnica</p>
+        <p>{professionOf(p.registry)}</p>
       </section>
       <section className="login-form">
         <div className="card grid" style={{ gap: 14, width: "100%", maxWidth: 460 }}>

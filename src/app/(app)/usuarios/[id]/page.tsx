@@ -74,8 +74,8 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
       ) : (
         <div className="user-grid">
           {records.map((r) => (
-            <article key={r.id} className="card user-card">
-              <h3>{r.answers.nomes?.value ?? "(sem nome)"}</h3>
+            <article key={r.id} className="card user-card clickable">
+              <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
               <p>Proc. {r.answers.processo?.value ?? "—"}</p>
               {r.answers.unidade?.value && <p>{r.answers.unidade.value}</p>}
               {r.answers.data_acolhimento?.value && <p>Acolhido em {formatDate(r.answers.data_acolhimento.value)}</p>}
@@ -103,8 +103,8 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
       ) : (
         <div className="user-grid">
           {withFollowup.map((r) => (
-            <article key={r.id} className="card user-card">
-              <h3>{r.answers.nomes?.value ?? "(sem nome)"}</h3>
+            <article key={r.id} className="card user-card clickable">
+              <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
               <p>
                 Reavaliação {r.followup?.acomp_2?.value ? formatDate(r.followup.acomp_2.value) : "—"}
               </p>

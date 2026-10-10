@@ -72,3 +72,11 @@ export async function ensureSlug(me: { id: string; name: string; email: string; 
   });
   return slug;
 }
+
+// CRESS = Assistente Social, CRP = Psicólogo(a).
+export function professionOf(registry: string) {
+  const r = registry.toUpperCase();
+  if (r.includes("CRESS")) return "Assistente Social";
+  if (r.includes("CRP")) return "Psicólogo(a)";
+  return "Equipe técnica";
+}

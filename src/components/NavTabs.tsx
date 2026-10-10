@@ -5,10 +5,7 @@ import { usePathname } from "next/navigation";
 export function NavTabs({ userId, isAdmin }: { userId: string; isAdmin: boolean }) {
   const path = usePathname();
   const items = [
-    { href: "/formulario", label: "Novo cadastro", on: path.startsWith("/formulario") },
-    { href: "/cadastrados", label: "Cadastrados", on: path.startsWith("/cadastrados") },
-    { href: "/banco-de-dados", label: "Banco de dados", on: path.startsWith("/banco-de-dados") },
-    { href: `/usuarios/${userId}`, label: "Meus cadastros", on: path === `/usuarios/${userId}` },
+    { href: `/usuarios/${userId}`, label: "Meus cadastros", on: path === `/usuarios/${userId}` || path.startsWith("/cadastrados") || path.startsWith("/formulario") },
     ...(isAdmin ? [{ href: "/usuarios", label: "Usuários", on: path === "/usuarios" }] : []),
   ];
   return (
