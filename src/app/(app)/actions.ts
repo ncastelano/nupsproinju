@@ -18,7 +18,8 @@ export async function updateProfile(_: string | null, form: FormData) {
   }
 
   const admin = createAdminClient();
-  await admin.from("members").update({ name, registry }).eq("id", me.id);
+  const { error } = await admin.from("members").update({ name, registry }).eq("id", me.id);
+  if (error) return `Não foi possível salvar no banco (${error.message}).`;
   if (password) await admin.auth.admin.updateUserById(me.id, { password });
   revalidatePath("/", "layout");
   return "ok";
@@ -38,7 +39,8 @@ export async function uploadAvatar(form: FormData) {
     .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: "image/jpeg" });
   if (error) return "Não foi possível enviar a foto.";
   const { data } = admin.storage.from("avatars").getPublicUrl(path);
-  await admin.from("members").update({ avatar_url: data.publicUrl }).eq("id", me.id);
+  const { error: e2 } = await admin.from("members").update({ avatar_url: data.publicUrl }).eq("id", me.id);
+  if (e2) return "Não foi possível salvar a foto no perfil.";
   revalidatePath("/", "layout");
   return "ok";
 }
