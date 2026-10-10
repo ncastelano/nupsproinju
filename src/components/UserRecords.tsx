@@ -120,7 +120,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         );
       })}
 
-      {mine && showF && <ModeloRelatorio />}
+      {mine && showF && <ModeloRelatorio canEdit={me.role === "admin"} />}
 
       {showF && <h2 className="section" style={{ margin: 0 }}>PROCESSOS ({records.length})</h2>}
       {showF && (records.length === 0 ? (

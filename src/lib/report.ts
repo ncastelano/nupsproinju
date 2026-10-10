@@ -75,12 +75,39 @@ export function reportValues(a: Ans, now = new Date()): Record<string, string> {
   };
 }
 
+// O Word costuma quebrar um marcador em vários trechos ao editar (ex.: "{{PRO" + "CESSO}}").
+// Aqui juntamos o texto desses parágrafos para o marcador voltar a ficar inteiro.
+export function normalizeMarkers(xml: string): string {
+  return xml.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, (para) => {
+    const runs = [...para.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)];
+    if (runs.length < 2) return para;
+    const joined = runs.map((m) => m[1]).join("");
+    const markers = joined.match(/\{\{[A-Z_]+\}\}/g);
+    if (!markers) return para;
+    const whole = markers.every((mk) => runs.some((m) => m[1].includes(mk)));
+    if (whole) return para;
+    let i = 0;
+    return para.replace(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g, () =>
+      i++ === 0 ? `<w:t xml:space="preserve">${joined}</w:t>` : `<w:t xml:space="preserve"></w:t>`);
+  });
+}
+
+// Lê um .docx e devolve os marcadores {{...}} que ele contém.
+export async function markersOf(buf: Buffer): Promise<string[]> {
+  const zip = await JSZip.loadAsync(buf);
+  const f = zip.file("word/document.xml");
+  if (!f) throw new Error("Não é um arquivo .docx válido.");
+  const xml = normalizeMarkers(await f.async("string"));
+  const text = [...xml.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)].map((m) => m[1]).join("");
+  return [...new Set((text.match(/\{\{[A-Z_]+\}\}/g) ?? []).map((m) => m.slice(2, -2)))];
+}
+
 // Preenche o .docx: troca cada {{MARCADOR}} pelo texto correspondente.
 export async function fillDocx(template: Buffer, values: Record<string, string>): Promise<Buffer> {
   const zip = await JSZip.loadAsync(template);
   const file = zip.file("word/document.xml");
   if (!file) throw new Error("Modelo inválido");
-  let xml = await file.async("string");
+  let xml = normalizeMarkers(await file.async("string"));
   xml = xml.replace(/<w:t>/g, '<w:t xml:space="preserve">');
   for (const [ph, raw] of Object.entries(values)) {
     const text = esc(raw.trim() || "—").replace(/\r?\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
