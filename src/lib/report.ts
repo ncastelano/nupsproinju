@@ -25,6 +25,13 @@ export function ageFrom(births: string, ref = new Date()): string {
 }
 
 // Respostas do Cadastro inicial -> texto de cada {{MARCADOR}} do relatório.
+// Valor de uma pergunta isolada (para {{Q:chave}} nos parágrafos editados).
+export function questionValues(a: Ans): Record<string, string> {
+  return Object.fromEntries(Object.entries(a)
+    .filter(([k, v]) => !k.startsWith("_") && v && typeof v === "object" && "value" in v)
+    .map(([k, v]) => [`Q:${k}`, iso(String(v.value))]));
+}
+
 export function reportValues(a: Ans, now = new Date()): Record<string, string> {
   const v = (k: string) => (a[k]?.value ?? "").trim();
   const join = (...p: string[]) => p.map((x) => x.trim()).filter(Boolean).join(". ").replace(/\.\./g, ".");
@@ -103,16 +110,21 @@ export async function markersOf(buf: Buffer): Promise<string[]> {
 }
 
 // Preenche o .docx: troca cada {{MARCADOR}} pelo texto correspondente.
-export async function fillDocx(template: Buffer, values: Record<string, string>): Promise<Buffer> {
+export async function fillDocx(
+  template: Buffer, values: Record<string, string>,
+  edit?: (xml: string) => string,
+): Promise<Buffer> {
   const zip = await JSZip.loadAsync(template);
   const file = zip.file("word/document.xml");
   if (!file) throw new Error("Modelo inválido");
   let xml = normalizeMarkers(await file.async("string"));
+  if (edit) xml = edit(xml);
   xml = xml.replace(/<w:t>/g, '<w:t xml:space="preserve">');
   for (const [ph, raw] of Object.entries(values)) {
     const text = esc(raw.trim() || "—").replace(/\r?\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
     xml = xml.split(`{{${ph}}}`).join(text);
   }
+  xml = xml.replace(/\{\{Q:[A-Za-z0-9_]+\}\}/g, "—"); // pergunta sem resposta
   zip.file("word/document.xml", xml);
   return zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 }

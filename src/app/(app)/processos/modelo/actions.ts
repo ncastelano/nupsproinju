@@ -2,6 +2,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PLACEHOLDER_SOURCE, REPORT_BUCKET, REPORT_PATH, markersOf } from "@/lib/report";
+import { CONFIG_PATH } from "@/lib/reportEdit";
 
 // Troca o modelo do relatório por uma versão editada no Word (só o administrador).
 export async function replaceReportTemplate(_: string | null, form: FormData) {
@@ -34,9 +35,33 @@ export async function replaceReportTemplate(_: string | null, form: FormData) {
     upsert: true,
   });
   if (error) return "Não foi possível salvar o modelo. Tente de novo.";
+  // as edições feitas na tela eram sobre o arquivo antigo: recomeça
+  await admin.storage.from(REPORT_BUCKET).remove([CONFIG_PATH]);
 
   const avisos: string[] = [];
   if (unknown.length) avisos.push(`Campos que o sistema não conhece (vão aparecer escritos no relatório): ${unknown.map((m) => `{{${m}}}`).join(", ")}.`);
   if (missing.length) avisos.push(`Campos que ficaram de fora do documento: ${missing.length}.`);
   return `ok:Modelo atualizado (${found.length} campos preenchidos automaticamente).${avisos.length ? " " + avisos.join(" ") : ""}`;
+}
+
+// Salva os textos do modelo editados na própria tela (só os parágrafos que mudaram).
+export async function saveReportEdits(changes: Record<string, string>): Promise<string> {
+  await requireAdmin();
+  const admin = createAdminClient();
+  const body = JSON.stringify({ paragraphs: changes });
+  if (body.length > 400_000) return "Modelo grande demais.";
+  const old = await admin.storage.from(REPORT_BUCKET).download(CONFIG_PATH);
+  if (old.data) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    await admin.storage.from(REPORT_BUCKET).upload(`anteriores/config-${stamp}.json`, Buffer.from(await old.data.arrayBuffer()), { contentType: "application/json" });
+  }
+  const { error } = await admin.storage.from(REPORT_BUCKET)
+    .upload(CONFIG_PATH, Buffer.from(body, "utf8"), { contentType: "application/json", upsert: true });
+  return error ? "Não foi possível salvar o modelo." : "ok";
+}
+
+export async function resetReportEdits(): Promise<string> {
+  await requireAdmin();
+  const { error } = await createAdminClient().storage.from(REPORT_BUCKET).remove([CONFIG_PATH]);
+  return error ? "Não foi possível voltar ao original." : "ok";
 }
