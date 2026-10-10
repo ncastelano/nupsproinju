@@ -9,7 +9,7 @@ import { saveIntake } from "./actions";
 type Answers = Record<string, { label: string; value: string }>;
 export type Acolhido = { id: string; answers: Answers; followup: Answers | null };
 
-function Field({ q, initial = "" }: { q: Question; initial?: string }) {
+export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
   const isOther = q.type === "radio_other" && initial.startsWith(OTHER_PREFIX);
   const [choice, setChoice] = useState(isOther ? "__outro__" : initial);
   const name = q.key;

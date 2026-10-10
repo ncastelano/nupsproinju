@@ -445,3 +445,16 @@ button.light-brand:hover { background: var(--brand); color: #fff; border-color: 
 .nav-progress.run { opacity: 1; width: 82%; transition: width 9s cubic-bezier(.08,.6,.2,1), opacity .15s; }
 .nav-progress.done { opacity: 0; width: 100%; transition: width .2s ease-out, opacity .35s .15s; }
 .nav-progress.idle { width: 0; transition: none; }
+
+/* Ficha compartilhada: presença, histórico */
+.hero-meta { margin-top: 8px; font-size: 14px; opacity: .9; display: flex; gap: 6px; flex-wrap: wrap; }
+.editing-now {
+  margin-top: 10px; display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  background: rgba(255,255,255,.18); border-radius: 999px; padding: 6px 14px; font-size: 14px; font-weight: 600;
+}
+.hist { border-left: 3px solid var(--brand-soft); padding: 2px 0 2px 12px; display: grid; gap: 4px; }
+.hist-when { color: var(--muted); font-size: 14px; }
+.hist-line { display: grid; gap: 2px; font-size: 14px; background: #f6fafb; border-radius: var(--radius-sm); padding: 8px 10px; }
+.hist-line .from { color: var(--muted); text-decoration: line-through; overflow-wrap: anywhere; }
+.hist-line .to { color: var(--brand-dark); font-weight: 600; overflow-wrap: anywhere; }
+.hist-line .arrow { color: var(--muted); }

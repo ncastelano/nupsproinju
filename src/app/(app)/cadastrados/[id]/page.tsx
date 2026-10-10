@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ClipboardPen, FileText } from "lucide-react";
+import { ArrowLeft, FileText, History, Pencil, UserPlus, X } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_ACOMP, FORM_KEY } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
-import { RecordView, formatDate } from "@/components/RecordView";
+import { accessOf, loadRecord, type Ans } from "@/lib/records";
+import { formatDate } from "@/components/RecordView";
 import { ShareMenu } from "@/components/ShareMenu";
+import { RecordSection } from "@/components/RecordSection";
+import { shareRecord, unshareRecord } from "../records-actions";
 
-type Answers = Record<string, { label: string; value: string }>;
-
-function fmt(a: Answers) {
+function fmt(a: Ans | null): Ans | null {
+  if (!a) return null;
   const copy = { ...a };
   for (const k of ["data_acolhimento", "acomp_2"]) {
     if (copy[k]) copy[k] = { ...copy[k], value: formatDate(copy[k].value) };
@@ -18,61 +21,131 @@ function fmt(a: Answers) {
   return copy;
 }
 
-// Página de um único cadastrado, própria para compartilhar o link só dele.
-// Abre apenas para quem está logado e tem acesso (dono ou administrador).
+const when = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+// Ficha de um formulário: quem tem acesso pode ver, editar ali mesmo e compartilhar o link.
 export default async function CadastradoPage({ params }: { params: Promise<{ id: string }> }) {
   const me = await requireMember();
   const { id } = await params;
-  const supabase = await createClient();
-
-  const { data: rec } = await supabase
-    .from("intake_records").select("id, created_by, answers, followup")
-    .eq("id", id).eq("form_key", FORM_KEY).maybeSingle();
+  const rec = await loadRecord(id);
   if (!rec) notFound();
+  const acc = accessOf(rec, me);
+  if (!acc.canView) notFound();
 
-  const owner = rec.created_by as string;
-  const cadQs = (await loadQuestions(supabase, FORM_KEY, owner)).questions;
-  const acQs = (await loadQuestions(supabase, FORM_ACOMP, owner)).questions;
+  const supabase = await createClient();
+  const [cad, ac] = await Promise.all([
+    loadQuestions(supabase, FORM_KEY, rec.created_by),
+    loadQuestions(supabase, FORM_ACOMP, rec.created_by),
+  ]);
 
-  const a = rec.answers as Answers;
-  const followup = rec.followup as Answers | null;
-  const nome = a.nomes?.value ?? "(sem nome)";
+  const admin = createAdminClient();
+  const { data: owner } = await admin.from("members").select("name, email").eq("id", rec.created_by).maybeSingle();
+  const ownerName = (owner?.name as string) || (owner?.email as string) || "—";
+
+  let people: { id: string; name: string }[] = [];
+  if (acc.canShare) {
+    const { data } = await admin.from("members").select("id, name, email").eq("status", "approved").order("name");
+    const taken = new Set([rec.created_by, ...rec.meta.shared.map((s) => s.id)]);
+    people = (data ?? [])
+      .filter((m) => !taken.has(m.id as string))
+      .map((m) => ({ id: m.id as string, name: (m.name as string) || (m.email as string) }));
+  }
+
+  const nome = rec.answers.nomes?.value ?? "(sem nome)";
+  const editors = Object.entries(rec.meta.editing).filter(([uid]) => uid !== me.id);
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <Link href="/cadastrados" className="row"><ArrowLeft size={16} /> Voltar aos formulários</Link>
+      <Link href={`/usuarios/${me.id}`} className="row"><ArrowLeft size={16} /> Voltar aos meus formulários</Link>
 
       <section className="hero">
         <h1 style={{ fontSize: 24 }}>{nome}</h1>
-        <p>Processo {a.processo?.value ?? "—"}{a.unidade?.value ? ` · ${a.unidade.value}` : ""}</p>
+        <p>Processo {rec.answers.processo?.value ?? "—"}{rec.answers.unidade?.value ? ` · ${rec.answers.unidade.value}` : ""}</p>
+        <div className="hero-meta">
+          <span>Preenchido por {ownerName}</span>
+          {rec.meta.shared.length > 0 && <span>· compartilhado com {rec.meta.shared.map((s) => s.name).join(", ")}</span>}
+        </div>
+        {(editors.length > 0 || rec.meta.editing[me.id]) && (
+          <div className="editing-now">
+            <Pencil size={14} />
+            {[...(rec.meta.editing[me.id] ? [["você", rec.meta.editing[me.id]] as const] : []), ...editors.map(([, v]) => [v.name, v] as const)]
+              .map(([n, v]) => `${n} (${v.scope === "acompanhamento" ? "acompanhamento" : "formulário"})`)
+              .join(", ")} editando agora
+          </div>
+        )}
       </section>
 
       <div className="row">
         <ShareMenu
           path={`/cadastrados/${id}`}
           text={`Formulário de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
-          label="Compartilhar este formulário"
+          label="Compartilhar o link"
           className=""
           note="Só abre para quem estiver logado e tiver acesso a este formulário."
         />
         <Link href={`/banco-de-dados/${id}/resumo`}><button className="ghost"><FileText size={16} /> Resumo A4 / Imprimir</button></Link>
-        {rec.created_by === me.id && (
-          <Link href={`/cadastrar-pessoa?aba=acompanhamento&acolhido=${id}`}>
-            <button className="ghost"><ClipboardPen size={16} /> {followup ? "Editar acompanhamento" : "Preencher acompanhamento"}</button>
-          </Link>
-        )}
       </div>
 
-      <div className="card">
-        <h2 style={{ marginTop: 0 }}>Formulário inicial</h2>
-        <RecordView answers={fmt(a)} questions={cadQs} />
-      </div>
+      {acc.canShare && (
+        <div className="card grid" style={{ gap: 10 }}>
+          <strong><UserPlus size={16} style={{ verticalAlign: "-3px" }} /> Quem pode editar</strong>
+          <span style={{ color: "var(--muted)" }}>
+            Escolha uma pessoa para ela abrir este link e editar o formulário e o acompanhamento. Todas as alterações ficam registradas com o nome de quem alterou.
+          </span>
+          {rec.meta.shared.map((s) => (
+            <form key={s.id} action={unshareRecord} className="qrow">
+              <input type="hidden" name="record_id" value={id} />
+              <input type="hidden" name="member_id" value={s.id} />
+              <strong>{s.name}</strong>
+              <button className="danger" aria-label={`Remover ${s.name}`}><X size={16} /></button>
+            </form>
+          ))}
+          {people.length > 0 && (
+            <form action={shareRecord} className="row">
+              <input type="hidden" name="record_id" value={id} />
+              <select name="member_id" defaultValue="" required>
+                <option value="" disabled>Escolher pessoa...</option>
+                {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <button>Dar acesso para editar</button>
+            </form>
+          )}
+        </div>
+      )}
 
-      <div className="card">
-        <h2 style={{ marginTop: 0 }}>Acompanhamento</h2>
-        {followup
-          ? <RecordView answers={fmt(followup)} questions={acQs} />
-          : <p style={{ color: "var(--muted)", margin: 0 }}>Ainda não preenchido.</p>}
+      <RecordSection
+        recordId={id} scope="formulario" title="Formulário" canEdit={acc.canEdit}
+        raw={rec.answers} view={fmt(rec.answers)} questions={cad.questions}
+        emptyText="Ainda não preenchido."
+      />
+      <RecordSection
+        recordId={id} scope="acompanhamento" title="Acompanhamento" canEdit={acc.canEdit}
+        raw={rec.followup} view={fmt(rec.followup)} questions={ac.questions}
+        emptyText="Ainda não preenchido."
+      />
+
+      <div className="card grid" style={{ gap: 10 }}>
+        <h2 style={{ margin: 0 }}><History size={18} style={{ verticalAlign: "-3px" }} /> Alterações</h2>
+        {rec.meta.history.length === 0 ? (
+          <p style={{ color: "var(--muted)", margin: 0 }}>Nenhuma alteração depois do preenchimento inicial.</p>
+        ) : rec.meta.history.map((h, i) => (
+          <div key={i} className="hist">
+            <div>
+              <strong>{h.by_name}</strong>{" "}
+              {h.note ?? `alterou o ${h.scope === "acompanhamento" ? "acompanhamento" : "formulário"}`}
+              <span className="hist-when"> · {when(h.at)}</span>
+            </div>
+            {h.changes.map((c, j) => (
+              <div key={j} className="hist-line">
+                <b>{c.label}</b>
+                <span className="from">{c.from || "(vazio)"}</span>
+                <span className="arrow">→</span>
+                <span className="to">{c.to || "(vazio)"}</span>
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );

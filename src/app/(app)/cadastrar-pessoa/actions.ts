@@ -4,6 +4,7 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, OTHER_PREFIX, PROFESSIONAL_KEYS } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
+import { loadRecord, saveRecord, type Ans } from "@/lib/records";
 
 // Cadastro inicial cria a ficha; Acompanhamento preenche/atualiza a MESMA ficha (coluna followup).
 export async function saveIntake(_: string | null, form: FormData) {
@@ -42,12 +43,31 @@ export async function saveIntake(_: string | null, form: FormData) {
 
   if (formKey === FORM_KEY) answers._template = { label: "Modelo de formulário", value: typeName };
 
+  const before = formKey === FORM_ACOMP && recordId ? await loadRecord(recordId) : null;
+
   if (formKey === FORM_ACOMP) {
     const { data: upd, error } = await supabase
       .from("intake_records")
       .update({ followup: answers, followup_at: new Date().toISOString() })
       .eq("id", recordId!).eq("form_key", FORM_KEY).select("id");
     if (error || !upd?.length) return "Não foi possível salvar o acompanhamento.";
+    if (before) {
+      // registra no histórico quem alterou o acompanhamento
+      const old: Ans = before.followup ?? {};
+      const changes = Object.keys({ ...old, ...answers })
+        .filter((k) => !PROFESSIONAL_KEYS.includes(k) && (old[k]?.value ?? "") !== (answers[k]?.value ?? ""))
+        .map((k) => ({ label: (answers[k] ?? old[k]).label, from: old[k]?.value ?? "", to: answers[k]?.value ?? "" }));
+      const meta = before.meta;
+      delete meta.editing[me.id];
+      if (changes.length || !before.followup) {
+        meta.history.unshift({
+          at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "acompanhamento",
+          changes, note: before.followup ? undefined : "preencheu o acompanhamento",
+        });
+        meta.history = meta.history.slice(0, 200);
+        await saveRecord(before, {}, meta);
+      }
+    }
   } else {
     const { error } = await supabase
       .from("intake_records").insert({ form_key: FORM_KEY, created_by: me.id, answers });

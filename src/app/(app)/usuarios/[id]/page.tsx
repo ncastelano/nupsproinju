@@ -9,6 +9,7 @@ import { loadQuestions } from "@/lib/questions";
 import { MODEL_VALUES } from "@/lib/modelRecord";
 import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
+import { metaOf } from "@/lib/records";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -45,6 +46,20 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   }
 
   const first = (person.name || person.email).split(" ")[0];
+
+  // formulários de outras pessoas que foram compartilhados comigo para editar
+  let sharedWithMe: { id: string; answers: Answers; owner: string }[] = [];
+  if (mine) {
+    const admin = createAdminClient();
+    const [{ data: all }, { data: ppl }] = await Promise.all([
+      admin.from("intake_records").select("id, created_by, answers").eq("form_key", FORM_KEY).neq("created_by", id),
+      admin.from("members").select("id, name"),
+    ]);
+    const names = new Map((ppl ?? []).map((p) => [p.id as string, p.name as string]));
+    sharedWithMe = (all ?? [])
+      .filter((r) => metaOf(r.answers as Record<string, unknown>).shared.some((s) => s.id === id))
+      .map((r) => ({ id: r.id as string, answers: r.answers as Answers, owner: names.get(r.created_by as string) ?? "" }));
+  }
   const withFollowup = records.filter((r) => r.followup);
 
   return (
@@ -85,6 +100,24 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
             </article>
           ))}
         </div>
+      )}
+
+      {sharedWithMe.length > 0 && (
+        <>
+          <h2 className="section" style={{ margin: 0 }}>COMPARTILHADOS COMIGO ({sharedWithMe.length})</h2>
+          <div className="user-grid">
+            {sharedWithMe.map((r) => (
+              <article key={r.id} className="card user-card clickable">
+                <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
+                <p>Proc. {r.answers.processo?.value ?? "—"}</p>
+                <p>Compartilhado por {r.owner || "—"}</p>
+                <div className="row" style={{ marginTop: 6 }}>
+                  <span className="badge">Você pode editar</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
       )}
 
       <h2 className="section" style={{ margin: 0 }}>ACOMPANHAMENTOS ({withFollowup.length})</h2>
