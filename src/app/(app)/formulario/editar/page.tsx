@@ -33,7 +33,7 @@ export default async function EditarFormularioPage({
       <Link href={back} className="row"><ArrowLeft size={16} /> Voltar ao formulário</Link>
       <h1 style={{ margin: 0 }}>Editar perguntas · {FORM_TITLE[formKey]}</h1>
       <p style={{ margin: 0, color: "var(--muted)" }}>
-        Para opções de seleção, escreva uma por linha. Cadastros já salvos não mudam quando você edita uma pergunta.
+        Para opções de seleção, escreva uma por linha. Formulários já salvos não mudam quando você edita uma pergunta.
       </p>
 
       <form action={addQuestion} className="card grid">

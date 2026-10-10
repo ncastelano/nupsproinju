@@ -26,7 +26,7 @@ export async function addCustomQuestion(_: string | null, form: FormData) {
   const type = String(form.get("type")) as QuestionType;
   const options = lines(String(form.get("options") ?? ""));
 
-  if (!typeName) return "Dê um nome para este tipo de cadastro.";
+  if (!typeName) return "Dê um nome para este formulário.";
   if (!label) return "Escreva a pergunta.";
   if (!TYPES.includes(type)) return "Escolha o tipo de resposta.";
   if (["select", "radio", "radio_other", "checkbox"].includes(type) && options.length < 2) {

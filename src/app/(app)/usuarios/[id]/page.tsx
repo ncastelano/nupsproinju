@@ -53,7 +53,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
         <div className="row" style={{ flexWrap: "nowrap", gap: 14 }}>
           <Avatar url={person.avatar_url ?? null} size={64} />
           <div>
-            <h1 style={{ fontSize: 24 }}>{mine ? "Meus cadastros" : `Cadastros de ${first}`}</h1>
+            <h1 style={{ fontSize: 24 }}>{mine ? "Meus formulários" : `Formulários de ${first}`}</h1>
             <p>{person.name || person.email}{person.registry ? ` · ${person.registry}` : ""}</p>
           </div>
         </div>
@@ -61,16 +61,16 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
 
       <div className="row" style={{ justifyContent: "space-between" }}>
         <span className={personal ? "badge" : "badge off"}>
-          {personal ? typeName || `Cadastro de ${first}` : "Cadastro modelo"}
+          {personal ? typeName || `Formulário de ${first}` : "Formulário modelo"}
         </span>
         {mine && (
-          <Link href="/formulario"><button><Plus size={16} /> Novo cadastro</button></Link>
+          <Link href="/formulario"><button><Plus size={16} /> Novo formulário</button></Link>
         )}
       </div>
 
-      <h2 className="section" style={{ margin: 0 }}>CADASTROS ({records.length})</h2>
+      <h2 className="section" style={{ margin: 0 }}>FORMULÁRIOS ({records.length})</h2>
       {records.length === 0 ? (
-        <div className="card empty"><p>Nenhum cadastro ainda.</p></div>
+        <div className="card empty"><p>Nenhum formulário ainda.</p></div>
       ) : (
         <div className="user-grid">
           {records.map((r) => (

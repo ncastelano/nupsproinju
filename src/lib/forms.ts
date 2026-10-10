@@ -29,7 +29,7 @@ export const FORM_KEY = "cadastro_inicial";
 export const FORM_ACOMP = "acompanhamento";
 export const FORM_KEYS = [FORM_KEY, FORM_ACOMP] as const;
 export const FORM_TITLE: Record<string, string> = {
-  cadastro_inicial: "Cadastro inicial",
+  cadastro_inicial: "Formulário inicial",
   acompanhamento: "Acompanhamento",
 };
 export const OTHER_PREFIX = "Outro: ";

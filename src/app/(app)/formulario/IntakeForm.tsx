@@ -123,7 +123,7 @@ export function IntakeForm({
           {current ? (
             <details className="card" open>
               <summary style={{ cursor: "pointer", fontWeight: 700 }}>
-                Cadastro inicial de {current.answers.nomes?.value ?? "(sem nome)"}
+                Formulário inicial de {current.answers.nomes?.value ?? "(sem nome)"}
               </summary>
               <div style={{ marginTop: 10 }}>
                 <RecordView

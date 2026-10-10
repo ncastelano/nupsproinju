@@ -77,7 +77,7 @@ export default async function UsuariosPage() {
               <button className="ghost">Salvar</button>
             </form>
             <div className="row">
-              <Link href={`/usuarios/${m.id}`}><button type="button" className="ghost">Ver cadastros e acompanhamentos</button></Link>
+              <Link href={`/usuarios/${m.id}`}><button type="button" className="ghost">Ver formulários e acompanhamentos</button></Link>
             </div>
             {m.id !== me.id && (
               <div className="row">

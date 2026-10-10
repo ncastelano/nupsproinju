@@ -40,7 +40,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <Link href="/cadastrados" className="row"><ArrowLeft size={16} /> Voltar aos cadastrados</Link>
+      <Link href="/cadastrados" className="row"><ArrowLeft size={16} /> Voltar aos formulários</Link>
 
       <section className="hero">
         <h1 style={{ fontSize: 24 }}>{nome}</h1>
@@ -50,10 +50,10 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
       <div className="row">
         <ShareMenu
           path={`/cadastrados/${id}`}
-          text={`Cadastro de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
-          label="Compartilhar este cadastrado"
+          text={`Formulário de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
+          label="Compartilhar este formulário"
           className=""
-          note="Só abre para quem estiver logado e tiver acesso a este cadastro."
+          note="Só abre para quem estiver logado e tiver acesso a este formulário."
         />
         <Link href={`/banco-de-dados/${id}/resumo`}><button className="ghost"><FileText size={16} /> Resumo A4 / Imprimir</button></Link>
         {rec.created_by === me.id && (
@@ -64,7 +64,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
       </div>
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>Cadastro inicial</h2>
+        <h2 style={{ marginTop: 0 }}>Formulário inicial</h2>
         <RecordView answers={fmt(a)} questions={cadQs} />
       </div>
 

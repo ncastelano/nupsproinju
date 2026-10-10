@@ -39,8 +39,8 @@ export default async function FormularioPage({
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
-          <h2>Nenhum acolhido cadastrado</h2>
-          <p>Faça primeiro o <Link href="/formulario">Cadastro inicial</Link> para poder registrar acompanhamentos.</p>
+          <h2>Nenhum acolhido registrado</h2>
+          <p>Faça primeiro o <Link href="/formulario">Formulário inicial</Link> para poder registrar acompanhamentos.</p>
         </div>
       ) : questions.length === 0 ? (
         <div className="card empty">Nenhuma pergunta cadastrada ainda.</div>

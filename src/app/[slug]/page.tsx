@@ -57,16 +57,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
           {canSeeRecords && (
             <div className="grid" style={{ gap: 8 }}>
               <strong>
-                {viewer!.id === p.id ? "Meus cadastros" : `Cadastros de ${p.name.split(" ")[0]}`} ({records.length})
+                {viewer!.id === p.id ? "Meus formulários" : `Formulários de ${p.name.split(" ")[0]}`} ({records.length})
               </strong>
-              {records.length === 0 && <span style={{ color: "var(--muted)" }}>Nenhum cadastro ainda.</span>}
+              {records.length === 0 && <span style={{ color: "var(--muted)" }}>Nenhum formulário ainda.</span>}
               {records.slice(0, 8).map((r) => (
                 <Link key={r.id} href={`/cadastrados/${r.id}`} className="mini-rec dark">
                   <FolderOpen size={16} />
                   <span><strong>{r.nome}</strong>{r.processo ? ` · Proc. ${r.processo}` : ""}</span>
                 </Link>
               ))}
-              <Link href={`/usuarios/${p.id}`}><button type="button" className="ghost">Ver todos os meus cadastros</button></Link>
+              <Link href={`/usuarios/${p.id}`}><button type="button" className="ghost">Ver todos os meus formulários</button></Link>
             </div>
           )}
 

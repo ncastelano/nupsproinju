@@ -23,12 +23,12 @@ export function CustomEditor({
         <button type="button" className="ghost" onClick={() => setOpen((o) => !o)}>
           {open ? <X size={16} /> : <Pencil size={16} />} {open ? "Fechar edição" : "Editar"}
         </button>
-        {typeName && <span className="badge">Tipo de cadastro: {typeName}</span>}
+        {typeName && <span className="badge">Formulário: {typeName}</span>}
       </div>
 
       {open && (
         <div className="card grid" style={{ gap: 14 }}>
-          <strong>Adicionar pergunta ao cadastro</strong>
+          <strong>Adicionar nova pergunta?</strong>
 
           {extras.map((q) => (
             <div key={q.key} className="qrow">
@@ -48,9 +48,9 @@ export function CustomEditor({
 
           <form ref={ref} action={action} className="grid" style={{ gap: 12 }}>
             <input type="hidden" name="form_key" value={formKey} />
-            <label className="field"><span>Nome do tipo de cadastro *</span>
-              <input name="type_name" defaultValue={typeName} placeholder="Ex.: Cadastro da Gessiane" required />
-              <small>É o nome com que este tipo de cadastro fica salvo.</small>
+            <label className="field"><span>Nome do formulário *</span>
+              <input name="type_name" defaultValue={typeName} placeholder="Ex.: Formulário da Gessiane" required />
+              <small>É o nome com que este formulário fica salvo.</small>
             </label>
             <label className="field"><span>Pergunta *</span>
               <input name="label" required placeholder="Ex.: Situação escolar" /></label>
