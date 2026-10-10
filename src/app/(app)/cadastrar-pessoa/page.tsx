@@ -39,10 +39,22 @@ export default async function FormularioPage({
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <span className="badge">Formulário em uso: {typeName}{personal && template.owner_id !== me.id ? ` · de ${template.owner_name}` : ""}</span>
-        <Link href="/modelos-de-formularios" className="row" style={{ fontSize: 14 }}><LayoutTemplate size={14} /> Trocar formulário</Link>
-      </div>
+      <section className="using">
+        <div className="using-ico"><LayoutTemplate size={22} /></div>
+        <div className="using-body">
+          <span className="using-kicker">Formulário em uso</span>
+          <strong className="using-name">{typeName}</strong>
+          <span className="using-meta">
+            {template.id === "base"
+              ? "Modelo padrão do núcleo"
+              : template.owner_id === me.id
+                ? "Formulário seu"
+                : `Formulário de ${template.owner_name}`}
+            {template.parent_name ? ` · a partir de ${template.parent_name}` : ""}
+          </span>
+        </div>
+        <Link href="/modelos-de-formularios"><button type="button" className="light-brand">Trocar formulário</button></Link>
+      </section>
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
           <h2>Nenhum acolhido registrado</h2>

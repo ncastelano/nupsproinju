@@ -416,3 +416,21 @@ button.who-btn { padding: 6px 14px 6px 6px; flex: 0 1 auto; }
 button.small { padding: 6px 12px; font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
 .active-card { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
 .ico-sm { width: 40px; height: 40px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; }
+
+/* Qual formulário está em uso */
+.using {
+  display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  padding: 16px 18px; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--brand-soft), #f2f9fa);
+  border: 1.5px solid #bcdde2;
+}
+.using-ico {
+  width: 46px; height: 46px; border-radius: 14px; flex: none; display: grid; place-items: center;
+  background: var(--brand); color: #fff; box-shadow: 0 6px 14px rgba(11,93,107,.25);
+}
+.using-body { display: grid; gap: 1px; flex: 1 1 200px; min-width: 0; }
+.using-kicker { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--brand); }
+.using-name { font-size: 20px; line-height: 1.2; color: var(--brand-dark); overflow-wrap: anywhere; }
+.using-meta { font-size: 14px; color: var(--muted); }
+button.light-brand { background: #fff; color: var(--brand-dark); border: 1.5px solid #bcdde2; }
+button.light-brand:hover { background: var(--brand); color: #fff; border-color: var(--brand); box-shadow: none; }
