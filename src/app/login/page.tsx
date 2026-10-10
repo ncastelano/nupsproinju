@@ -7,7 +7,6 @@ export default function LoginPage() {
   return (
     <div className="login-wrap">
       <section className="login-brand">
-        <div className="mark">🛡️</div>
         <h1>Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho</h1>
         <p>Acompanhamento, registro e compartilhamento seguro das informações da equipe.</p>
       </section>
