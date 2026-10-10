@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
+import { FileText, Database, UserRound } from "lucide-react";
 
 const ITEMS = [
-  { href: "/formulario", label: "Formulário", icon: "📝" },
-  { href: "/banco-de-dados", label: "Banco de dados", icon: "🗂️" },
-  { href: "/perfil", label: "Meu perfil", icon: "👤" },
+  { href: "/formulario", label: "Formulário", Icon: FileText },
+  { href: "/banco-de-dados", label: "Banco de dados", Icon: Database },
+  { href: "/perfil", label: "Meu perfil", Icon: UserRound },
 ];
 
 export function Topbar({ name }: { name: string }) {
@@ -20,7 +21,7 @@ export function Topbar({ name }: { name: string }) {
         <nav className="nav">
           {ITEMS.map((i) => (
             <Link key={i.href} href={i.href} className={path.startsWith(i.href) ? "active" : ""}>
-              <span aria-hidden>{i.icon}</span> {i.label}
+              <i.Icon size={17} aria-hidden /> {i.label}
             </Link>
           ))}
         </nav>

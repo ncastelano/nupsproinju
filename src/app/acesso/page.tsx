@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getMember } from "@/lib/auth";
 import { logout } from "../login/actions";
 import { Brand } from "@/components/Brand";
+import { Ban, Hourglass } from "lucide-react";
 
 export default async function AcessoPage() {
   const m = await getMember();
@@ -14,7 +15,7 @@ export default async function AcessoPage() {
       <Brand />
       <section className="login-form">
         <div className="card grid" style={{ gap: 14, textAlign: "center" }}>
-          <div style={{ fontSize: 44 }}>{rejected ? "🚫" : "⏳"}</div>
+          <div className="ico">{rejected ? <Ban size={44} /> : <Hourglass size={44} />}</div>
           <h2 style={{ margin: 0 }}>{rejected ? "Acesso recusado" : "Aguardando aprovação"}</h2>
           <p style={{ color: "var(--muted)", margin: 0 }}>
             {rejected

@@ -157,3 +157,8 @@ button.pw-toggle:hover { background: var(--brand-soft); box-shadow: none; }
 .empty .ico, .card .ico { display: grid; place-items: center; color: var(--brand); margin-bottom: 8px; }
 .tile .ico { color: var(--brand); }
 button.pw-toggle { display: grid; place-items: center; color: var(--muted); }
+
+.nav a { display: inline-flex; align-items: center; gap: 8px; }
+.empty .ico, .card .ico { display: grid; place-items: center; color: var(--brand); margin-bottom: 8px; }
+.tile .ico { color: var(--brand); }
+button.pw-toggle { display: grid; place-items: center; color: var(--muted); }
