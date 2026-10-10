@@ -7,7 +7,8 @@ import { listAuthUsers } from "@/lib/profiles";
 export const BUCKET = "processos";
 
 export type DocMeta = {
-  id: string; title: string; source: "google" | "arquivo"; source_url?: string;
+  id: string; title: string; kind?: "formulario" | "acompanhamento";
+  source: "google" | "arquivo"; source_url?: string;
   filename: string; ext: string; size: number; chars: number; created_at: string;
   path_original: string; path_text: string;
 };

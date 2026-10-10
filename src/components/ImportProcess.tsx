@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { FileUp, Link2 } from "lucide-react";
 import { importProcess } from "@/app/(app)/usuarios/[id]/import-actions";
 
-// Exportar processo: cola o link do Google Docs ou arrasta e solta o arquivo.
-export function ImportProcess() {
+// Exportar formulário / acompanhamento: cola o link do Google Docs ou arrasta e solta o arquivo.
+export function ImportProcess({ kind }: { kind: "formulario" | "acompanhamento" }) {
+  const label = kind === "acompanhamento" ? "acompanhamento" : "formulário";
   const router = useRouter();
   const [msg, action, pending] = useActionState(importProcess, null);
   const [over, setOver] = useState(false);
@@ -28,10 +29,11 @@ export function ImportProcess() {
 
   return (
     <form ref={formRef} action={action} className="card grid" style={{ gap: 12 }}>
+      <input type="hidden" name="kind" value={kind} />
       <div>
-        <strong>Exportar processo</strong>
+        <strong>Exportar {label}</strong>
         <div style={{ color: "var(--muted)" }}>
-          Traga o documento completo para o banco de dados: cole o link do Google Docs ou arraste o arquivo.
+          Traga o {label} completo para o banco de dados: cole o link do Google Docs ou envie o arquivo.
         </div>
       </div>
 
@@ -68,8 +70,8 @@ export function ImportProcess() {
           onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} />
       </div>
 
-      <button disabled={pending}>{pending ? "Trazendo o documento..." : "Exportar processo"}</button>
-      {msg === "ok" && <p className="ok">Processo exportado. Ele aparece em “Processos exportados”.</p>}
+      <button disabled={pending}>{pending ? "Trazendo o documento..." : `Exportar ${label}`}</button>
+      {msg === "ok" && <p className="ok">Pronto. Ele aparece em “Exportados” logo abaixo.</p>}
       {msg && msg !== "ok" && <p className="error">{msg}</p>}
     </form>
   );

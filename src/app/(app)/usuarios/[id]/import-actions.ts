@@ -48,6 +48,7 @@ const sniffExt = (name: string, type: string) => {
 
 export async function importProcess(_: string | null, form: FormData) {
   const me = await requireMember();
+  const kind: DocMeta["kind"] = form.get("kind") === "acompanhamento" ? "acompanhamento" : "formulario";
   const link = String(form.get("url") ?? "").trim();
   const file = form.get("file");
 
@@ -94,7 +95,7 @@ export async function importProcess(_: string | null, form: FormData) {
 
   const title = filename.replace(/\.(docx|pdf|txt|md)$/i, "") || text.split("\n")[0].slice(0, 120);
   const r = await addDoc(me.id, {
-    id, title, source, source_url: sourceUrl, filename, ext, size: buf.length, chars: text.length,
+    id, title, kind, source, source_url: sourceUrl, filename, ext, size: buf.length, chars: text.length,
     created_at: new Date().toISOString(), path_original: `${base}.${ext}`, path_text: `${base}.txt`,
   });
   if (r.error) return "Não foi possível registrar o processo.";

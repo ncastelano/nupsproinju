@@ -76,25 +76,36 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
         </p>
       </div>
 
-      {mine && <ImportProcess />}
-
-      {docs.length > 0 && (
-        <>
-          <h2 className="section" style={{ margin: 0 }}>PROCESSOS EXPORTADOS ({docs.length})</h2>
-          <div className="user-grid">
-            {docs.map((d) => (
-              <article key={d.id} className="card user-card clickable">
-                <h3><Link href={`/documentos/${d.id}`} className="stretch">{d.title}</Link></h3>
-                <p>{d.source === "google" ? "Google Docs" : `Arquivo .${d.ext}`} · {d.chars.toLocaleString("pt-BR")} caracteres</p>
-                <p>Exportado em {new Date(d.created_at).toLocaleDateString("pt-BR")}</p>
-                <div className="row" style={{ marginTop: 6 }}>
-                  <span className="badge">Documento completo no banco</span>
-                </div>
-              </article>
-            ))}
-          </div>
-        </>
+      {mine && (
+        <div className="user-grid">
+          <ImportProcess kind="formulario" />
+          <ImportProcess kind="acompanhamento" />
+        </div>
       )}
+
+      {(["formulario", "acompanhamento"] as const).map((k) => {
+        const list = docs.filter((d) => (d.kind ?? "formulario") === k);
+        if (list.length === 0) return null;
+        return (
+          <section key={k} className="grid" style={{ gap: 12 }}>
+            <h2 className="section" style={{ margin: 0 }}>
+              {k === "formulario" ? "FORMULÁRIOS EXPORTADOS" : "ACOMPANHAMENTOS EXPORTADOS"} ({list.length})
+            </h2>
+            <div className="user-grid">
+              {list.map((d) => (
+                <article key={d.id} className="card user-card clickable">
+                  <h3><Link href={`/documentos/${d.id}`} className="stretch">{d.title}</Link></h3>
+                  <p>{d.source === "google" ? "Google Docs" : `Arquivo .${d.ext}`} · {d.chars.toLocaleString("pt-BR")} caracteres</p>
+                  <p>Exportado em {new Date(d.created_at).toLocaleDateString("pt-BR")}</p>
+                  <div className="row" style={{ marginTop: 6 }}>
+                    <span className="badge">Documento completo no banco</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        );
+      })}
 
       <h2 className="section" style={{ margin: 0 }}>FORMULÁRIOS ({records.length})</h2>
       {records.length === 0 ? (
