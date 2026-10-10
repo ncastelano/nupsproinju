@@ -30,7 +30,7 @@ export default async function Home() {
       isAdmin={m.role === "admin"}
       avatarUrl={m.avatar_url}
       registry={m.registry}
-      professional={m.registry ? { name, registry: m.registry } : null}
+      professional={{ name, registry: m.registry }}
       cards={cards}
     />
   );

@@ -10,7 +10,7 @@ import { Avatar } from "./Avatar";
 
 type Props = {
   name: string; email: string; isAdmin: boolean; avatarUrl: string | null;
-  registry: string; professional: Professional | null; cards: Card[];
+  registry: string; professional: Professional; cards: Card[];
 };
 
 export function AppShell({ name, email, isAdmin, avatarUrl, registry, professional, cards }: Props) {

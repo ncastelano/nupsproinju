@@ -5,7 +5,7 @@ import type { Professional } from "./ProfileForm";
 
 export function AcolhimentoForm({
   professional, onSaved, goProfile,
-}: { professional: Professional | null; onSaved: () => void; goProfile: () => void }) {
+}: { professional: Professional; onSaved: () => void; goProfile: () => void }) {
   const [msg, action, pending] = useActionState(createAcolhimento, null);
   const [modality, setModality] = useState("");
   const [related, setRelated] = useState("");
@@ -15,22 +15,23 @@ export function AcolhimentoForm({
     if (msg === "ok") { ref.current?.reset(); setModality(""); setRelated(""); onSaved(); }
   }, [msg]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!professional) {
-    return (
-      <div className="card empty">
-        <h3>Falta o seu CRP ou CRESS</h3>
-        <p>Informe o seu registro profissional no perfil para assinar os formulários.</p>
-        <button type="button" onClick={goProfile}>Abrir meu perfil</button>
-      </div>
-    );
-  }
+  const missing = !professional.registry;
 
   return (
     <form ref={ref} action={action} className="grid" style={{ gap: 14 }}>
       <div className="card grid">
         <div className="field">
-          <span>1. Profissional responsável pelo acompanhamento</span>
-          <div className="linked">{professional.name} · {professional.registry}</div>
+          <span>1. Profissional responsável pelo acompanhamento *</span>
+          <div className="linked">
+            {professional.name}{professional.registry ? ` - ${professional.registry}` : ""}
+          </div>
+          <small>Preenchido automaticamente com a pessoa que está logada.</small>
+          {missing && (
+            <div className="row">
+              <span style={{ color: "var(--danger)" }}>Falta o seu CRP ou CRESS para assinar.</span>
+              <button type="button" className="ghost" onClick={goProfile}>Informar no perfil</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -103,7 +104,7 @@ export function AcolhimentoForm({
           <textarea name="procedures" rows={6} required /></label>
       </div>
 
-      <button disabled={pending}>{pending ? "Salvando..." : "Salvar e gerar o texto"}</button>
+      <button disabled={pending || missing}>{pending ? "Salvando..." : "Salvar e gerar o texto"}</button>
       {msg && msg !== "ok" && <p className="error">{msg}</p>}
     </form>
   );
