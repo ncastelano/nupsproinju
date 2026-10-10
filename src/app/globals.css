@@ -395,3 +395,9 @@ button.who-btn { padding: 6px 14px 6px 6px; flex: 0 1 auto; }
 .slug-prefix { display: flex; align-items: center; gap: 0; }
 .slug-prefix > span { padding: 12px 0 12px 14px; color: rgba(255,255,255,.7); white-space: nowrap; }
 .slug-prefix input { border-left: 0; }
+.expander .share-pop { position: static; margin-top: 8px; }
+.expander .share { display: block; }
+.mini-rec.dark { background: var(--brand-soft); color: var(--text); }
+.mini-rec.dark:hover { background: #cfe6ea; }
+
+.avatar.on-light { background: var(--brand-soft); color: var(--brand); }

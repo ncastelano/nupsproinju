@@ -4,9 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { Header, type MyRecord } from "@/components/Header";
 import { NavTabs } from "@/components/NavTabs";
 import { FORM_KEY } from "@/lib/forms";
+import { ensureSlug } from "@/lib/profiles";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const m = await requireMember();
+  const profileslug = await ensureSlug({ id: m.id, name: m.name, email: m.email, profileslug: m.profileslug });
   const supabase = await createClient();
   const { data } = await supabase
     .from("intake_records").select("id, answers")
@@ -25,7 +27,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         email={m.email}
         avatarUrl={m.avatar_url ?? null}
         registry={m.registry ?? ""}
-        profileslug={m.profileslug ?? ""}
+        profileslug={profileslug}
         records={records}
       />
       <div className="container grid" style={{ gap: 16 }}>

@@ -54,3 +54,21 @@ export async function isSlugTaken(slug: string, exceptId: string) {
   const users = await listAuthUsers();
   return users.some((u) => u.id !== exceptId && u.user_metadata?.profileslug === slug);
 }
+
+// Quem ainda não escolheu endereço ganha um padrão (baseado no nome), que pode trocar depois.
+export async function ensureSlug(me: { id: string; name: string; email: string; profileslug: string }) {
+  if (me.profileslug) return me.profileslug;
+  const users = await listAuthUsers();
+  const taken = new Set(users.filter((u) => u.id !== me.id).map((u) => String(u.user_metadata?.profileslug ?? "")));
+  let base = cleanSlug(me.name || me.email.split("@")[0]).slice(0, 26).replace(/-$/, "");
+  if (slugError(base)) base = `perfil-${me.id.slice(0, 6)}`;
+  let slug = base;
+  for (let i = 2; taken.has(slug); i++) slug = `${base}-${i}`;
+
+  const admin = createAdminClient();
+  const { data: cur } = await admin.auth.admin.getUserById(me.id);
+  await admin.auth.admin.updateUserById(me.id, {
+    user_metadata: { ...(cur.user?.user_metadata ?? {}), profileslug: slug },
+  });
+  return slug;
+}

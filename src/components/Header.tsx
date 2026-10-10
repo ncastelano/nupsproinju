@@ -55,20 +55,6 @@ export function Header({ userId, name, email, avatarUrl, registry, profileslug, 
             <span className="sheet-sub">{email}</span>
             <ProfileForm name={name} avatarUrl={avatarUrl} registry={registry} profileslug={profileslug} />
 
-            <div className="grid" style={{ gap: 8 }}>
-              <span className="sheet-sub">Meus cadastros ({records.length})</span>
-              {records.length === 0 && <span className="sheet-sub">Nenhum cadastro ainda.</span>}
-              {records.slice(0, 5).map((r) => (
-                <Link key={r.id} href={`/cadastrados/${r.id}`} className="mini-rec" onClick={() => setOpen(false)}>
-                  <FolderOpen size={16} />
-                  <span><strong>{r.nome}</strong>{r.processo ? ` · Proc. ${r.processo}` : ""}</span>
-                </Link>
-              ))}
-              <Link href={`/usuarios/${userId}`} onClick={() => setOpen(false)}>
-                <button type="button" className="light">Ver todos os meus cadastros</button>
-              </Link>
-            </div>
-
             <div className="row" style={{ justifyContent: "center" }}>
               <form action={logout}><button className="light"><LogOut size={18} /> Sair</button></form>
               <button type="button" className="light" onClick={() => setOpen(false)}><ChevronUp size={18} /> Fechar</button>

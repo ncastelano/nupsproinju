@@ -54,7 +54,7 @@ export function ProfileForm({
     <form action={action} className="grid" style={{ gap: 14 }}>
       <div className="row" style={{ gap: 10 }}>
         {profileslug ? (
-          <Link href={`/${profileslug}`} target="_blank"><button type="button" className="light">Ver perfil</button></Link>
+          <Link href={`/${profileslug}`}><button type="button" className="light">Ver perfil</button></Link>
         ) : (
           <button type="button" className="light" disabled title="Defina o endereço do perfil abaixo e salve">Ver perfil</button>
         )}
