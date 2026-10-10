@@ -54,7 +54,12 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       .filter((r) => metaOf(r.answers as Record<string, unknown>).shared.some((s) => s.id === id))
       .map((r) => ({ id: r.id as string, answers: r.answers as Answers, owner: names.get(r.created_by as string) ?? "" }));
   }
-  const withFollowup = records.filter((r) => r.followup);
+  // um cartão por acompanhamento (um formulário pode ter vários, um por reavaliação)
+  const entries = records.flatMap((r) => {
+    const all = metaOf(r.answers as Record<string, unknown>).followups;
+    const list = all.length ? all : r.followup ? [{ at: r.followup_at ?? r.created_at, answers: r.followup }] : [];
+    return list.map((f) => ({ r, f }));
+  }).sort((a, b) => b.f.at.localeCompare(a.f.at));
 
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -151,17 +156,17 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         </>
       )}
 
-      {showA && <h2 className="section" style={{ margin: 0 }}>ACOMPANHAMENTOS ({withFollowup.length})</h2>}
-      {showA && (withFollowup.length === 0 ? (
+      {showA && <h2 className="section" style={{ margin: 0 }}>ACOMPANHAMENTOS ({entries.length})</h2>}
+      {showA && (entries.length === 0 ? (
         <div className="card empty"><p>Nenhum acompanhamento preenchido ainda.</p></div>
       ) : (
         <div className="user-grid">
-          {withFollowup.map((r) => (
-            <article key={r.id} className="card user-card clickable">
+          {entries.map(({ r, f }, i) => (
+            <article key={`${r.id}-${f.at}-${i}`} className="card user-card clickable">
               <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
-              <p>
-                Reavaliação {r.followup?.acomp_2?.value ? formatDate(r.followup.acomp_2.value) : "—"}
-              </p>
+              <p>Reavaliação {f.answers.acomp_2?.value ? formatDate(f.answers.acomp_2.value) : new Date(f.at).toLocaleDateString("pt-BR")}</p>
+              {f.answers.acomp_1?.value && <p>{f.answers.acomp_1.value}</p>}
+              <p>Proc. {r.answers.processo?.value ?? "—"}</p>
               <div className="row" style={{ marginTop: 8 }}>
                 <Link href={`/cadastrados/${r.id}`}><button className="ghost"><FileText size={16} /> Ver acompanhamento</button></Link>
                 <Link href={`/banco-de-dados/${r.id}/resumo`}><button className="ghost">Resumo A4</button></Link>

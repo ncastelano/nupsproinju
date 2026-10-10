@@ -8,8 +8,10 @@ export type HistoryEntry = {
   changes: { label: string; from: string; to: string }[];
   note?: string;
 };
+export type FollowupEntry = { at: string; by_name: string; answers: Ans };
 export type RecMeta = {
   shared: { id: string; name: string }[];
+  followups: FollowupEntry[]; // todos os acompanhamentos (o mais recente também fica em "followup")
   history: HistoryEntry[];
   editing: Record<string, { name: string; scope: Scope; since: string }>;
 };
@@ -27,7 +29,7 @@ export function metaOf(raw: Record<string, unknown>): RecMeta {
   const editing = Object.fromEntries(
     Object.entries(m.editing ?? {}).filter(([, v]) => now - new Date(v.since).getTime() < STALE_MS),
   );
-  return { shared: m.shared ?? [], history: m.history ?? [], editing };
+  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing };
 }
 
 export async function loadRecord(id: string): Promise<Rec | null> {

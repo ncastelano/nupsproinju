@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_ACOMP, FORM_KEY } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
 import { accessOf, loadRecord, type Ans } from "@/lib/records";
-import { formatDate } from "@/components/RecordView";
+import { RecordView, formatDate } from "@/components/RecordView";
 import { ShareMenu } from "@/components/ShareMenu";
 import { RecordSection } from "@/components/RecordSection";
 import { deleteRecord, shareRecord, unshareRecord } from "../records-actions";
@@ -130,6 +130,21 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
         raw={rec.followup} view={fmt(rec.followup)} questions={ac.questions}
         emptyText="Ainda não preenchido."
       />
+
+      {rec.meta.followups.length > 1 && (
+        <div className="card grid" style={{ gap: 10 }}>
+          <h2 style={{ margin: 0 }}>Acompanhamentos anteriores ({rec.meta.followups.length - 1})</h2>
+          {[...rec.meta.followups].reverse().slice(1).map((f, i) => (
+            <details key={`${f.at}-${i}`} className="hist-det">
+              <summary>
+                Reavaliação {f.answers.acomp_2?.value ? formatDate(f.answers.acomp_2.value) : new Date(f.at).toLocaleDateString("pt-BR")}
+                {f.answers.acomp_1?.value ? ` · ${f.answers.acomp_1.value}` : ""}
+              </summary>
+              <div style={{ marginTop: 10 }}><RecordView answers={fmt(f.answers)!} questions={ac.questions} /></div>
+            </details>
+          ))}
+        </div>
+      )}
 
       <div className="card grid" style={{ gap: 10 }}>
         <h2 style={{ margin: 0 }}><History size={18} style={{ verticalAlign: "-3px" }} /> Alterações</h2>

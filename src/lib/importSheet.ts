@@ -27,9 +27,11 @@ const KNOWN: [string, string][] = [
   ["existem outros processos judiciais relacionados a crianca/adolescente?", "outros_processos"],
   ["se sim, informe o(s) numero(s) do(s) processo(s) relacionado(s)", "outros_processos_numeros"],
 ];
-const keyOf = (h: string, i: number) => {
+export const normLabel = norm;
+const keyOf = (h: string, i: number, extra?: Map<string, string>) => {
   const n = norm(h);
-  return KNOWN.find(([k]) => k === n)?.[1] ?? `c${String(i).padStart(2, "0")}_${n.replace(/[^a-z0-9]+/g, "_").slice(0, 40)}`;
+  return extra?.get(n) ?? KNOWN.find(([k]) => k === n)?.[1]
+    ?? `c${String(i).padStart(2, "0")}_${n.replace(/[^a-z0-9]+/g, "_").slice(0, 40)}`;
 };
 
 const isoDate = (v: string) => {
@@ -41,7 +43,8 @@ function stamp(v: string): string | null {
   return m ? new Date(`${m[3]}-${m[2]}-${m[1]}T${m[4]}:${m[5]}:${m[6]}-04:00`).toISOString() : null; // Porto Velho (UTC-4)
 }
 
-export function readSheet(csv: string): { rows: SheetRow[]; headers: string[] } {
+// extra: texto normalizado da pergunta -> chave (perguntas do modelo, ex.: acompanhamento)
+export function readSheet(csv: string, extra?: Map<string, string>): { rows: SheetRow[]; headers: string[] } {
   const table = parseCsv(csv);
   if (table.length < 2) return { rows: [], headers: [] };
   const headers = table[0].map((h) => h.trim());
@@ -53,8 +56,8 @@ export function readSheet(csv: string): { rows: SheetRow[]; headers: string[] } 
       if (i === tsCol || !h) return;
       let v = (cells[i] ?? "").trim();
       if (!v) return;
-      const key = keyOf(h, i);
-      if (key === "data_acolhimento") v = isoDate(v);
+      const key = keyOf(h, i, extra);
+      if (key === "data_acolhimento" || key === "acomp_2") v = isoDate(v);
       answers[key] = { label: h, value: v };
     });
     if (Object.keys(answers).length === 0) continue;

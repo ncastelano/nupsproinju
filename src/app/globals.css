@@ -475,3 +475,6 @@ button.light-brand:hover { background: var(--brand); color: #fff; border-color: 
   .only-touch { display: block; }
   .dropzone { padding: 26px 16px; }
 }
+
+.hist-det { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; }
+.hist-det summary { cursor: pointer; font-weight: 600; }
