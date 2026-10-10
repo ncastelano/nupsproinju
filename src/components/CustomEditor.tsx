@@ -1,10 +1,19 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { TYPE_LABEL, type Question, type QuestionType } from "@/lib/forms";
 import { addCustomQuestion, deleteCustomQuestion } from "@/app/(app)/formulario/custom-actions";
 
 const NEEDS_OPTIONS: QuestionType[] = ["select", "radio", "radio_other", "checkbox"];
+// Jeitos de responder, em linguagem simples.
+const HOW: Partial<Record<QuestionType, string>> = {
+  text: "Campo para escrever (resposta curta)",
+  textarea: "Campo para escrever (resposta longa)",
+  radio: "Escolher uma entre as opções",
+  radio_other: "Escolher uma opção ou escrever outra",
+  checkbox: "Marcar várias opções",
+  date: "Data",
+};
 
 // "Editar": a pessoa acrescenta perguntas ao cadastro e dá um nome para o tipo de cadastro dela.
 export function CustomEditor({
@@ -21,7 +30,7 @@ export function CustomEditor({
     <div className="grid" style={{ gap: 12 }}>
       <div className="row">
         <button type="button" className="ghost" onClick={() => setOpen((o) => !o)}>
-          {open ? <X size={16} /> : <Pencil size={16} />} {open ? "Fechar edição" : "Editar"}
+          {open ? <X size={16} /> : <Plus size={16} />} {open ? "Fechar" : "Adicionar uma pergunta"}
         </button>
         {typeName && <span className="badge">Formulário: {typeName}</span>}
       </div>
@@ -54,15 +63,15 @@ export function CustomEditor({
             </label>
             <label className="field"><span>Pergunta *</span>
               <input name="label" required placeholder="Ex.: Situação escolar" /></label>
-            <label className="field"><span>Texto de ajuda (opcional)</span>
+            <label className="field"><span>Frase de apoio (opcional)</span>
               <input name="help" /></label>
-            <label className="field"><span>Tipo de resposta</span>
+            <label className="field"><span>Como a pessoa responde?</span>
               <select name="type" value={type} onChange={(e) => setType(e.target.value as QuestionType)}>
-                {(Object.keys(TYPE_LABEL) as QuestionType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+                {(Object.keys(HOW) as QuestionType[]).map((t) => <option key={t} value={t}>{HOW[t]}</option>)}
               </select>
             </label>
             {NEEDS_OPTIONS.includes(type) && (
-              <label className="field"><span>Respostas prontas (uma por linha)</span>
+              <label className="field"><span>Opções de resposta (uma por linha)</span>
                 <textarea name="options" rows={4} placeholder={"Sim\nNão\nNão se aplica"} />
                 {type === "radio_other" && <small>A opção “Outro”, para escrever, é acrescentada automaticamente.</small>}
               </label>

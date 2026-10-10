@@ -48,11 +48,6 @@ export default async function FormularioPage({
         <IntakeForm key={formKey} formKey={formKey} professional={professional} hasRegistry={!!me.registry} questions={questions}
           extra={<CustomEditor formKey={formKey} typeName={typeName} extras={questions.filter((q) => q.key.startsWith("x_"))} />} acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
       )}
-      {me.role === "admin" && (
-        <Link href={`/formulario/editar?form=${formKey}`} className="row" style={{ fontSize: 14 }}>
-          <Settings2 size={14} /> Editar as perguntas do modelo (administrador)
-        </Link>
-      )}
     </div>
   );
 }
