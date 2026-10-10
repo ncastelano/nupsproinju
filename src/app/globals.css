@@ -102,20 +102,6 @@ label.check { display: flex; align-items: center; gap: 8px; width: auto; }
   .login-brand { border-radius: 0 0 var(--radius) var(--radius); padding: 32px 24px; }
 }
 
-/* Navbar */
-.nav { display: flex; gap: 6px; flex-wrap: wrap; }
-.nav a {
-  color: #fff; padding: 9px 16px; border-radius: 999px; font-weight: 600;
-  background: rgba(255,255,255,.1); transition: background .15s;
-}
-.nav a:hover { background: rgba(255,255,255,.22); text-decoration: none; }
-.nav a.active { background: #fff; color: var(--brand-dark); }
-.topbar .who { opacity: .85; font-size: 14px; }
-@media (max-width: 760px) {
-  .topbar .inner { flex-direction: column; align-items: stretch; }
-  .nav { justify-content: center; }
-  .topbar form.row { justify-content: space-between; }
-}
 .tile {
   display: block; color: inherit; background: var(--card); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 22px; transition: transform .1s, box-shadow .15s, border-color .15s;
@@ -153,12 +139,10 @@ button.pw-toggle {
 }
 button.pw-toggle:hover { background: var(--brand-soft); box-shadow: none; }
 
-.nav a { display: inline-flex; align-items: center; gap: 8px; }
 .empty .ico, .card .ico { display: grid; place-items: center; color: var(--brand); margin-bottom: 8px; }
 .tile .ico { color: var(--brand); }
 button.pw-toggle { display: grid; place-items: center; color: var(--muted); }
 
-.nav a { display: inline-flex; align-items: center; gap: 8px; }
 .empty .ico, .card .ico { display: grid; place-items: center; color: var(--brand); margin-bottom: 8px; }
 .tile .ico { color: var(--brand); }
 button.pw-toggle { display: grid; place-items: center; color: var(--muted); }
@@ -266,3 +250,30 @@ dialog.big::backdrop { background: rgba(7,40,46,.55); backdrop-filter: blur(2px)
 .ac-check { background: var(--brand); color: #fff; border-radius: 999px; width: 24px; height: 24px; display: grid; place-items: center; flex: none; }
 .ac-line { color: var(--muted); font-size: 14px; }
 .acolhido-card .badge { width: fit-content; }
+
+/* Topo + perfil que desce cobrindo a página */
+.topbar { position: sticky; top: 0; z-index: 60; }
+.topbar.open { border-radius: 0; }
+button.who-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.16); max-width: 60vw;
+}
+.who-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who-btn .chev { transition: transform .3s; flex: none; }
+.topbar.open .who-btn .chev { transform: rotate(180deg); }
+.profile-sheet {
+  position: fixed; inset: 0; z-index: 50; overflow-y: auto;
+  padding: 96px 16px 40px;
+  background:
+    radial-gradient(circle at 85% 10%, rgba(232,163,61,.3), transparent 45%),
+    linear-gradient(160deg, var(--brand-dark), var(--brand));
+  transform: translateY(-102%); visibility: hidden;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: transform .45s cubic-bezier(.2,.8,.2,1), visibility 0s .45s;
+}
+.profile-sheet.open { transform: translateY(0); visibility: visible; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+.profile-inner { max-width: 520px; margin: 0 auto; display: grid; gap: 16px; }
+button.light { background: rgba(255,255,255,.16); display: inline-flex; gap: 8px; align-items: center; }
+button.light:hover { background: rgba(255,255,255,.28); box-shadow: none; }
+label.field { display: grid; gap: 6px; font-weight: 600; width: 100%; }
+label.field > span { color: var(--muted); font-size: 14px; }

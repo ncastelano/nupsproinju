@@ -1,6 +1,11 @@
-import { redirect } from "next/navigation";
+import { FileText } from "lucide-react";
 
-// A primeira página do sistema é o formulário.
 export default function Home() {
-  redirect("/formulario");
+  return (
+    <div className="card empty" style={{ marginTop: 16 }}>
+      <div className="ico"><FileText size={44} /></div>
+      <h2>Os campos entram aqui</h2>
+      <p>Esta é a página principal. Mande os campos do formulário e eu monto.</p>
+    </div>
+  );
 }
