@@ -13,6 +13,7 @@ export type AcolhimentoRow = {
   has_related_processes: "sim" | "nao" | "nao_verificado";
   related_processes: string;
   procedures: string;
+  extra_answers?: { label: string; value: string }[];
 };
 
 const fmt = (d: string) => (d ? d.split("-").reverse().join("/") : "");
@@ -51,6 +52,8 @@ export function buildNarrative(a: AcolhimentoRow, professional: string): string 
 
   const procs = a.procedures.split("\n").map((l) => l.trim()).filter(Boolean);
   out.push(`Procedimentos realizados na avaliação inicial:\n${procs.map((p) => `• ${p}`).join("\n")}`);
+
+  for (const e of a.extra_answers ?? []) out.push(`${e.label}: ${e.value}`);
 
   if (professional) out.push(`Profissional responsável pelo acompanhamento: ${professional}.`);
   return out.join("\n\n");

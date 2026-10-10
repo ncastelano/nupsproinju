@@ -7,13 +7,14 @@ import { ProfileForm, type Professional } from "./ProfileForm";
 import { AcolhimentoForm } from "./AcolhimentoForm";
 import { AcompanhamentoList, type Card } from "./AcompanhamentoList";
 import { Avatar } from "./Avatar";
+import type { FormQuestion } from "./QuestionEditor";
 
 type Props = {
   name: string; email: string; isAdmin: boolean; avatarUrl: string | null;
-  registry: string; professional: Professional; cards: Card[];
+  registry: string; professional: Professional; cards: Card[]; questions: FormQuestion[];
 };
 
-export function AppShell({ name, email, isAdmin, avatarUrl, registry, professional, cards }: Props) {
+export function AppShell({ name, email, isAdmin, avatarUrl, registry, professional, cards, questions }: Props) {
   const [tab, setTab] = useState<"novo" | "acompanhamento">("novo");
   const [open, setOpen] = useState(false);
   const [headH, setHeadH] = useState(72);
@@ -79,6 +80,8 @@ export function AppShell({ name, email, isAdmin, avatarUrl, registry, profession
         {tab === "novo" ? (
           <AcolhimentoForm
             professional={professional}
+            questions={questions}
+            isAdmin={isAdmin}
             onSaved={() => setTab("acompanhamento")}
             goProfile={() => setOpen(true)}
           />

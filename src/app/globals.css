@@ -355,3 +355,10 @@ button.who-btn { padding: 6px 14px 6px 6px; flex: 0 1 auto; }
 .expander .row, .expander-inner > .row { gap: 10px; }
 .subtabs a button { background: var(--brand-soft); color: var(--brand-dark); }
 .subtabs a { display: inline-block; }
+
+/* Uma pergunta por cartão */
+.qcard { padding: 18px 20px; }
+.qrow {
+  display: flex; gap: 12px; align-items: center; justify-content: space-between;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px;
+}

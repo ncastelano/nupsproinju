@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireMember } from "@/lib/auth";
+import { requireAdmin, requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -74,7 +74,18 @@ export async function createAcolhimento(_: string | null, form: FormData) {
   if (s("modality") === "Outro" && !s("modality_other")) return "Informe qual é a outra modalidade.";
 
   const supabase = await createClient();
-  const { error } = await supabase.from("acolhimentos").insert(row);
+
+  // perguntas extras criadas pelo administrador
+  const { data: qs } = await supabase.from("form_questions").select("*").order("position");
+  const extra: { label: string; value: string }[] = [];
+  for (const q of qs ?? []) {
+    let v = s(`q_${q.id}`);
+    if (v === "__other") v = s(`q_${q.id}_other`);
+    if (q.required && !v) return `Responda: ${q.label}`;
+    if (v) extra.push({ label: q.label, value: v });
+  }
+
+  const { error } = await supabase.from("acolhimentos").insert({ ...row, extra_answers: extra });
   if (error) return "Não foi possível salvar. Tente novamente.";
   revalidatePath("/");
   return "ok";
@@ -84,5 +95,40 @@ export async function deleteAcolhimento(form: FormData) {
   await requireMember();
   const supabase = await createClient();
   await supabase.from("acolhimentos").delete().eq("id", String(form.get("id")));
+  revalidatePath("/");
+}
+
+const KINDS = ["text", "textarea", "date", "choice", "choice_other"];
+
+export async function createQuestion(_: string | null, form: FormData) {
+  await requireAdmin();
+  const label = String(form.get("label") ?? "").trim();
+  const help = String(form.get("help") ?? "").trim();
+  const kind = String(form.get("kind") ?? "");
+  const required = form.get("required") === "on";
+  const options = String(form.get("options") ?? "")
+    .split("\n").map((o) => o.trim()).filter(Boolean);
+  if (!label) return "Escreva a pergunta.";
+  if (!KINDS.includes(kind)) return "Escolha o tipo de resposta.";
+  if ((kind === "choice" || kind === "choice_other") && options.length < 2) {
+    return "Informe pelo menos 2 respostas prontas (uma por linha).";
+  }
+
+  const admin = createAdminClient();
+  const { data: last } = await admin
+    .from("form_questions").select("position").order("position", { ascending: false }).limit(1);
+  const position = (last?.[0]?.position ?? 0) + 1;
+  const { error } = await admin.from("form_questions").insert({
+    label, help, kind, required, position,
+    options: kind === "choice" || kind === "choice_other" ? options : [],
+  });
+  if (error) return "Não foi possível salvar a pergunta.";
+  revalidatePath("/");
+  return "ok";
+}
+
+export async function deleteQuestion(form: FormData) {
+  await requireAdmin();
+  await createAdminClient().from("form_questions").delete().eq("id", String(form.get("id")));
   revalidatePath("/");
 }
