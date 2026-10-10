@@ -119,3 +119,25 @@ export async function deleteRecord(form: FormData) {
   const { redirect } = await import("next/navigation");
   redirect(`/usuarios/${me.id}`);
 }
+
+// Apaga só este acompanhamento (a reavaliação), sem mexer no cadastro inicial.
+export async function deleteFollowup(form: FormData) {
+  const id = String(form.get("record_id"));
+  const at = String(form.get("at"));
+  const { me, rec, acc } = await open(id);
+  if (!acc.owner && !acc.admin) return;
+
+  const meta = rec.meta;
+  let list = meta.followups;
+  if (list.length === 0 && rec.followup) list = [{ at: at, by_name: "", answers: rec.followup }];
+  const kept = list.filter((f) => f.at !== at);
+  meta.followups = kept;
+  meta.history.unshift({
+    at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email,
+    scope: "acompanhamento", changes: [], note: "apagou um acompanhamento",
+  });
+  const latest = kept.length ? [...kept].sort((a, b) => a.at.localeCompare(b.at))[kept.length - 1] : null;
+  const r = await saveRecord(rec, { followup: latest ? latest.answers : null, ...(latest ? { followupAt: latest.at } : {}) }, meta);
+  if (r.error) return;
+  done(id);
+}

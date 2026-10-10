@@ -10,7 +10,7 @@ const formKeyOf = (f: FormData) => {
   const k = String(f.get("form_key"));
   return (FORM_KEYS as readonly string[]).includes(k) ? k : FORM_KEY;
 };
-const done = () => { revalidatePath("/cadastrar-pessoa"); revalidatePath("/cadastrar-pessoa/editar"); };
+const done = () => { revalidatePath("/cadastro-inicial"); revalidatePath("/cadastro-inicial/editar"); };
 const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
 
 function fields(form: FormData) {

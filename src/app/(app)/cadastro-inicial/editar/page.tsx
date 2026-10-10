@@ -23,7 +23,7 @@ export default async function EditarFormularioPage({
   await requireAdmin();
   const f = (await searchParams).form ?? "";
   const formKey = (FORM_KEYS as readonly string[]).includes(f) ? f : FORM_KEY;
-  const back = formKey === "acompanhamento" ? "/cadastrar-pessoa?aba=acompanhamento" : "/cadastrar-pessoa";
+  const back = formKey === "acompanhamento" ? "/cadastro-inicial?aba=acompanhamento" : "/cadastro-inicial";
   const supabase = await createClient();
   const { data } = await supabase.from("form_questions").select("*").eq("form_key", formKey).order("position");
   const questions = (data ?? []) as Question[];

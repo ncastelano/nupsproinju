@@ -10,6 +10,7 @@ import { Avatar } from "@/components/Avatar";
 import { metaOf } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
 import { ExportButton } from "@/components/ExportButton";
+import { FollowupActions } from "@/components/FollowupActions";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -86,7 +87,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       </div>
       {mine && (
         <div className="row">
-          {showF && <Link href="/cadastrar-pessoa"><button><Plus size={16} /> Novo cadastro inicial</button></Link>}
+          {showF && <Link href="/cadastro-inicial"><button><Plus size={16} /> Novo cadastro inicial</button></Link>}
           {showF && <ExportButton kind="formulario" />}
           {showA && <ExportButton kind="acompanhamento" />}
         </div>
@@ -136,7 +137,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
               <div className="row" style={{ marginTop: 8 }}>
                 <Link href={`/cadastrados/${r.id}`}><button className="ghost"><FolderOpen size={16} /> Ficha</button></Link>
                 {mine && (
-                  <Link href={`/cadastrar-pessoa?aba=acompanhamento&acolhido=${r.id}`}>
+                  <Link href={`/cadastro-inicial?aba=acompanhamento&acolhido=${r.id}`}>
                     <button className="ghost"><ClipboardPen size={16} /> Acompanhar</button>
                   </Link>
                 )}
@@ -175,10 +176,11 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
               <p>Reavaliação {f.answers.acomp_2?.value ? formatDate(f.answers.acomp_2.value) : new Date(f.at).toLocaleDateString("pt-BR")}</p>
               {f.answers.acomp_1?.value && <p>{f.answers.acomp_1.value}</p>}
               <p>Proc. {r.answers.processo?.value ?? "—"}</p>
-              <div className="row" style={{ marginTop: 8 }}>
-                <Link href={`/cadastrados/${r.id}`}><button className="ghost"><FileText size={16} /> Ver acompanhamento</button></Link>
-                <Link href={`/banco-de-dados/${r.id}/resumo`}><button className="ghost">Resumo A4</button></Link>
-              </div>
+              {mine && (
+                <div className="row" style={{ marginTop: 8 }}>
+                  <FollowupActions recordId={r.id} at={f.at} nome={r.answers.nomes?.value ?? "(sem nome)"} />
+                </div>
+              )}
             </article>
           ))}
         </div>

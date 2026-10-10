@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 export function NavTabs({ userId, isAdmin }: { userId: string; isAdmin: boolean }) {
   const path = usePathname();
   const items = [
-    { href: "/cadastro-inicial", label: "Cadastro inicial", on: path === "/cadastro-inicial" || path.startsWith("/cadastrar-pessoa") || path.startsWith("/cadastrados") || path.startsWith("/documentos") },
+    { href: "/cadastros", label: "Cadastro inicial", on: path === "/cadastros" || path.startsWith("/cadastro-inicial") || path.startsWith("/cadastrados") || path.startsWith("/documentos") },
     { href: "/acompanhamentos", label: "Acompanhamentos", on: path === "/acompanhamentos" },
     ...(isAdmin ? [{ href: "/usuarios", label: "Usuários", on: path.startsWith("/usuarios") }] : []),
   ];

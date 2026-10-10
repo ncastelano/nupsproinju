@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Pencil, X } from "lucide-react";
 import { PROFESSIONAL_KEYS, type Question } from "@/lib/forms";
 import { RecordView } from "@/components/RecordView";
-import { Field } from "@/app/(app)/cadastrar-pessoa/IntakeForm";
+import { Field } from "@/app/(app)/cadastro-inicial/IntakeForm";
 import { saveRecordEdit, startEdit, stopEdit } from "@/app/(app)/cadastrados/records-actions";
 import type { Ans, Scope } from "@/lib/records";
 

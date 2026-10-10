@@ -54,7 +54,7 @@ export function RecordList({ items, questions }: { items: Item[]; questions: Que
               <strong>Resumo do acompanhamento</strong>
               <div className="row">
                 <Link href={`/banco-de-dados/${current.id}/resumo`}><button className="ghost"><Printer size={16} /> Imprimir</button></Link>
-                <Link href={`/cadastrar-pessoa?aba=acompanhamento&acolhido=${current.id}`}><button className="ghost"><ClipboardPen size={16} /> Editar</button></Link>
+                <Link href={`/cadastro-inicial?aba=acompanhamento&acolhido=${current.id}`}><button className="ghost"><ClipboardPen size={16} /> Editar</button></Link>
                 <Link href={`/banco-de-dados/${current.id}`}><button className="ghost"><ExternalLink size={16} /> Ficha completa</button></Link>
                 <button className="ghost" aria-label="Fechar" onClick={() => setOpenId(null)}><X size={18} /></button>
               </div>
