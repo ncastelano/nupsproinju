@@ -409,3 +409,28 @@ button.who-btn { padding: 6px 14px 6px 6px; flex: 0 1 auto; }
 .user-card .stretch::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius); }
 .user-card .stretch:hover { text-decoration: none; }
 .user-card .row, .user-card .badge { position: relative; z-index: 1; }
+
+/* ===== Início: perfil aberto empurra a página; ao ir para uma página, sobe ===== */
+.topbar {
+  position: sticky; top: 0; z-index: 60;
+  overflow: hidden; max-height: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: border-radius .4s;
+}
+.topbar.open { position: relative; }
+.topbar .inner { padding: 16px 20px; min-height: 72px; }
+.expander {
+  display: grid; grid-template-rows: 0fr; max-height: none; overflow: visible;
+  transition: grid-template-rows .6s cubic-bezier(.22,.9,.3,1);
+}
+.topbar.open .expander { grid-template-rows: 1fr; max-height: none; }
+.expander-clip { overflow: hidden; min-height: 0; }
+.expander-inner { max-width: 560px; margin: 0 auto; padding: 0 20px 28px; display: grid; gap: 14px; }
+.topbar .who-btn .chev { transition: transform .4s; }
+.topbar.open .who-btn .chev { transform: rotate(180deg); }
+.page-in { animation: pageIn .6s cubic-bezier(.22,.9,.3,1) both; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .page-in { animation: none; }
+  .expander { transition: none; }
+}

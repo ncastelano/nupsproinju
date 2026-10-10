@@ -1,6 +1,5 @@
 "use client";
 import { Fragment, useActionState, useState, type ReactNode } from "react";
-import { BackButton } from "@/components/BackButton";
 import { CheckCircle2, Check } from "lucide-react";
 import { RecordView, formatDate } from "@/components/RecordView";
 import { OTHER_PREFIX, PROFESSIONAL_KEYS, type Question } from "@/lib/forms";
@@ -174,7 +173,6 @@ export function IntakeForm({
 
     {msg && msg !== "ok" && <p className="error">{msg}</p>}
     <div className="row">
-      <BackButton />
       {(!acolhidos || current) && (
         <button type="submit" form="intake-form" disabled={pending}>{pending ? "Salvando..." : "Salvar"}</button>
       )}
