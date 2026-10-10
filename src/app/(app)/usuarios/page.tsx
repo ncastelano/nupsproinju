@@ -76,6 +76,9 @@ export default async function UsuariosPage() {
               <PasswordInput name="password" placeholder="Nova senha (opcional)" />
               <button className="ghost">Salvar</button>
             </form>
+            <div className="row">
+              <Link href={`/usuarios/${m.id}`}><button type="button" className="ghost">Ver cadastros e acompanhamentos</button></Link>
+            </div>
             {m.id !== me.id && (
               <div className="row">
                 {m.status === "approved"

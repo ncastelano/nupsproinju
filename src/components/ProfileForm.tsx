@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useRef, useState, useTransition } from "react";
 import { Camera, ChevronDown } from "lucide-react";
-import { updateProfile, uploadAvatar } from "@/app/(app)/actions";
+import { updateProfile, uploadAvatar } from "@/app/(app)/profile-actions";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Avatar } from "@/components/Avatar";
 

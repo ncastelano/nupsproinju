@@ -362,3 +362,16 @@ button.who-btn { padding: 6px 14px 6px 6px; flex: 0 1 auto; }
   display: flex; gap: 12px; align-items: center; justify-content: space-between;
   border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px;
 }
+
+.mini-rec {
+  display: flex; gap: 10px; align-items: center; color: #fff; font-weight: 400;
+  background: rgba(255,255,255,.12); border-radius: var(--radius-sm); padding: 10px 14px;
+}
+.mini-rec:hover { background: rgba(255,255,255,.22); text-decoration: none; }
+.main-nav a { display: inline-block; }
+.main-nav a button { background: var(--brand-soft); color: var(--brand-dark); }
+.main-nav a button.on { background: var(--brand); color: #fff; }
+.user-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.user-card { display: grid; gap: 6px; align-content: start; }
+.user-card h3 { margin: 0; }
+.user-card p { margin: 0; color: var(--muted); }

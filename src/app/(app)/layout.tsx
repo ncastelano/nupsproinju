@@ -1,7 +1,36 @@
 import type { ReactNode } from "react";
 import { requireMember } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { Header, type MyRecord } from "@/components/Header";
+import { NavTabs } from "@/components/NavTabs";
+import { FORM_KEY } from "@/lib/forms";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  await requireMember();
-  return <>{children}</>;
+  const m = await requireMember();
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("intake_records").select("id, answers")
+    .eq("form_key", FORM_KEY).eq("created_by", m.id).order("created_at", { ascending: false });
+
+  const records: MyRecord[] = (data ?? []).map((r) => {
+    const a = r.answers as Record<string, { value: string }>;
+    return { id: r.id as string, nome: a.nomes?.value ?? "(sem nome)", processo: a.processo?.value ?? "" };
+  });
+
+  return (
+    <>
+      <Header
+        userId={m.id}
+        name={m.name || m.email}
+        email={m.email}
+        avatarUrl={m.avatar_url ?? null}
+        registry={m.registry ?? ""}
+        records={records}
+      />
+      <div className="container grid" style={{ gap: 16 }}>
+        <NavTabs userId={m.id} isAdmin={m.role === "admin"} />
+        {children}
+      </div>
+    </>
+  );
 }

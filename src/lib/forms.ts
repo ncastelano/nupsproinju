@@ -12,6 +12,7 @@ export type Question = {
   options: string[];
   required: boolean;
   active: boolean;
+  owner_id?: string | null;
 };
 
 export const TYPE_LABEL: Record<QuestionType, string> = {
@@ -32,3 +33,6 @@ export const FORM_TITLE: Record<string, string> = {
   acompanhamento: "Acompanhamento",
 };
 export const OTHER_PREFIX = "Outro: ";
+
+// Perguntas que sempre são preenchidas com a pessoa que está logada.
+export const PROFESSIONAL_KEYS = ["profissional", "acomp_1"];
