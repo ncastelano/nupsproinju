@@ -3,9 +3,13 @@ import { revalidatePath } from "next/cache";
 import { randomBytes } from "node:crypto";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { FORM_KEY, type QuestionType } from "@/lib/forms";
+import { FORM_KEYS, FORM_KEY, type QuestionType } from "@/lib/forms";
 
-const TYPES: QuestionType[] = ["text", "textarea", "date", "select", "radio", "radio_other"];
+const TYPES: QuestionType[] = ["text", "textarea", "date", "select", "radio", "radio_other", "checkbox"];
+const formKeyOf = (f: FormData) => {
+  const k = String(f.get("form_key"));
+  return (FORM_KEYS as readonly string[]).includes(k) ? k : FORM_KEY;
+};
 const done = () => { revalidatePath("/formulario"); revalidatePath("/formulario/editar"); };
 const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
 
@@ -34,12 +38,13 @@ export async function addQuestion(form: FormData) {
   await requireAdmin();
   const { active: _a, ...f } = fields(form);
   if (!f.label) return;
+  const formKey = formKeyOf(form);
   const admin = createAdminClient();
-  const { data } = await admin.from("form_questions").select("position").eq("form_key", FORM_KEY)
+  const { data } = await admin.from("form_questions").select("position").eq("form_key", formKey)
     .order("position", { ascending: false }).limit(1);
   const position = ((data?.[0]?.position as number | undefined) ?? 0) + 10;
   await admin.from("form_questions").insert({
-    ...f, form_key: FORM_KEY, key: "q_" + randomBytes(4).toString("hex"), position,
+    ...f, form_key: formKey, key: "q_" + randomBytes(4).toString("hex"), position,
   });
   done();
 }
@@ -50,7 +55,7 @@ export async function moveQuestion(form: FormData) {
   const dir = form.get("dir") === "up" ? -1 : 1;
   const admin = createAdminClient();
   const { data } = await admin.from("form_questions").select("id, position")
-    .eq("form_key", FORM_KEY).order("position");
+    .eq("form_key", formKeyOf(form)).order("position");
   const list = data ?? [];
   const i = list.findIndex((q) => q.id === id);
   const j = i + dir;
