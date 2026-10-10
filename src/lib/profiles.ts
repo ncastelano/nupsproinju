@@ -2,7 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 // Páginas que já existem e não podem virar endereço de perfil.
 export const RESERVED_SLUGS = [
-  "login", "cadastro", "acesso", "formulario", "banco-de-dados", "usuarios", "cadastrados",
+  "login", "cadastro", "acesso", "formulario", "cadastrar-pessoa", "modelos-de-formularios", "banco-de-dados", "usuarios", "cadastrados",
   "perfil", "api", "admin", "administrador", "icon", "apple-icon", "favicon", "_next",
 ];
 

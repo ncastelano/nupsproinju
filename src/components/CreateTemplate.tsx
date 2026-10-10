@@ -1,7 +1,7 @@
 "use client";
 import { useActionState } from "react";
 import { Plus } from "lucide-react";
-import { createTemplate } from "@/app/(app)/formulario/custom-actions";
+import { createTemplate } from "@/app/(app)/cadastrar-pessoa/custom-actions";
 
 export function CreateTemplate() {
   const [msg, action, pending] = useActionState(createTemplate, null);

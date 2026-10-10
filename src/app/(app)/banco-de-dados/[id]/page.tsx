@@ -45,7 +45,7 @@ export default async function AcolhidoPage({ params }: { params: Promise<{ id: s
 
       <div className="row">
         <Link href={`/banco-de-dados/${id}/resumo`}><button><FileText size={16} /> Resumo A4 / Imprimir</button></Link>
-        <Link href={`/formulario?aba=acompanhamento&acolhido=${id}`}>
+        <Link href={`/cadastrar-pessoa?aba=acompanhamento&acolhido=${id}`}>
           <button className="ghost"><ClipboardPen size={16} /> {followup ? "Editar acompanhamento" : "Preencher acompanhamento"}</button>
         </Link>
       </div>

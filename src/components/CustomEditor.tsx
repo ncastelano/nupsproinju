@@ -2,7 +2,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { TYPE_LABEL, type Question, type QuestionType } from "@/lib/forms";
-import { addCustomQuestion, deleteCustomQuestion } from "@/app/(app)/formulario/custom-actions";
+import { addCustomQuestion, deleteCustomQuestion } from "@/app/(app)/cadastrar-pessoa/custom-actions";
 
 const NEEDS_OPTIONS: QuestionType[] = ["select", "radio", "radio_other", "checkbox"];
 // Jeitos de responder, em linguagem simples.

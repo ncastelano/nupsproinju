@@ -3,7 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, RotateCcw } from "lucide-react";
 import type { Question } from "@/lib/forms";
-import { resetQuestionEdit, saveQuestionEdit } from "@/app/(app)/formulario/custom-actions";
+import { resetQuestionEdit, saveQuestionEdit } from "@/app/(app)/cadastrar-pessoa/custom-actions";
 
 const HAS_OPTIONS = ["select", "radio", "radio_other", "checkbox"];
 

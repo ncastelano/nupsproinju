@@ -71,7 +71,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
           )}
 
           <div style={{ textAlign: "center", fontSize: 14 }}>
-            {viewer ? <Link href="/formulario">Voltar ao sistema</Link> : <Link href="/login">Entrar no sistema</Link>}
+            {viewer ? <Link href="/cadastrar-pessoa">Voltar ao sistema</Link> : <Link href="/login">Entrar no sistema</Link>}
           </div>
         </div>
       </section>

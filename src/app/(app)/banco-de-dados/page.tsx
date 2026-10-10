@@ -37,7 +37,7 @@ export default async function BancoDeDadosPage({
         <div className="card empty">
           <div className="ico"><Database size={44} /></div>
           <h2>{q ? "Nada encontrado" : "Nenhum acolhido registrado"}</h2>
-          <p>{q ? "Tente outro termo de busca." : <>Faça um <Link href="/formulario">Formulário inicial</Link> para começar.</>}</p>
+          <p>{q ? "Tente outro termo de busca." : <>Faça um <Link href="/cadastrar-pessoa">Formulário inicial</Link> para começar.</>}</p>
         </div>
       ) : (
         <RecordList items={list} questions={(qs ?? []) as Question[]} />

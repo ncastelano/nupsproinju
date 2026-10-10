@@ -57,7 +57,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
         />
         <Link href={`/banco-de-dados/${id}/resumo`}><button className="ghost"><FileText size={16} /> Resumo A4 / Imprimir</button></Link>
         {rec.created_by === me.id && (
-          <Link href={`/formulario?aba=acompanhamento&acolhido=${id}`}>
+          <Link href={`/cadastrar-pessoa?aba=acompanhamento&acolhido=${id}`}>
             <button className="ghost"><ClipboardPen size={16} /> {followup ? "Editar acompanhamento" : "Preencher acompanhamento"}</button>
           </Link>
         )}

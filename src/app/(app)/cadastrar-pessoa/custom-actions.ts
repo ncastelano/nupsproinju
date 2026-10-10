@@ -13,7 +13,7 @@ const TYPES: QuestionType[] = ["text", "textarea", "date", "select", "radio", "r
 const NEEDS = ["select", "radio", "radio_other", "checkbox"];
 const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
 const refresh = () => {
-  revalidatePath("/formulario");
+  revalidatePath("/cadastrar-pessoa");
   revalidatePath("/modelos-de-formularios", "layout");
   revalidatePath("/usuarios", "layout");
 };
@@ -130,7 +130,7 @@ export async function useTemplate(form: FormData) {
   if (!(await findTemplate(id))) return;
   await setActiveTemplate(me.id, id);
   refresh();
-  redirect("/formulario");
+  redirect("/cadastrar-pessoa");
 }
 
 export async function createTemplate(_: string | null, form: FormData) {
@@ -142,7 +142,7 @@ export async function createTemplate(_: string | null, form: FormData) {
     parent_name: "Modelo padrão", created_at: new Date().toISOString(), forms: {},
   };
   if (!(await commit(me, tpl))) return "Não foi possível criar o formulário.";
-  redirect("/formulario");
+  redirect("/cadastrar-pessoa");
 }
 
 export async function deleteTemplate(form: FormData) {

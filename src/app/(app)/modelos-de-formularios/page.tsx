@@ -4,7 +4,7 @@ import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BASE_ID, getActiveTemplate, listTemplates } from "@/lib/templates";
 import { CreateTemplate } from "@/components/CreateTemplate";
-import { deleteTemplate, useTemplate } from "../formulario/custom-actions";
+import { deleteTemplate, useTemplate } from "../cadastrar-pessoa/custom-actions";
 
 export default async function ModelosPage() {
   const me = await requireMember();
@@ -57,7 +57,7 @@ export default async function ModelosPage() {
                   </form>
                 )}
                 {isActive && (
-                  <Link href="/formulario"><button>Preencher</button></Link>
+                  <Link href="/cadastrar-pessoa"><button>Preencher</button></Link>
                 )}
                 {mine && t.id !== BASE_ID && (
                   <form action={deleteTemplate}>

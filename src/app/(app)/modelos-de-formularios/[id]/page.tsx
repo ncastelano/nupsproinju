@@ -5,7 +5,7 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_KEYS, FORM_TITLE, type Question } from "@/lib/forms";
 import { emptyDelta, findTemplate } from "@/lib/templates";
-import { useTemplate } from "../../formulario/custom-actions";
+import { useTemplate } from "../../cadastrar-pessoa/custom-actions";
 
 export default async function ModeloPage({ params }: { params: Promise<{ id: string }> }) {
   await requireMember();

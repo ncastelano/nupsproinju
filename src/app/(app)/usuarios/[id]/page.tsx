@@ -64,7 +64,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
           {personal ? typeName || `Formulário de ${first}` : "Formulário modelo"}
         </span>
         {mine && (
-          <Link href="/formulario"><button><Plus size={16} /> Novo formulário</button></Link>
+          <Link href="/cadastrar-pessoa"><button><Plus size={16} /> Novo formulário</button></Link>
         )}
       </div>
 
@@ -87,7 +87,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
               <div className="row" style={{ marginTop: 8 }}>
                 <Link href={`/cadastrados/${r.id}`}><button className="ghost"><FolderOpen size={16} /> Ficha</button></Link>
                 {mine && (
-                  <Link href={`/formulario?aba=acompanhamento&acolhido=${r.id}`}>
+                  <Link href={`/cadastrar-pessoa?aba=acompanhamento&acolhido=${r.id}`}>
                     <button className="ghost"><ClipboardPen size={16} /> Acompanhar</button>
                   </Link>
                 )}
