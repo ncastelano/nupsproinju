@@ -23,14 +23,14 @@ function Field({ q, initial = "" }: { q: Question; initial?: string }) {
     return (
       <select name={name} required={q.required} defaultValue={initial}>
         <option value="" disabled>Selecione...</option>
-        {q.options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {q.options.map((o, i) => <option key={`${o}-${i}`} value={o}>{o}</option>)}
       </select>
     );
   if (q.type === "checkbox")
     return (
       <div className="chips">
-        {q.options.map((o) => (
-          <label key={o} className="chip">
+        {q.options.map((o, i) => (
+          <label key={`${o}-${i}`} className="chip">
             <input type="checkbox" name={name} value={o} defaultChecked={picked.includes(o)} />
             <span>{o}</span>
           </label>
@@ -40,8 +40,8 @@ function Field({ q, initial = "" }: { q: Question; initial?: string }) {
   if (q.type === "radio" || q.type === "radio_other")
     return (
       <div className="chips">
-        {q.options.map((o) => (
-          <label key={o} className="chip">
+        {q.options.map((o, i) => (
+          <label key={`${o}-${i}`} className="chip">
             <input type="radio" name={name} value={o} required={q.required} defaultChecked={choice === o} onChange={() => setChoice(o)} />
             <span>{o}</span>
           </label>
@@ -144,11 +144,11 @@ export function IntakeForm({
         </>
       )}
 
-      {(!acolhidos || current) && questions.map((q) => {
+      {(!acolhidos || current) && questions.map((q, qi) => {
         const showSection = q.section && q.section !== lastSection;
         lastSection = q.section || lastSection;
         return (
-          <Fragment key={q.id}>
+          <Fragment key={`${q.id}-${qi}`}>
             {showSection && <h2 className="section">{q.section}</h2>}
             <div className="card q">
               <label className="q-label">

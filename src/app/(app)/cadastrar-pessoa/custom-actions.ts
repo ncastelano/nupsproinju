@@ -11,7 +11,7 @@ import {
 
 const TYPES: QuestionType[] = ["text", "textarea", "date", "select", "radio", "radio_other", "checkbox"];
 const NEEDS = ["select", "radio", "radio_other", "checkbox"];
-const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
+const lines = (s: string) => [...new Set(s.split("\n").map((x) => x.trim()).filter(Boolean))];
 const refresh = () => {
   revalidatePath("/cadastrar-pessoa");
   revalidatePath("/modelos-de-formularios", "layout");

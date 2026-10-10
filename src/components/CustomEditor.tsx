@@ -38,8 +38,8 @@ export function CustomEditor({
         <div className="card grid" style={{ gap: 14 }}>
           <strong>Adicionar nova pergunta?</strong>
 
-          {extras.map((q) => (
-            <div key={q.key} className="qrow">
+          {extras.map((q, i) => (
+            <div key={`${q.key}-${i}`} className="qrow">
               <div>
                 <strong>{q.label}{q.required ? " *" : ""}</strong>
                 <div style={{ color: "var(--muted)", fontSize: 14 }}>
