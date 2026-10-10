@@ -50,7 +50,12 @@ async function writeMeta(userId: string, patch: (m: Meta) => Meta) {
   const admin = createAdminClient();
   const { data } = await admin.auth.admin.getUserById(userId);
   const cur = (data.user?.user_metadata ?? {}) as Meta;
-  return admin.auth.admin.updateUserById(userId, { user_metadata: patch(cur) });
+  const next = patch(cur);
+  // esses dados vão dentro do cookie de login: acima disso o navegador recebe erro 431
+  if (JSON.stringify(next).length > 6000) {
+    return { data: null, error: { message: "Dados da conta grandes demais." } as { message: string } };
+  }
+  return admin.auth.admin.updateUserById(userId, { user_metadata: next });
 }
 
 export async function listTemplates(): Promise<Template[]> {

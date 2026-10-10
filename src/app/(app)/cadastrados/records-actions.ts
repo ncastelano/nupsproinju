@@ -121,11 +121,11 @@ export async function deleteRecord(form: FormData) {
 }
 
 // Apaga só este acompanhamento (a reavaliação), sem mexer no cadastro inicial.
-export async function deleteFollowup(form: FormData) {
+export async function deleteFollowup(form: FormData): Promise<string> {
   const id = String(form.get("record_id"));
   const at = String(form.get("at"));
   const { me, rec, acc } = await open(id);
-  if (!acc.owner && !acc.admin) return;
+  if (!acc.owner && !acc.admin) return "Você não tem permissão para apagar.";
 
   const meta = rec.meta;
   let list = meta.followups;
@@ -138,6 +138,7 @@ export async function deleteFollowup(form: FormData) {
   });
   const latest = kept.length ? [...kept].sort((a, b) => a.at.localeCompare(b.at))[kept.length - 1] : null;
   const r = await saveRecord(rec, { followup: latest ? latest.answers : null, ...(latest ? { followupAt: latest.at } : {}) }, meta);
-  if (r.error) return;
+  if (r.error) return "Não foi possível apagar. Tente novamente.";
   done(id);
+  return "ok";
 }

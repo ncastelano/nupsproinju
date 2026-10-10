@@ -38,7 +38,12 @@ export async function addDoc(userId: string, doc: DocMeta) {
   const { data } = await admin.auth.admin.getUserById(userId);
   const meta = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
   const docs = ((meta.documents ?? []) as DocMeta[]).filter((d) => d.id !== doc.id);
-  return admin.auth.admin.updateUserById(userId, { user_metadata: { ...meta, documents: [doc, ...docs] } });
+  const next = { ...meta, documents: [doc, ...docs] };
+  // vai dentro do cookie de login: acima disso o navegador recebe erro 431
+  if (JSON.stringify(next).length > 6000) {
+    return { data: null, error: { message: "Limite de documentos exportados atingido. Apague algum para continuar." } as { message: string } };
+  }
+  return admin.auth.admin.updateUserById(userId, { user_metadata: next });
 }
 
 export async function removeDocMeta(userId: string, id: string) {
