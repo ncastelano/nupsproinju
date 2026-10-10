@@ -1,10 +1,8 @@
 import Link from "next/link";
-import { LayoutTemplate } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
-import { CustomEditor } from "@/components/CustomEditor";
 import { IntakeForm, type Acolhido } from "./IntakeForm";
 
 export default async function FormularioPage({
@@ -18,9 +16,7 @@ export default async function FormularioPage({
   const formKey = acomp ? FORM_ACOMP : FORM_KEY;
 
   const supabase = await createClient();
-  const { questions, typeName, template, personal } = await loadQuestions(supabase, formKey, me.id, true);
-  const owned = personal && template.owner_id === me.id;
-  const first = (me.name || me.email).split(" ")[0];
+  const { questions } = await loadQuestions(supabase, formKey, me.id, true);
   const professional = [me.name || me.email, me.registry].filter(Boolean).join(" - ");
 
   let acolhidos: Acolhido[] | undefined;
@@ -39,33 +35,25 @@ export default async function FormularioPage({
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <section className="using">
-        <div className="using-ico"><LayoutTemplate size={22} /></div>
-        <div className="using-body">
-          <span className="using-kicker">Formulário em uso</span>
-          <strong className="using-name">{typeName}</strong>
-          <span className="using-meta">
-            {template.id === "base"
-              ? "Modelo padrão do núcleo"
-              : template.owner_id === me.id
-                ? "Formulário seu"
-                : `Formulário de ${template.owner_name}`}
-            {template.parent_name ? ` · a partir de ${template.parent_name}` : ""}
-          </span>
-        </div>
-        <Link href="/modelos-de-formularios"><button type="button" className="light-brand">Trocar formulário</button></Link>
-      </section>
+      <div>
+        <h1 style={{ margin: "8px 0 0" }}>{acomp ? "Novo acompanhamento" : "Cadastro inicial"}</h1>
+        <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
+          {acomp
+            ? "Escolha a criança ou adolescente e registre a reavaliação."
+            : "Preenchido uma única vez por criança ou adolescente: é o marco inicial dos acompanhamentos e reavaliações."}{" "}
+          Campos com <span className="req">*</span> são obrigatórios.
+        </p>
+      </div>
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
           <h2>Nenhum acolhido registrado</h2>
-          <p>Faça primeiro o <Link href="/cadastrar-pessoa">Formulário inicial</Link> para poder registrar acompanhamentos.</p>
+          <p>Faça primeiro o <Link href="/cadastrar-pessoa">Cadastro inicial</Link> para poder registrar acompanhamentos.</p>
         </div>
       ) : questions.length === 0 ? (
         <div className="card empty">Nenhuma pergunta cadastrada ainda.</div>
       ) : (
         <IntakeForm key={formKey} formKey={formKey} professional={professional} hasRegistry={!!me.registry} questions={questions}
-          owned={owned}
-          extra={<CustomEditor formKey={formKey} activeName={typeName} owned={owned} suggestedName={`${typeName} · ${first}`} extras={questions.filter((q) => q.key.startsWith("x_"))} />} acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
+          acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
       )}
     </div>
   );

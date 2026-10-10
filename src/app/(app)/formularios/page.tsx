@@ -1,7 +1,5 @@
-import { requireMember } from "@/lib/auth";
-import { UserRecords } from "@/components/UserRecords";
+import { redirect } from "next/navigation";
 
-export default async function Page() {
-  const me = await requireMember();
-  return <UserRecords id={me.id} view="formularios" />;
+export default function Page() {
+  redirect("/cadastro-inicial");
 }

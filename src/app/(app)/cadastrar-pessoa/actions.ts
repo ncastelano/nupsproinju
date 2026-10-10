@@ -25,11 +25,17 @@ export async function saveIntake(_: string | null, form: FormData) {
   for (const q of questions) {
     let value: string;
     if (PROFESSIONAL_KEYS.includes(q.key)) {
-      // o responsável é sempre quem está logado, não o que veio do navegador
+      // quem está logado sempre assina; outros profissionais podem ser marcados junto
       if (!me.registry) return "Informe o seu CRP ou CRESS no perfil antes de salvar.";
-      value = signature;
+      if (q.type === "checkbox") {
+        const picked = form.getAll(q.key).map((v) => String(v).trim()).filter(Boolean);
+        if (!picked.includes(signature)) picked.unshift(signature);
+        value = picked.join(", ");
+      } else value = signature;
     } else if (q.type === "checkbox") {
-      value = form.getAll(q.key).map((v) => String(v).trim()).filter(Boolean).join("; ");
+      const outro = String(form.get(`${q.key}__outro`) ?? "").trim();
+      value = form.getAll(q.key).map((v) => String(v).trim()).filter(Boolean)
+        .map((v) => (v === "Outro" ? (outro ? OTHER_PREFIX + outro : "") : v)).filter(Boolean).join("; ");
     } else {
       value = String(form.get(q.key) ?? "").trim();
     }

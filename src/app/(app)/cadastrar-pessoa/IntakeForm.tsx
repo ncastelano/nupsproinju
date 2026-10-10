@@ -3,11 +3,29 @@ import { Fragment, useActionState, useState, type ReactNode } from "react";
 import { CheckCircle2, Check } from "lucide-react";
 import { RecordView, formatDate } from "@/components/RecordView";
 import { OTHER_PREFIX, PROFESSIONAL_KEYS, type Question } from "@/lib/forms";
-import { QuestionEdit } from "@/components/QuestionEdit";
 import { saveIntake } from "./actions";
 
 type Answers = Record<string, { label: string; value: string }>;
 export type Acolhido = { id: string; answers: Answers; followup: Answers | null };
+
+function CheckboxField({ q, picked, otherInit, hasOther }: { q: Question; picked: string[]; otherInit: string; hasOther: boolean }) {
+  const [other, setOther] = useState(!!otherInit);
+  return (
+    <div className="chips">
+      {q.options.map((o, i) => (
+        <label key={`${o}-${i}`} className="chip">
+          <input type="checkbox" name={q.key} value={o}
+            defaultChecked={o === "Outro" ? !!otherInit : picked.includes(o)}
+            onChange={o === "Outro" ? (e) => setOther(e.target.checked) : undefined} />
+          <span>{o}</span>
+        </label>
+      ))}
+      {hasOther && other && (
+        <input name={`${q.key}__outro`} placeholder="Qual?" style={{ flexBasis: "100%" }} defaultValue={otherInit} autoFocus />
+      )}
+    </div>
+  );
+}
 
 export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
   const isOther = q.type === "radio_other" && initial.startsWith(OTHER_PREFIX);
@@ -26,17 +44,11 @@ export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
         {q.options.map((o, i) => <option key={`${o}-${i}`} value={o}>{o}</option>)}
       </select>
     );
-  if (q.type === "checkbox")
-    return (
-      <div className="chips">
-        {q.options.map((o, i) => (
-          <label key={`${o}-${i}`} className="chip">
-            <input type="checkbox" name={name} value={o} defaultChecked={picked.includes(o)} />
-            <span>{o}</span>
-          </label>
-        ))}
-      </div>
-    );
+  if (q.type === "checkbox") {
+    const hasOther = q.options.includes("Outro");
+    const otherInit = picked.find((p) => p.startsWith(OTHER_PREFIX));
+    return <CheckboxField q={q} picked={picked} otherInit={otherInit?.slice(OTHER_PREFIX.length) ?? ""} hasOther={hasOther} />;
+  }
   if (q.type === "radio" || q.type === "radio_other")
     return (
       <div className="chips">
@@ -155,7 +167,7 @@ export function IntakeForm({
                 {q.label}{q.required && <span className="req"> *</span>}
               </label>
               {q.help && <div className="help">{q.help}</div>}
-              {PROFESSIONAL_KEYS.includes(q.key) ? (
+              {PROFESSIONAL_KEYS.includes(q.key) && q.type !== "checkbox" ? (
                 <>
                   <div className="linked">{professional}</div>
                   <input type="hidden" name={q.key} value={professional} />
@@ -163,9 +175,13 @@ export function IntakeForm({
                   {!hasRegistry && <p className="error">Informe o seu CRP ou CRESS no perfil (toque no seu nome) para assinar.</p>}
                 </>
               ) : (
-              <Field key={`${sel}-${q.id}`} q={q} initial={formKey === "acompanhamento" ? current?.followup?.[q.key]?.value ?? "" : ""} />
+              <Field
+                key={`${sel}-${q.id}`}
+                q={PROFESSIONAL_KEYS.includes(q.key) ? { ...q, options: [...new Set([...q.options, professional])] } : q}
+                initial={PROFESSIONAL_KEYS.includes(q.key) ? professional : formKey === "acompanhamento" ? current?.followup?.[q.key]?.value ?? "" : ""}
+              />
               )}
-              {!PROFESSIONAL_KEYS.includes(q.key) && <QuestionEdit key={`${q.key}-${q.label}-${q.help}`} q={q} formKey={formKey} owned={owned} />}
+              
             </div>
           </Fragment>
         );

@@ -72,20 +72,21 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
       <div>
         <h1 style={{ margin: "8px 0 0" }}>
-          {view === "formularios" ? (mine ? "Formulários" : `Formulários de ${first}`)
+          {view === "formularios" ? (mine ? "Cadastro inicial" : `Cadastros iniciais de ${first}`)
             : view === "acompanhamentos" ? (mine ? "Acompanhamentos" : `Acompanhamentos de ${first}`)
-            : `Formulários e acompanhamentos de ${first}`}
+            : `Cadastros e acompanhamentos de ${first}`}
         </h1>
         <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
           {mine
             ? view === "acompanhamentos"
               ? "Os acompanhamentos que você preencheu. Toque em um para abrir a ficha completa."
-              : "Os formulários que você preencheu. Toque em um para abrir a ficha completa."
+              : "Os cadastros iniciais que você preencheu. Toque em um para abrir a ficha completa."
             : `${person.name || person.email}${person.registry ? ` · ${person.registry}` : ""}. Toque em um item para abrir a ficha completa.`}
         </p>
       </div>
       {mine && (
         <div className="row">
+          {showF && <Link href="/cadastrar-pessoa"><button><Plus size={16} /> Novo cadastro inicial</button></Link>}
           {showF && <ExportButton kind="formulario" />}
           {showA && <ExportButton kind="acompanhamento" />}
         </div>
@@ -98,7 +99,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         return (
           <section key={k} className="grid" style={{ gap: 12 }}>
             <h2 className="section" style={{ margin: 0 }}>
-              {k === "formulario" ? "FORMULÁRIOS EXPORTADOS" : "ACOMPANHAMENTOS EXPORTADOS"} ({list.length})
+              {k === "formulario" ? "CADASTROS INICIAIS EXPORTADOS" : "ACOMPANHAMENTOS EXPORTADOS"} ({list.length})
             </h2>
             <div className="user-grid">
               {list.map((d) => (
@@ -116,9 +117,9 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         );
       })}
 
-      {showF && <h2 className="section" style={{ margin: 0 }}>FORMULÁRIOS ({records.length})</h2>}
+      {showF && <h2 className="section" style={{ margin: 0 }}>CADASTROS INICIAIS ({records.length})</h2>}
       {showF && (records.length === 0 ? (
-        <div className="card empty"><p>Nenhum formulário ainda.</p></div>
+        <div className="card empty"><p>Nenhum cadastro inicial ainda.</p></div>
       ) : (
         <div className="user-grid">
           {records.map((r) => (

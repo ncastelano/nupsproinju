@@ -50,7 +50,11 @@ export async function saveRecordEdit(_: string | null, form: FormData) {
   for (const q of questions) {
     if (PROFESSIONAL_KEYS.includes(q.key)) continue; // assinatura não muda
     let value: string;
-    if (q.type === "checkbox") value = form.getAll(q.key).map((v) => String(v).trim()).filter(Boolean).join("; ");
+    if (q.type === "checkbox") {
+      const outro = String(form.get(`${q.key}__outro`) ?? "").trim();
+      value = form.getAll(q.key).map((v) => String(v).trim()).filter(Boolean)
+        .map((v) => (v === "Outro" ? (outro ? OTHER_PREFIX + outro : "") : v)).filter(Boolean).join("; ");
+    }
     else value = String(form.get(q.key) ?? "").trim();
     if (q.type === "radio_other" && value === "__outro__") {
       const other = String(form.get(`${q.key}__outro`) ?? "").trim();
