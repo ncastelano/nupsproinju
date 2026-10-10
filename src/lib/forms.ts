@@ -2,6 +2,7 @@ export type QuestionType = "text" | "textarea" | "date" | "select" | "radio" | "
 
 export type Question = {
   id: string;
+  form_key: string;
   key: string;
   position: number;
   section: string;
