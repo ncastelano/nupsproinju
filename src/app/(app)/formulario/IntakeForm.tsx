@@ -1,5 +1,6 @@
 "use client";
-import { Fragment, useActionState, useState } from "react";
+import { Fragment, useActionState, useState, type ReactNode } from "react";
+import { BackButton } from "@/components/BackButton";
 import { CheckCircle2, Check } from "lucide-react";
 import { RecordView, formatDate } from "@/components/RecordView";
 import { OTHER_PREFIX, PROFESSIONAL_KEYS, type Question } from "@/lib/forms";
@@ -62,9 +63,10 @@ function Field({ q, initial = "" }: { q: Question; initial?: string }) {
 }
 
 export function IntakeForm({
-  formKey, questions, acolhidos, selected, cadastroQuestions = [], professional, hasRegistry,
+  formKey, questions, acolhidos, selected, cadastroQuestions = [], professional, hasRegistry, extra,
 }: {
   formKey: string;
+  extra?: ReactNode;
   professional: string;
   hasRegistry: boolean;
   questions: Question[];
@@ -87,7 +89,8 @@ export function IntakeForm({
 
   let lastSection = "";
   return (
-    <form action={action} className="grid" style={{ gap: 14 }}>
+    <>
+    <form id="intake-form" action={action} className="grid" style={{ gap: 14 }}>
       <input type="hidden" name="form_key" value={formKey} />
 
       {acolhidos && (
@@ -165,8 +168,17 @@ export function IntakeForm({
           </Fragment>
         );
       })}
-      {msg && msg !== "ok" && <p className="error">{msg}</p>}
-      {(!acolhidos || current) && <button disabled={pending}>{pending ? "Salvando..." : "Salvar"}</button>}
     </form>
+
+    {(!acolhidos || current) && extra}
+
+    {msg && msg !== "ok" && <p className="error">{msg}</p>}
+    <div className="row">
+      <BackButton />
+      {(!acolhidos || current) && (
+        <button type="submit" form="intake-form" disabled={pending}>{pending ? "Salvando..." : "Salvar"}</button>
+      )}
+    </div>
+    </>
   );
 }

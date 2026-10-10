@@ -1,20 +1,29 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Question } from "./forms";
 
-// Cada pessoa começa com o modelo (owner_id nulo). Ao editar, ganha a própria cópia
-// ("Cadastro de <nome>") e passa a usar só ela.
+// Perguntas que a pessoa acrescentou ao modelo (ficam nos dados da própria conta).
+export type CustomForm = { name: string; questions: Question[] };
+export type CustomForms = Record<string, CustomForm>;
+
+export async function getCustomForms(ownerId: string): Promise<CustomForms> {
+  const { data } = await createAdminClient().auth.admin.getUserById(ownerId);
+  return ((data.user?.user_metadata as Record<string, unknown> | undefined)?.custom_forms ?? {}) as CustomForms;
+}
+
+// Modelo (igual pra todos) + as perguntas extras de quem está preenchendo.
 export async function loadQuestions(
   sb: SupabaseClient, formKey: string, ownerId: string, onlyActive = false,
-): Promise<{ questions: Question[]; personal: boolean }> {
-  let { data, error } = await sb
-    .from("form_questions").select("*").eq("form_key", formKey)
-    .or(`owner_id.is.null,owner_id.eq.${ownerId}`).order("position");
-  if (error) {
-    // coluna owner_id ainda não existe no banco: usa o modelo único
-    ({ data } = await sb.from("form_questions").select("*").eq("form_key", formKey).order("position"));
-  }
-  const rows = (data ?? []) as Question[];
-  const own = rows.filter((r) => r.owner_id === ownerId);
-  const list = own.length ? own : rows.filter((r) => !r.owner_id);
-  return { questions: onlyActive ? list.filter((q) => q.active) : list, personal: own.length > 0 };
+): Promise<{ questions: Question[]; personal: boolean; typeName: string }> {
+  const { data } = await sb
+    .from("form_questions").select("*").eq("form_key", formKey).order("position");
+  const model = ((data ?? []) as Question[]).filter((q) => !q.owner_id);
+  const custom = (await getCustomForms(ownerId))[formKey];
+  const extras = custom?.questions ?? [];
+  const all = [...model, ...extras];
+  return {
+    questions: onlyActive ? all.filter((q) => q.active) : all,
+    personal: extras.length > 0,
+    typeName: custom?.name ?? "",
+  };
 }

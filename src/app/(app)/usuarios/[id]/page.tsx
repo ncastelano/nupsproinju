@@ -24,7 +24,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
   if (!person) notFound();
 
   const supabase = await createClient();
-  const { questions, personal } = await loadQuestions(supabase, FORM_KEY, id);
+  const { questions, personal, typeName } = await loadQuestions(supabase, FORM_KEY, id);
 
   const fetchRecords = async () => {
     const { data } = await supabase
@@ -61,7 +61,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
 
       <div className="row" style={{ justifyContent: "space-between" }}>
         <span className={personal ? "badge" : "badge off"}>
-          {personal ? `Cadastro de ${first}` : "Cadastro modelo"}
+          {personal ? typeName || `Cadastro de ${first}` : "Cadastro modelo"}
         </span>
         {mine && (
           <Link href="/formulario"><button><Plus size={16} /> Novo cadastro</button></Link>

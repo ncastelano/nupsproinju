@@ -4,6 +4,7 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
+import { CustomEditor } from "@/components/CustomEditor";
 import { IntakeForm, type Acolhido } from "./IntakeForm";
 
 export default async function FormularioPage({
@@ -17,8 +18,7 @@ export default async function FormularioPage({
   const formKey = acomp ? FORM_ACOMP : FORM_KEY;
 
   const supabase = await createClient();
-  const { questions, personal } = await loadQuestions(supabase, formKey, me.id, true);
-  const first = (me.name || me.email).split(" ")[0];
+  const { questions, typeName } = await loadQuestions(supabase, formKey, me.id, true);
   const professional = [me.name || me.email, me.registry].filter(Boolean).join(" - ");
 
   let acolhidos: Acolhido[] | undefined;
@@ -37,30 +37,6 @@ export default async function FormularioPage({
 
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
-      <div className="row" style={{ justifyContent: "space-between" }}>
-        <div>
-          <h1 style={{ margin: "8px 0 0" }}>{personal ? `Cadastro de ${first}` : "Cadastro modelo"}</h1>
-          <span className={personal ? "badge" : "badge off"}>
-            {personal ? "Perguntas personalizadas por você" : "Modelo padrão — editar cria o seu cadastro"}
-          </span>
-        </div>
-        <Link href={`/formulario/editar?form=${formKey}`}>
-          <button className="ghost"><Settings2 size={16} /> Editar perguntas</button>
-        </Link>
-      </div>
-
-      <div className="tabs">
-        <Link href="/formulario" className={!acomp ? "active" : ""}>Cadastro inicial</Link>
-        <Link href="/formulario?aba=acompanhamento" className={acomp ? "active" : ""}>Acompanhamento</Link>
-      </div>
-
-      <p style={{ margin: 0, color: "var(--muted)" }}>
-        {acomp
-          ? "Acompanhamento e reavaliação da situação da criança, adolescente ou grupo de irmãos em medida de acolhimento. Fica salvo na mesma ficha do cadastro inicial."
-          : "Cadastro inicial para acompanhamento de criança ou adolescente acolhido."}{" "}
-        Campos com * são obrigatórios.
-      </p>
-
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
           <h2>Nenhum acolhido cadastrado</h2>
@@ -69,7 +45,13 @@ export default async function FormularioPage({
       ) : questions.length === 0 ? (
         <div className="card empty">Nenhuma pergunta cadastrada ainda.</div>
       ) : (
-        <IntakeForm key={formKey} formKey={formKey} professional={professional} hasRegistry={!!me.registry} questions={questions} acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
+        <IntakeForm key={formKey} formKey={formKey} professional={professional} hasRegistry={!!me.registry} questions={questions}
+          extra={<CustomEditor formKey={formKey} typeName={typeName} extras={questions.filter((q) => q.key.startsWith("x_"))} />} acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
+      )}
+      {me.role === "admin" && (
+        <Link href={`/formulario/editar?form=${formKey}`} className="row" style={{ fontSize: 14 }}>
+          <Settings2 size={14} /> Editar as perguntas do modelo (administrador)
+        </Link>
       )}
     </div>
   );
