@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "Núcleo Psicossocial · VPIJ Porto Velho",
+    siteName: "Núcleo Psicossocial · PROINJU",
     title: TITLE,
     description: DESCRIPTION,
   },

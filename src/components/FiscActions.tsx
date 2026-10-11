@@ -32,7 +32,7 @@ export function FiscActions({
         )}
         <ShareMenu
           path={`/fiscalizacoes/${id}`}
-          text={`Fiscalização – ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
+          text={`Fiscalização – ${nome} (Núcleo Psicossocial – PROINJU):`}
           label="Compartilhar" className="ghost"
           note="Só abre para quem estiver logado e tiver acesso."
         />

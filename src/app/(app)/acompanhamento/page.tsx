@@ -32,7 +32,15 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
 
       <div className="card q">
         <label className="q-label">Processo <span className="req">*</span></label>
-        <ProcessPicker options={options} value={rec?.id ?? ""} />
+        {options.length === 0 ? (
+          <p className="error">
+            Ainda não há nenhum processo. O acompanhamento é feito sobre um Cadastro inicial (o mesmo número de processo): faça o{" "}
+            <a href="/cadastro-inicial">Cadastro inicial</a> primeiro.
+          </p>
+        ) : (
+          <ProcessPicker options={options} value={rec?.id ?? ""} />
+        )}
+        <span className="help">Só é possível fazer o acompanhamento de um processo que já tem Cadastro inicial.</span>
         {a && (
           <span className="help">
             Acompanhamento nº {n} · {a.unidade?.value ?? ""}. A identificação (nomes, nascimentos, genitores, unidade, profissionais e assinatura) vem do Cadastro inicial.

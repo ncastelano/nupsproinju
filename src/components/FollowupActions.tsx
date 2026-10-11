@@ -27,7 +27,7 @@ export function FollowupActions({ recordId, at, nome }: { recordId: string; at: 
     <>
       <ShareMenu
         path={`/cadastrados/${recordId}`}
-        text={`Acompanhamento de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
+        text={`Acompanhamento de ${nome} (Núcleo Psicossocial – PROINJU):`}
         label="Compartilhar"
         className="ghost"
         note="Só abre para quem estiver logado e tiver acesso."

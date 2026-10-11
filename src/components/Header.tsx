@@ -39,7 +39,7 @@ export function Header({ userId, name, email, avatarUrl, registry, profileslug, 
       <div style={{ height: headH }} />
       <header className={`topbar${open ? " open" : ""}`} style={{ ["--head-h" as string]: `${headH}px` }}>
         <div ref={innerRef} className="inner">
-          <strong className="brand">Núcleo Psicossocial · VPIJ Porto Velho</strong>
+          <strong className="brand">Núcleo Psicossocial · PROINJU</strong>
           <button type="button" className="who-btn" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
             <Avatar url={avatarUrl} size={30} />
             <span>{name}</span>

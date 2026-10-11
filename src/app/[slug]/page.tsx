@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const p = await findBySlug(cleanSlug((await params).slug));
-  return { title: p ? `${p.name} · Núcleo Psicossocial VPIJ Porto Velho` : "Perfil não encontrado" };
+  return { title: p ? `${p.name} · Núcleo Psicossocial PROINJU` : "Perfil não encontrado" };
 }
 
 // Perfil da pessoa. Público: nome, foto e registro. Os cadastros só aparecem
@@ -51,7 +51,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
               <h2 style={{ margin: 0 }}>{p.name}</h2>
               {p.registry && <span style={{ color: "var(--muted)" }}>{p.registry}</span>}
             </div>
-            <ShareMenu path={`/${slug}`} text={`Perfil de ${p.name} no Núcleo Psicossocial (VPIJ Porto Velho):`} className="ghost" />
+            <ShareMenu path={`/${slug}`} text={`Perfil de ${p.name} no Núcleo Psicossocial (PROINJU):`} className="ghost" />
           </div>
 
           {canSeeRecords && (

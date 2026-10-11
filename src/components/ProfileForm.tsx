@@ -59,7 +59,7 @@ export function ProfileForm({
           <button type="button" className="light" disabled title="Defina o endereço do perfil abaixo e salve">Ver perfil</button>
         )}
         {profileslug ? (
-          <ShareMenu path={`/${profileslug}`} text={`Perfil de ${name} no Núcleo Psicossocial (VPIJ Porto Velho):`} label="Compartilhar meu perfil" />
+          <ShareMenu path={`/${profileslug}`} text={`Perfil de ${name} no Núcleo Psicossocial (PROINJU):`} label="Compartilhar meu perfil" />
         ) : (
           <button type="button" className="light" disabled title="Defina o endereço do perfil abaixo e salve">Compartilhar meu perfil</button>
         )}

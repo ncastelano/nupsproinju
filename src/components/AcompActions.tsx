@@ -25,7 +25,7 @@ export function AcompActions({ id, n, nome, canDelete }: { id: string; n: number
       <Link href={`/cadastrados/${id}/acompanhamento/${n}`}><button type="button"><FileText size={16} /> Abrir</button></Link>
       <ShareMenu
         path={`/cadastrados/${id}/acompanhamento/${n}`}
-        text={`Acompanhamento nº ${n} de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
+        text={`Acompanhamento nº ${n} de ${nome} (Núcleo Psicossocial – PROINJU):`}
         label="Compartilhar"
         className="ghost"
         note="Só abre para quem estiver logado e tiver acesso ao processo."

@@ -29,7 +29,7 @@ export function RecordActions({ recordId, nome, canDelete }: { recordId: string;
       </Link>
       <ShareMenu
         path={`/cadastrados/${recordId}`}
-        text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
+        text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – PROINJU):`}
         label="Compartilhar"
         className="ghost"
         note="Só abre para quem estiver logado e tiver acesso."

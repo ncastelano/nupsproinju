@@ -79,7 +79,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
       <div className="row">
         <ShareMenu
           path={`/cadastrados/${id}`}
-          text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
+          text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – PROINJU):`}
           label="Compartilhar o link"
           className=""
           note="Só abre para quem estiver logado e tiver acesso a este formulário."
