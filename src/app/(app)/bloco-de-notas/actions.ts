@@ -50,3 +50,14 @@ export async function deleteNote(id: string): Promise<string> {
   revalidatePath("/bloco-de-notas");
   return "ok";
 }
+
+// Quem pode ver a nota: só a pessoa ("privado") ou qualquer pessoa com conta, pelo perfil ("perfil").
+export async function setNoteVisibility(id: string, visibility: "privado" | "perfil"): Promise<string> {
+  const m = await mine(id);
+  if (!m) return "Nota não encontrada.";
+  const answers = { ...m.rec.answers, visibilidade: { label: "Visibilidade", value: visibility === "perfil" ? "perfil" : "privado" } };
+  const { error } = await createAdminClient().from("intake_records").update({ answers }).eq("id", id);
+  if (error) return "Não foi possível alterar.";
+  revalidatePath("/bloco-de-notas");
+  return "ok";
+}

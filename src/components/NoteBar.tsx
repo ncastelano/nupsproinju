@@ -3,15 +3,16 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Plus, Trash2 } from "lucide-react";
 import { DownloadMenu } from "@/components/DownloadMenu";
-import { createNote, deleteNote, renameNote } from "@/app/(app)/bloco-de-notas/actions";
+import { createNote, deleteNote, renameNote, setNoteVisibility } from "@/app/(app)/bloco-de-notas/actions";
 
 // Barra do Bloco de notas: trocar de nota, nova nota, renomear, baixar e apagar.
-export function NoteBar({ notes, current, title }: { notes: { id: string; title: string }[]; current: string; title: string }) {
+export function NoteBar({ notes, current, title, visibility }: { notes: { id: string; title: string }[]; current: string; title: string; visibility: "privado" | "perfil" }) {
   const router = useRouter();
   const [name, setName] = useState(title);
   const [ask, setAsk] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [vis, setVis] = useState(visibility);
   const [pending, start] = useTransition();
 
   const rename = () => start(async () => {
@@ -44,6 +45,18 @@ export function NoteBar({ notes, current, title }: { notes: { id: string; title:
       </div>
       <div className="row">
         <input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() !== title && rename()} placeholder="Título da nota" style={{ flex: 1, minWidth: 180 }} />
+        <select
+          value={vis} title="Quem pode ver esta nota"
+          onChange={(e) => {
+            const v = e.target.value as "privado" | "perfil";
+            setVis(v);
+            start(async () => { const r = await setNoteVisibility(current, v); if (r !== "ok") setErr(r); });
+          }}
+          style={{ width: "auto" }}
+        >
+          <option value="privado">Só para mim</option>
+          <option value="perfil">Aparece no meu perfil</option>
+        </select>
         {saved && <span className="doc-ok"><Check size={14} style={{ verticalAlign: "-2px" }} /> Título salvo</span>}
       </div>
       {err && <p className="error">{err}</p>}

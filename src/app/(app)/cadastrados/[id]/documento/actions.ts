@@ -99,6 +99,10 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
   const { error } = await storeProcessDoc(id, buf, ref);
   if (error) return { ok: false, msg: "Não foi possível salvar. Tente de novo." };
   if (changes.length && ref.kind !== "nota") await note(id, `editou ${label(ref)}`, refKey(ref), changes);
+  if (ref.kind === "nota") {
+    // guarda quando a nota foi atualizada pela última vez
+    await saveRecord(rec, { answers: { ...rec.answers, atualizada: { label: "Atualizada", value: new Date().toISOString() } } }, rec.meta);
+  }
   revalidatePath(`/cadastrados/${id}`);
   revalidatePath("/processos");
   revalidatePath("/acompanhamento");

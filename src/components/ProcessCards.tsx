@@ -9,8 +9,8 @@ const day = (iso: string) => {
 
 // Cartão simples: só o nome e o processo. Os detalhes e os botões ficam na página do arquivo.
 export { day as brDate };
-export function MiniCard({ href, title, line, sub, draft, children }: {
-  href: string; title: string; line: string; sub?: string; draft?: boolean; children?: React.ReactNode;
+export function MiniCard({ href, title, line, sub, draft, tag, children }: {
+  href: string; title: string; line: string; sub?: string; draft?: boolean; tag?: string; children?: React.ReactNode;
 }) {
   return (
     <article className="card pcard mini">
@@ -19,7 +19,7 @@ export function MiniCard({ href, title, line, sub, draft, children }: {
         <p>{line}</p>
         {sub && <p className="mini-sub">{sub}</p>}
       </Link>
-      {draft && <span className="draft-tag">Rascunho</span>}
+      {(draft || tag) && <span className="draft-tag">{tag ?? "Rascunho"}</span>}
       {children}
     </article>
   );
