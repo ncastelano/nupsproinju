@@ -20,6 +20,7 @@ export function NavTabs({ userId, isAdmin, slug }: { userId: string; isAdmin: bo
   return (
     <header className="app-header">
       <div className="inner">
+        <span className="app-brand" title="Núcleo Psicossocial · PROINJU">PROINJU</span>
         <nav ref={nav} className="subtabs main-nav scroll-nav" aria-label="Menu principal">
           {items.map((i) => (
             <Link key={i.href} href={i.href}>
