@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import { Save } from "lucide-react";
 import { FISC_SECTIONS, OTHER, rowKey, visible, type FQ } from "@/lib/fisc";
+import { ChoiceField } from "@/components/ChoiceField";
 import { saveResponses } from "@/app/(app)/fiscalizacoes/actions";
 
 type Vals = Record<string, string>;
@@ -21,66 +22,38 @@ function Input({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v: string
     );
   if (q.type === "radio") {
     const isOther = v.startsWith(OTHER);
-    const opts = [...(q.options ?? []), ...(q.other ? ["Outro"] : [])];
     return (
-      <div className="chips">
-        {opts.map((o) => (
-          <label key={o} className="chip">
-            <input type="radio" name={q.key} value={o}
-              checked={o === "Outro" ? isOther : v === o}
-              onChange={() => set(q.key, o === "Outro" ? OTHER : o)} />
-            <span>{o}</span>
-          </label>
-        ))}
-        {q.other && isOther && (
-          <input name={`${q.key}__outro`} placeholder="Qual?" style={{ flexBasis: "100%" }}
-            value={v.slice(OTHER.length)} onChange={(e) => set(q.key, OTHER + e.target.value)} />
-        )}
-      </div>
+      <ChoiceField
+        key={q.key} name={q.key} other={!!q.other} options={q.options ?? []}
+        initial={isOther ? ["Outro"] : v ? [v] : []} initialOther={isOther ? v.slice(OTHER.length) : ""}
+        onChange={(sel, text) => set(q.key, sel[0] === "Outro" ? OTHER + text : sel[0] ?? "")}
+      />
     );
   }
   if (q.type === "checkbox") {
     const picked = v ? v.split("; ") : [];
     const otherItem = picked.find((p) => p.startsWith(OTHER));
-    const toggle = (o: string, on: boolean) => {
-      const base = picked.filter((p) => (o === "Outro" ? !p.startsWith(OTHER) : p !== o));
-      set(q.key, [...base, ...(on ? [o === "Outro" ? OTHER : o] : [])].join("; "));
-    };
-    const opts = [...(q.options ?? []), ...(q.other ? ["Outro"] : [])];
     return (
-      <div className="chips">
-        {opts.map((o) => (
-          <label key={o} className="chip">
-            <input type="checkbox" name={q.key} value={o}
-              checked={o === "Outro" ? otherItem !== undefined : picked.includes(o)}
-              onChange={(e) => toggle(o, e.target.checked)} />
-            <span>{o}</span>
-          </label>
-        ))}
-        {q.other && otherItem !== undefined && (
-          <input name={`${q.key}__outro`} placeholder="Qual?" style={{ flexBasis: "100%" }}
-            value={otherItem.slice(OTHER.length)}
-            onChange={(e) => set(q.key, [...picked.filter((p) => !p.startsWith(OTHER)), OTHER + e.target.value].join("; "))} />
-        )}
-      </div>
+      <ChoiceField
+        key={q.key} name={q.key} multiple other={!!q.other} options={q.options ?? []}
+        initial={[...picked.filter((p) => !p.startsWith(OTHER)), ...(otherItem !== undefined ? ["Outro"] : [])]}
+        initialOther={otherItem?.slice(OTHER.length) ?? ""}
+        onChange={(sel, text) => set(q.key, [...sel.filter((x) => x !== "Outro"), ...(sel.includes("Outro") ? [OTHER + text] : [])].join("; "))}
+      />
     );
   }
-  // matrix: uma linha por item, uma opção por linha
+  // matrix: uma linha por item, com a opção escolhida numa lista de uma linha só
   return (
     <div className="fisc-matrix">
       {(q.rows ?? []).map((r, i) => {
         const k = rowKey(q.key, i);
         return (
-          <div key={k} className="fisc-row">
+          <div key={k} className="fisc-row line">
             <span className="fisc-row-label">{r}</span>
-            <div className="chips">
-              {(q.options ?? []).map((o) => (
-                <label key={o} className="chip">
-                  <input type="radio" name={k} value={o} checked={vals[k] === o} onChange={() => set(k, o)} />
-                  <span>{o}</span>
-                </label>
-              ))}
-            </div>
+            <select name={k} value={vals[k] ?? ""} onChange={(e) => set(k, e.target.value)}>
+              <option value="">Selecione...</option>
+              {(q.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
           </div>
         );
       })}

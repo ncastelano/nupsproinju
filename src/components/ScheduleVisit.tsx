@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { CalendarPlus, X } from "lucide-react";
 import { scheduleVisit } from "@/app/(app)/fiscalizacoes/actions";
 import { UNIDADES } from "@/lib/fisc";
+import { ChoiceField } from "@/components/ChoiceField";
 
 // Agendar uma visita de fiscalização (unidade, data e profissionais).
 export function ScheduleVisit({ people, me }: { people: string[]; me: string }) {
@@ -35,14 +36,7 @@ export function ScheduleVisit({ people, me }: { people: string[]; me: string }) 
       </label>
       <div className="field">
         <span style={{ color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>Profissional(is) responsável(is)</span>
-        <div className="chips">
-          {people.map((p) => (
-            <label key={p} className="chip">
-              <input type="checkbox" name="professionals" value={p} defaultChecked={p === me} />
-              <span>{p}</span>
-            </label>
-          ))}
-        </div>
+        <ChoiceField name="professionals" multiple options={people} initial={people.includes(me) ? [me] : []} placeholder="Selecione os profissionais..." />
       </div>
       {msg && msg !== "ok" && <p className="error">{msg}</p>}
       <div className="row">

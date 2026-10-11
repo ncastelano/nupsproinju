@@ -2,36 +2,15 @@
 import { Fragment, useActionState, useState, type ReactNode } from "react";
 import { CheckCircle2, Check } from "lucide-react";
 import { RecordView, formatDate } from "@/components/RecordView";
+import { ChoiceField } from "@/components/ChoiceField";
 import { OTHER_PREFIX, PROFESSIONAL_KEYS, type Question } from "@/lib/forms";
 import { saveIntake } from "./actions";
 
 type Answers = Record<string, { label: string; value: string }>;
 export type Acolhido = { id: string; answers: Answers; followup: Answers | null };
 
-function CheckboxField({ q, picked, otherInit, hasOther }: { q: Question; picked: string[]; otherInit: string; hasOther: boolean }) {
-  const [other, setOther] = useState(!!otherInit);
-  return (
-    <div className="chips">
-      {q.options.map((o, i) => (
-        <label key={`${o}-${i}`} className="chip">
-          <input type="checkbox" name={q.key} value={o}
-            defaultChecked={o === "Outro" ? !!otherInit : picked.includes(o)}
-            onChange={o === "Outro" ? (e) => setOther(e.target.checked) : undefined} />
-          <span>{o}</span>
-        </label>
-      ))}
-      {hasOther && other && (
-        <input name={`${q.key}__outro`} placeholder="Qual?" style={{ flexBasis: "100%" }} defaultValue={otherInit} autoFocus />
-      )}
-    </div>
-  );
-}
-
 export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
-  const isOther = q.type === "radio_other" && initial.startsWith(OTHER_PREFIX);
-  const [choice, setChoice] = useState(isOther ? "__outro__" : initial);
   const name = q.key;
-  const picked = q.type === "checkbox" ? initial.split("; ") : [];
 
   if (q.type === "textarea")
     return <textarea name={name} required={q.required} rows={5} defaultValue={initial} />;
@@ -45,32 +24,27 @@ export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
       </select>
     );
   if (q.type === "checkbox") {
+    const picked = initial ? initial.split("; ") : [];
+    const otherItem = picked.find((p) => p.startsWith(OTHER_PREFIX));
     const hasOther = q.options.includes("Outro");
-    const otherInit = picked.find((p) => p.startsWith(OTHER_PREFIX));
-    return <CheckboxField q={q} picked={picked} otherInit={otherInit?.slice(OTHER_PREFIX.length) ?? ""} hasOther={hasOther} />;
-  }
-  if (q.type === "radio" || q.type === "radio_other")
     return (
-      <div className="chips">
-        {q.options.map((o, i) => (
-          <label key={`${o}-${i}`} className="chip">
-            <input type="radio" name={name} value={o} required={q.required} defaultChecked={choice === o} onChange={() => setChoice(o)} />
-            <span>{o}</span>
-          </label>
-        ))}
-        {q.type === "radio_other" && (
-          <>
-            <label className="chip">
-              <input type="radio" name={name} value="__outro__" required={q.required} defaultChecked={choice === "__outro__"} onChange={() => setChoice("__outro__")} />
-              <span>Outro</span>
-            </label>
-            {choice === "__outro__" && (
-              <input name={`${name}__outro`} placeholder="Qual?" style={{ flexBasis: "100%" }} defaultValue={isOther ? initial.slice(OTHER_PREFIX.length) : ""} autoFocus />
-            )}
-          </>
-        )}
-      </div>
+      <ChoiceField
+        name={name} multiple other={hasOther} options={q.options.filter((o) => o !== "Outro")}
+        initial={[...picked.filter((p) => !p.startsWith(OTHER_PREFIX)), ...(otherItem !== undefined ? ["Outro"] : [])]}
+        initialOther={otherItem?.slice(OTHER_PREFIX.length) ?? ""}
+      />
     );
+  }
+  if (q.type === "radio" || q.type === "radio_other") {
+    const isOther = q.type === "radio_other" && initial.startsWith(OTHER_PREFIX);
+    return (
+      <ChoiceField
+        name={name} other={q.type === "radio_other"} singleOtherValue="__outro__" options={q.options}
+        initial={isOther ? ["Outro"] : initial ? [initial] : []}
+        initialOther={isOther ? initial.slice(OTHER_PREFIX.length) : ""}
+      />
+    );
+  }
   return <input name={name} type="text" required={q.required} defaultValue={initial} />;
 }
 

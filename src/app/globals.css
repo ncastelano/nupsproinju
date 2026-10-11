@@ -609,3 +609,34 @@ hr.soft { border: 0; border-top: 1px solid var(--line); width: 100%; margin: 8px
   font-size: 11.5px; font-weight: 700; letter-spacing: .02em; padding: 3px 10px; border-radius: 999px;
   box-shadow: 0 2px 6px rgba(7,63,73,.25);
 }
+
+/* Campo de escolha em uma linha (abre ao clicar) */
+.choice { position: relative; }
+.choice-box {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; font-weight: 500;
+  background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 11px 14px;
+}
+.choice-box:hover { border-color: var(--brand); box-shadow: none; }
+.choice-box.open { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.choice-values { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.choice-values.empty { color: var(--muted); font-weight: 400; }
+.choice-count { background: var(--brand); color: #fff; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 1px 8px; }
+.choice-panel {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 6px); background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--radius-sm); box-shadow: 0 12px 28px rgba(7,63,73,.16);
+  padding: 8px; display: grid; gap: 6px;
+}
+.choice-list { max-height: 260px; overflow: auto; display: grid; gap: 2px; }
+.choice-opt {
+  display: flex; align-items: center; gap: 10px; text-align: left; background: transparent; color: var(--text);
+  font-weight: 500; padding: 8px 10px; border-radius: 10px;
+}
+.choice-opt:hover { background: var(--bg); box-shadow: none; }
+.choice-opt.on { background: var(--brand-soft); color: var(--brand-dark); font-weight: 600; }
+.choice-check { width: 18px; height: 18px; border: 1.5px solid var(--line); border-radius: 6px; display: grid; place-items: center; flex: none; background: #fff; }
+.choice-opt.on .choice-check { background: var(--brand); border-color: var(--brand); color: #fff; }
+.choice-search, .choice-other { width: 100%; }
+.choice-none { color: var(--muted); padding: 8px 10px; font-size: 14px; }
+.choice-done { justify-self: end; padding: 6px 14px; font-size: 13px; }
+.fisc-row.line { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fisc-row.line select { width: auto; min-width: 200px; }
