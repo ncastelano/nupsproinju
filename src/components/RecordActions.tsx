@@ -2,12 +2,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Download, FileText, Trash2 } from "lucide-react";
+import { ClipboardPen, Download, FileText, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
 import { deleteCadastro } from "@/app/(app)/cadastrados/records-actions";
 
 // Ações do cartão de cadastro inicial: compartilhar o link ou apagar (com confirmação na tela).
-export function RecordActions({ recordId, nome, canDelete }: { recordId: string; nome: string; canDelete: boolean }) {
+export function RecordActions({ recordId, nome, canDelete, draft = false }: { recordId: string; nome: string; canDelete: boolean; draft?: boolean }) {
   const router = useRouter();
   const [ask, setAsk] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -24,19 +24,27 @@ export function RecordActions({ recordId, nome, canDelete }: { recordId: string;
 
   return (
     <>
-      <Link href={`/cadastrados/${recordId}/documento`}>
-        <button type="button"><FileText size={16} /> Abrir</button>
-      </Link>
-      <ShareMenu
-        path={`/cadastrados/${recordId}`}
-        text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – PROINJU):`}
-        label="Compartilhar"
-        className="ghost"
-        note="Só abre para quem estiver logado e tiver acesso."
-      />
-      <a href={`/cadastrados/${recordId}/relatorio`}>
-        <button type="button" className="ghost"><Download size={16} /> Baixar</button>
-      </a>
+      {draft ? (
+        <Link href={`/cadastro-inicial?rascunho=${recordId}`}>
+          <button type="button"><ClipboardPen size={16} /> Continuar</button>
+        </Link>
+      ) : (
+        <>
+          <Link href={`/cadastrados/${recordId}/documento`}>
+            <button type="button"><FileText size={16} /> Abrir</button>
+          </Link>
+          <ShareMenu
+            path={`/cadastrados/${recordId}`}
+            text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – PROINJU):`}
+            label="Compartilhar"
+            className="ghost"
+            note="Só abre para quem estiver logado e tiver acesso."
+          />
+          <a href={`/cadastrados/${recordId}/relatorio`}>
+            <button type="button" className="ghost"><Download size={16} /> Baixar</button>
+          </a>
+        </>
+      )}
       {canDelete && (!ask ? (
         <button type="button" className="danger" onClick={() => { setErr(null); setAsk(true); }}>
           <Trash2 size={16} /> Deletar

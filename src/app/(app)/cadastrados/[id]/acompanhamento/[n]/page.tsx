@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ClipboardList, Download } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { accessOf, loadRecord } from "@/lib/records";
@@ -17,7 +17,9 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
   const rec = await loadRecord(id);
   if (!rec || !Number.isInteger(n)) notFound();
   const acc = accessOf(rec, me);
-  if (!acc.canView || !rec.meta.acomps.some((a) => a.n === n)) notFound();
+  const entry = rec.meta.acomps.find((a) => a.n === n);
+  if (!acc.canView || !entry) notFound();
+  if (entry.draft) redirect(`/acompanhamento?processo=${id}&n=${n}`);
 
   const ref = { kind: "acomp", n } as const;
   const doc = await loadProcessDoc(rec, ref, me);

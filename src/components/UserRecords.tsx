@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, FileText, Plus } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
@@ -11,7 +11,6 @@ import { listDocs } from "@/lib/documents";
 import { AcompCard, FiscCard } from "@/components/ProcessCards";
 import { FISC_KEY } from "@/lib/fisc";
 import { RecordActions } from "@/components/RecordActions";
-import { ModeloRelatorio } from "@/components/ModeloRelatorio";
 
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
@@ -82,33 +81,26 @@ export async function UserRecords({ id, view, only }: { id: string; view: "formu
       id: r.id as string, owner_id: r.created_by as string, created_at: r.created_at as string,
       meta: metaOf({ _meta: r.meta ?? {} }),
     }))
-    .filter((r) => r.meta.visit?.status === "realizada");
+    .filter((r) => r.meta.visit?.status === "realizada" || r.meta.visit?.draft);
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-      <div>
-        <h1 style={{ margin: "8px 0 0" }}>
-          {only ? { cadastros: "Cadastros iniciais", acompanhamentos: "Acompanhamentos", fiscalizacoes: "Fiscalizações" }[only]
-            : view === "formularios" ? (mine ? "Processos" : `Processos de ${first}`)
-            : view === "acompanhamentos" ? (mine ? "Acompanhamentos" : `Acompanhamentos de ${first}`)
-            : `Processos de ${first}`}
-        </h1>
-        <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
-          {mine
-            ? view === "acompanhamentos"
-              ? "Os acompanhamentos que você preencheu. Toque em um para abrir a ficha completa."
-              : "Os processos cadastrados pelo Cadastro inicial. Toque em um para abrir a ficha completa."
-            : `${person.name || person.email}${person.registry ? ` · ${person.registry}` : ""}. Toque em um item para abrir a ficha completa.`}
-        </p>
-      </div>
-      {mine && (
-        <div className="row">
-          {only ? <Link href="/processos"><button className="ghost"><ArrowLeft size={16} /> Voltar a Processos</button></Link>
-            : showF && <Link href="/cadastro-inicial"><button><Plus size={16} /> Novo cadastro inicial</button></Link>}
+      {(only || !mine) && (
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h1 style={{ margin: "8px 0 0" }}>
+              {only ? { cadastros: "Cadastros iniciais", acompanhamentos: "Acompanhamentos", fiscalizacoes: "Fiscalizações" }[only]
+                : `Relatórios de ${first}`}
+            </h1>
+            {!only && (
+              <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
+                {person.name || person.email}{person.registry ? ` · ${person.registry}` : ""}.
+              </p>
+            )}
+          </div>
+          {only && <Link href="/processos"><button className="ghost"><ArrowLeft size={16} /> Voltar a Relatórios</button></Link>}
         </div>
       )}
-      </div>
 
       {(["formulario", "acompanhamento"] as const).map((k) => {
         const list = docs.filter((d) => (d.kind ?? "formulario") === k);
@@ -134,7 +126,6 @@ export async function UserRecords({ id, view, only }: { id: string; view: "formu
         );
       })}
 
-      {mine && showF && !only && <ModeloRelatorio canEdit={me.role === "admin"} />}
 
       {showF && (!only || only === "cadastros") && (
         <Block
@@ -146,20 +137,21 @@ export async function UserRecords({ id, view, only }: { id: string; view: "formu
             const nome = r.answers.nomes?.value ?? "(sem nome)";
             return (
               <article key={r.id} className="card pcard">
-                <Link href={`/cadastrados/${r.id}/documento`} className="pcard-head">
+                <Link href={meta.draft ? `/cadastro-inicial?rascunho=${r.id}` : `/cadastrados/${r.id}/documento`} className="pcard-head">
                   <span className="pcard-ico"><FileText size={20} /></span>
                   <span>
                     <h3>{nome}</h3>
                     <p>Processo {r.answers.processo?.value ?? "—"}</p>
                   </span>
                 </Link>
+                {meta.draft && <span className="badge draft">Rascunho</span>}
                 <div className="pcard-chips">
                   {r.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(r.answers.data_acolhimento.value)}</span>}
                   <span className="chip">{meta.acomps.length} {meta.acomps.length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
                 </div>
                 <span className="pcard-by">Criado por {ownerOf(r.created_by) || "—"} em {new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
                 <div className="pcard-actions">
-                  <RecordActions recordId={r.id} nome={nome} canDelete={canRemove(r.created_by)} />
+                  <RecordActions recordId={r.id} nome={nome} canDelete={canRemove(r.created_by)} draft={!!meta.draft} />
                 </div>
               </article>
             );
@@ -175,7 +167,7 @@ export async function UserRecords({ id, view, only }: { id: string; view: "formu
           {(only ? acomps : acomps.slice(0, LIMIT)).map((x) => (
             <AcompCard
               key={`${x.rid}-${x.a.n}`} recordId={x.rid} nomes={x.nomes} processo={x.processo}
-              n={x.a.n} by={x.a.by_name} at={x.a.at} canDelete={x.canDelete}
+              n={x.a.n} by={x.a.by_name} at={x.a.at} canDelete={x.canDelete} draft={!!x.a.draft}
             />
           ))}
         </Block>
@@ -191,6 +183,7 @@ export async function UserRecords({ id, view, only }: { id: string; view: "formu
               key={f.id} id={f.id} unit={f.meta.visit?.unit ?? ""} date={f.meta.visit?.date ?? ""}
               professionals={f.meta.visit?.professionals ?? []} respondedBy={f.meta.visit?.responded_by}
               respondedAt={f.meta.visit?.responded_at} canDelete={canRemove(f.owner_id)}
+              draft={f.meta.visit?.status !== "realizada"}
             />
           ))}
         </Block>

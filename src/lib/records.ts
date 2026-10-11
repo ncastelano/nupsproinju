@@ -10,11 +10,12 @@ export type HistoryEntry = {
   doc?: string; // "inicial" ou "acomp:N": a que documento a atividade se refere
 };
 export type FollowupEntry = { at: string; by_name: string; answers: Ans };
-export type AcompEntry = { n: number; at: string; by_id: string; by_name: string };
+export type AcompEntry = { n: number; at: string; by_id: string; by_name: string; draft?: boolean };
 export type VisitMeta = {
   unit: string; date: string; professionals: string[];
   status: "agendada" | "realizada";
   responded_at?: string; responded_by?: string;
+  draft?: boolean; // questionário respondido pela metade (rascunho)
 };
 export type RecMeta = {
   shared: { id: string; name: string }[];
@@ -24,6 +25,7 @@ export type RecMeta = {
   acomps: AcompEntry[]; // relatórios de acompanhamento e reavaliação (documentos .docx)
   visit?: VisitMeta;    // só nas fiscalizações
   acompData?: Record<string, Record<string, string>>; // respostas do questionário de cada acompanhamento (por nº)
+  draft?: boolean;      // cadastro inicial salvo como rascunho
 };
 export type Rec = {
   id: string; created_by: string; created_at: string; form_key: string;
@@ -39,7 +41,7 @@ export function metaOf(raw: Record<string, unknown>): RecMeta {
   const editing = Object.fromEntries(
     Object.entries(m.editing ?? {}).filter(([, v]) => now - new Date(v.since).getTime() < STALE_MS),
   );
-  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [], visit: m.visit, acompData: m.acompData };
+  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [], visit: m.visit, acompData: m.acompData, draft: m.draft };
 }
 
 // formKey: o tipo de registro (padrão: cadastro inicial); null aceita qualquer tipo.

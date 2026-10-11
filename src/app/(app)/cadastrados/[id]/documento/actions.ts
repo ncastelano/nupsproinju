@@ -112,9 +112,12 @@ export async function saveAcompanhamento(_: string | null, form: FormData): Prom
   if (!accessOf(rec, me).canEdit) return "Você não tem permissão para editar.";
 
   const meta = rec.meta;
+  const draft = form.get("intent") === "draft";
   const isNew = nRaw === "";
   const n = isNew ? Math.max(0, ...meta.acomps.map((a) => a.n)) + 1 : Number(nRaw);
-  if (!isNew && !meta.acomps.some((a) => a.n === n)) return "Acompanhamento não encontrado.";
+  const existing = meta.acomps.find((a) => a.n === n);
+  if (!isNew && !existing) return "Acompanhamento não encontrado.";
+  if (meta.draft) return "Conclua o Cadastro inicial deste processo antes de fazer o acompanhamento.";
 
   const answers: Record<string, string> = {};
   for (const g of ACOMP_GROUPS) for (const f of g.fields) {
@@ -123,10 +126,24 @@ export async function saveAcompanhamento(_: string | null, form: FormData): Prom
   }
   meta.acompData = { ...(meta.acompData ?? {}), [String(n)]: answers };
   const at = new Date().toISOString();
-  if (isNew) meta.acomps.push({ n, at, by_id: me.id, by_name: me.name || me.email });
+  const wasDraft = !!existing?.draft;
+  if (isNew) meta.acomps.push({ n, at, by_id: me.id, by_name: me.name || me.email, draft });
+  else if (existing) { existing.draft = draft; }
+
+  const who = { by_id: me.id, by_name: me.name || me.email };
+  if (draft) {
+    // rascunho: guarda as respostas, sem gerar o documento
+    if (isNew) meta.history.unshift({ at, ...who, scope: "acompanhamento", changes: [], doc: `acomp:${n}`, note: `salvou o rascunho do acompanhamento nº ${n}` });
+    meta.history = meta.history.slice(0, 200);
+    const r = await saveRecord(rec, {}, meta);
+    if (r.error) return "Não foi possível salvar o rascunho.";
+    revalidatePath("/processos");
+    redirect("/processos");
+  }
+
   meta.history.unshift({
-    at, by_id: me.id, by_name: me.name || me.email, scope: "acompanhamento", changes: [], doc: `acomp:${n}`,
-    note: isNew ? `criou o acompanhamento nº ${n}` : `atualizou as respostas do acompanhamento nº ${n} (documento refeito)`,
+    at, ...who, scope: "acompanhamento", changes: [], doc: `acomp:${n}`,
+    note: isNew || wasDraft ? `criou o acompanhamento nº ${n}` : `atualizou as respostas do acompanhamento nº ${n} (documento refeito)`,
   });
   meta.history = meta.history.slice(0, 200);
 

@@ -39,6 +39,7 @@ export function AcompForm({
       {msg && <p className="error">{msg}</p>}
       <div className="row">
         <button disabled={pending || !id}><Save size={16} /> {pending ? "Gerando..." : "Salvar e gerar o relatório"}</button>
+        <button name="intent" value="draft" className="ghost" disabled={pending || !id}>Salvar rascunho</button>
         {!id && <span className="help">Escolha o processo acima para salvar.</span>}
       </div>
     </form>

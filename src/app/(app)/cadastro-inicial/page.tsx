@@ -3,12 +3,13 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
+import { loadRecord } from "@/lib/records";
 import { IntakeForm, type Acolhido } from "./IntakeForm";
 
 export default async function FormularioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string; acolhido?: string }>;
+  searchParams: Promise<{ aba?: string; acolhido?: string; rascunho?: string }>;
 }) {
   const me = await requireMember();
   const sp = await searchParams;
@@ -33,6 +34,17 @@ export default async function FormularioPage({
     }));
   }
 
+  // rascunho: continua de onde parou
+  let draftId = "";
+  let initialAnswers: Record<string, string> | undefined;
+  if (!acomp && sp.rascunho) {
+    const rec = await loadRecord(sp.rascunho);
+    if (rec && rec.meta.draft) {
+      draftId = rec.id;
+      initialAnswers = Object.fromEntries(Object.entries(rec.answers).map(([k, a]) => [k, a.value]));
+    }
+  }
+
   return (
     <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
       <div>
@@ -53,7 +65,8 @@ export default async function FormularioPage({
         <div className="card empty">Nenhuma pergunta cadastrada ainda.</div>
       ) : (
         <IntakeForm key={formKey} formKey={formKey} professional={professional} hasRegistry={!!me.registry} questions={questions}
-          acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions} />
+          acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions}
+          draftId={draftId} initialAnswers={initialAnswers} />
       )}
     </div>
   );

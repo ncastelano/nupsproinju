@@ -45,7 +45,7 @@ export default async function FiscalizacoesPage() {
         <div>
           <h1 style={{ margin: "8px 0 0" }}>Fiscalizações</h1>
           <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
-            Agende as visitas às unidades e responda o questionário depois de cada visita. O relatório gerado aparece em <Link href="/processos">Processos</Link>, abaixo dos acompanhamentos.
+            Agende as visitas às unidades e responda o questionário depois de cada visita. O relatório gerado aparece em <Link href="/processos">Relatórios</Link>, abaixo dos acompanhamentos.
           </p>
         </div>
       </div>
@@ -73,9 +73,13 @@ export default async function FiscalizacoesPage() {
                   </span>
                 </Link>
                 <div className="pcard-chips">
-                  <span className={`badge ${done ? "shared" : late ? "private" : ""}`}>
-                    {done ? "Realizada" : late ? "Atrasada" : "Agendada"}
-                  </span>
+                  {v?.draft && !done
+                    ? <span className="badge draft">Rascunho</span>
+                    : (
+                      <span className={`badge ${done ? "shared" : late ? "private" : ""}`}>
+                        {done ? "Realizada" : late ? "Atrasada" : "Agendada"}
+                      </span>
+                    )}
                   {(v?.professionals ?? []).map((p) => <span key={p} className="chip">{p}</span>)}
                 </div>
                 {done && v?.responded_at && (
@@ -84,7 +88,7 @@ export default async function FiscalizacoesPage() {
                   </span>
                 )}
                 <FiscActions
-                  id={r.id} done={done} nome={`${unit} – ${v?.date ? day(v.date) : ""}`}
+                  id={r.id} done={done} draft={!!v?.draft} nome={`${unit} – ${v?.date ? day(v.date) : ""}`}
                   canDelete={isOwner || me.role === "admin"}
                 />
                 <RecordActivity history={r.meta.history} createdAt={r.created_at} ownerName={r.owner} label="Agendou a fiscalização" showCreated={false} />

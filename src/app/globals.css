@@ -584,3 +584,5 @@ a.pcard-head:hover h3 { color: var(--brand); text-decoration: underline; }
 .user-grid.four .pcard-actions button { padding: 7px 10px; font-size: 13px; }
 .pcard-by { color: var(--muted); font-size: 13px; }
 a.see-all { font-size: 13.5px; }
+
+.badge.draft { background: var(--brand); color: #fff; display: inline-flex; align-items: center; width: fit-content; }

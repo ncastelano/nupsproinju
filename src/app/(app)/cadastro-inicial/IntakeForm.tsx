@@ -76,7 +76,10 @@ export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
 
 export function IntakeForm({
   formKey, questions, acolhidos, selected, cadastroQuestions = [], professional, hasRegistry, extra, owned = false,
+  draftId = "", initialAnswers,
 }: {
+  draftId?: string;
+  initialAnswers?: Record<string, string>;
   formKey: string;
   owned?: boolean;
   extra?: ReactNode;
@@ -88,6 +91,8 @@ export function IntakeForm({
   selected?: string;
 }) {
   const [msg, action, pending] = useActionState(saveIntake, null);
+  const savedDraft = msg?.startsWith("draft:") ? msg.slice(6) : null;
+  const currentDraft = savedDraft || draftId;
   const [sel, setSel] = useState(selected ?? "");
   const current = acolhidos?.find((a) => a.id === sel);
 
@@ -97,10 +102,10 @@ export function IntakeForm({
       <div className="card empty">
         <div className="ico"><CheckCircle2 size={44} /></div>
         <h2>Registro salvo</h2>
-        <p>O processo já aparece em <b>Processos</b>.</p>
+        <p>O cadastro já aparece em <b>Relatórios</b>.</p>
         <div className="row" style={{ justifyContent: "center" }}>
           {okId && <a href={`/cadastrados/${okId}/relatorio`}><button type="button">Baixar relatório (.docx)</button></a>}
-          <a href="/processos"><button type="button" className="ghost">Ver em Processos</button></a>
+          <a href="/processos"><button type="button" className="ghost">Ver em Relatórios</button></a>
           <button type="button" className="ghost" onClick={() => location.reload()}>Fazer outro cadastro</button>
         </div>
       </div>
@@ -111,6 +116,7 @@ export function IntakeForm({
     <>
     <form id="intake-form" action={action} className="grid" style={{ gap: 14 }}>
       <input type="hidden" name="form_key" value={formKey} />
+      {currentDraft && <input type="hidden" name="draft_id" value={currentDraft} />}
 
       {acolhidos && (
         <>
@@ -184,7 +190,7 @@ export function IntakeForm({
               <Field
                 key={`${sel}-${q.id}`}
                 q={PROFESSIONAL_KEYS.includes(q.key) ? { ...q, options: [...new Set([...q.options, professional])] } : q}
-                initial={PROFESSIONAL_KEYS.includes(q.key) ? professional : formKey === "acompanhamento" ? current?.followup?.[q.key]?.value ?? "" : ""}
+                initial={PROFESSIONAL_KEYS.includes(q.key) ? professional : formKey === "acompanhamento" ? current?.followup?.[q.key]?.value ?? "" : initialAnswers?.[q.key] ?? ""}
               />
               )}
               
@@ -196,10 +202,16 @@ export function IntakeForm({
 
     {(!acolhidos || current) && extra}
 
-    {msg && msg !== "ok" && !msg.startsWith("ok:") && <p className="error">{msg}</p>}
+    {msg && msg !== "ok" && !msg.startsWith("ok:") && !msg.startsWith("draft:") && <p className="error">{msg}</p>}
+    {savedDraft && <p className="help" style={{ margin: 0 }}><span className="badge draft">Rascunho</span> salvo. Você pode continuar depois em Relatórios.</p>}
     <div className="row">
       {(!acolhidos || current) && (
         <button type="submit" form="intake-form" disabled={pending}>{pending ? "Salvando..." : "Salvar"}</button>
+      )}
+      {!acolhidos && formKey === "cadastro_inicial" && (
+        <button type="submit" form="intake-form" name="intent" value="draft" formNoValidate className="ghost" disabled={pending}>
+          Salvar rascunho
+        </button>
       )}
     </div>
     </>

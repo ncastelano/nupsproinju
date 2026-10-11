@@ -373,7 +373,7 @@ export const rowKey = (key: string, i: number) => `${key}__${i}`;
 export type Visit = {
   unit: string; date: string; professionals: string[];
   status: "agendada" | "realizada";
-  responded_at?: string; responded_by?: string;
+  responded_at?: string; responded_by?: string; draft?: boolean;
 };
 
 const iso = (v: string) => { const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : v; };

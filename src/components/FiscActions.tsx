@@ -8,9 +8,9 @@ import { deleteFiscalizacao } from "@/app/(app)/fiscalizacoes/actions";
 
 // Botões de uma fiscalização: responder, abrir o relatório, compartilhar, baixar e apagar.
 export function FiscActions({
-  id, done, nome, canDelete,
+  id, done, nome, canDelete, draft = false,
 }: {
-  id: string; done: boolean; nome: string; canDelete: boolean;
+  id: string; done: boolean; nome: string; canDelete: boolean; draft?: boolean;
 }) {
   const router = useRouter();
   const [ask, setAsk] = useState(false);
@@ -28,7 +28,7 @@ export function FiscActions({
             <Link href={`/fiscalizacoes/${id}`}><button type="button"><FileText size={16} /> Abrir</button></Link>
           </>
         ) : (
-          <Link href={`/fiscalizacoes/${id}/responder`}><button type="button"><ClipboardPen size={16} /> Responder questionário</button></Link>
+          <Link href={`/fiscalizacoes/${id}/responder`}><button type="button"><ClipboardPen size={16} /> {draft ? "Continuar" : "Responder questionário"}</button></Link>
         )}
         <ShareMenu
           path={`/fiscalizacoes/${id}`}

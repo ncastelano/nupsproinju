@@ -7,18 +7,21 @@ import { AcompForm } from "@/components/AcompForm";
 import { ProcessPicker } from "@/components/ProcessPicker";
 
 // Formulário do Relatório de acompanhamento e reavaliação. Ao salvar, o relatório aparece em Processos.
-export default async function AcompanhamentoPage({ searchParams }: { searchParams: Promise<{ processo?: string }> }) {
+export default async function AcompanhamentoPage({ searchParams }: { searchParams: Promise<{ processo?: string; n?: string }> }) {
   await requireMember();
-  const { processo } = await searchParams;
+  const { processo, n: nRaw } = await searchParams;
   const { data } = await createAdminClient().from("intake_records")
-    .select("id, nomes:answers->nomes->>value, numero:answers->processo->>value")
+    .select("id, meta:answers->_meta, nomes:answers->nomes->>value, numero:answers->processo->>value")
     .eq("form_key", FORM_KEY).order("created_at", { ascending: false });
-  const options = (data ?? []).map((r) => ({
+  // cadastro inicial ainda em rascunho não tem processo para acompanhar
+  const options = (data ?? []).filter((r) => !(r.meta as { draft?: boolean } | null)?.draft).map((r) => ({
     id: r.id as string, label: `${(r.nomes as string) || "(sem nome)"} — Processo ${(r.numero as string) || "—"}`,
   }));
 
   const rec = processo ? await loadRecord(processo) : null;
-  const n = rec ? Math.max(0, ...rec.meta.acomps.map((a) => a.n)) + 1 : 1;
+  // ?n=N continua um rascunho de acompanhamento
+  const draftN = rec && nRaw ? rec.meta.acomps.find((a) => a.n === Number(nRaw) && a.draft)?.n ?? null : null;
+  const n = draftN ?? (rec ? Math.max(0, ...rec.meta.acomps.map((a) => a.n)) + 1 : 1);
   const a = rec?.answers;
 
   return (
@@ -26,7 +29,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
       <div>
         <h1 style={{ margin: "8px 0 0" }}>Relatório de acompanhamento e reavaliação</h1>
         <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
-          Preencha o formulário. Ao salvar, o relatório é gerado no padrão do NUPS e fica em Processos, para você editar.
+          Preencha o formulário. Ao salvar, o relatório é gerado no padrão do NUPS e fica em Relatórios, para você editar.
         </p>
       </div>
 
@@ -49,7 +52,8 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
       </div>
 
       <AcompForm
-        key={rec?.id ?? "novo"} id={rec?.id ?? ""} n={null} initial={{}} redo={false}
+        key={`${rec?.id ?? "novo"}-${draftN ?? ""}`} id={rec?.id ?? ""} n={draftN}
+        initial={draftN !== null ? rec?.meta.acompData?.[String(draftN)] ?? {} : {}} redo={false}
         previous={rec ? previousTexts(rec.answers, rec.meta, n) : {}}
       />
     </div>

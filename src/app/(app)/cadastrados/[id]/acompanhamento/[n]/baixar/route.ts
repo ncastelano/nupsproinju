@@ -9,7 +9,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const { id, n: nRaw } = await params;
   const n = Number(nRaw);
   const rec = await loadRecord(id);
-  if (!rec || !Number.isInteger(n) || !accessOf(rec, me).canView || !rec.meta.acomps.some((a) => a.n === n)) {
+  if (!rec || !Number.isInteger(n) || !accessOf(rec, me).canView || !rec.meta.acomps.some((a) => a.n === n && !a.draft)) {
     return new Response("Não encontrado", { status: 404 });
   }
   const doc = await loadProcessDoc(rec, { kind: "acomp", n }, me);

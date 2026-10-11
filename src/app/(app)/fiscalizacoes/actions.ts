@@ -43,6 +43,7 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
   if (!rec) return "Fiscalização não encontrada.";
   if (!accessOf(rec, me).canEdit) return "Você não tem permissão para editar.";
 
+  const draft = form.get("intent") === "draft";
   const next: Ans = {};
   const get = (k: string) => (next[k]?.value ?? "").trim();
   for (const sec of FISC_SECTIONS) {
@@ -64,7 +65,7 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
         const outro = String(form.get(`${qn.key}__outro`) ?? "").trim();
         value = outro ? OTHER + outro : "";
       } else value = String(form.get(qn.key) ?? "").trim();
-      if (qn.required && !value && ["q1", "q2", "q3"].includes(qn.key)) return `Preencha: ${qn.label}`;
+      if (qn.required && !value && !draft && ["q1", "q2", "q3"].includes(qn.key)) return `Preencha: ${qn.label}`;
       if (value) next[qn.key] = { label: qn.label, value: value.slice(0, 8000) };
     }
   }
@@ -74,8 +75,24 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
   const professionals = (next.q3?.value ?? "").split("; ").filter(Boolean);
   const meta = rec.meta;
   const first = meta.visit?.status !== "realizada";
+  if (draft) {
+    // rascunho: guarda as respostas e continua como visita a responder
+    meta.visit = { unit, date, professionals, status: meta.visit?.status ?? "agendada", draft: true,
+      responded_at: meta.visit?.responded_at, responded_by: meta.visit?.responded_by };
+    const note = "salvou o rascunho do questionário";
+    const last = meta.history[0];
+    if (!(last && last.by_id === me.id && last.note === note)) {
+      meta.history.unshift({ at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario", changes: [], note, doc: "fisc" });
+      meta.history = meta.history.slice(0, 200);
+    }
+    const r = await saveRecord(rec, { answers: next }, meta);
+    if (r.error) return "Não foi possível salvar o rascunho.";
+    refresh();
+    revalidatePath("/processos");
+    redirect("/fiscalizacoes");
+  }
   meta.visit = {
-    unit, date, professionals, status: "realizada",
+    unit, date, professionals, status: "realizada", draft: false,
     responded_at: new Date().toISOString(), responded_by: me.name || me.email,
   };
   const entry: HistoryEntry = {
@@ -88,6 +105,7 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
   if (r.error) return "Não foi possível salvar.";
   await createAdminClient().storage.from(DOC_BUCKET).remove([docPath(id, { kind: "fisc" })]); // regenera a partir das respostas
   refresh();
+  revalidatePath("/processos");
   redirect(`/fiscalizacoes/${id}`);
 }
 

@@ -121,6 +121,7 @@ export function FiscForm({ id, initial, redo }: { id: string; initial: Vals; red
       {msg && <p className="error">{msg}</p>}
       <div className="row">
         <button disabled={pending}><Save size={16} /> {pending ? "Salvando..." : "Salvar e gerar o relatório"}</button>
+        {!redo && <button name="intent" value="draft" formNoValidate className="ghost" disabled={pending}>Salvar rascunho</button>}
       </div>
     </form>
   );

@@ -11,6 +11,8 @@ export async function saveIntake(_: string | null, form: FormData) {
   const me = await requireMember();
   const formKey = form.get("form_key") === FORM_ACOMP ? FORM_ACOMP : FORM_KEY;
   const supabase = await createClient();
+  const draft = form.get("intent") === "draft" && formKey === FORM_KEY; // rascunho: salva sem exigir tudo
+  const draftId = String(form.get("draft_id") ?? "");
 
   let recordId: string | null = null;
   if (formKey === FORM_ACOMP) {
@@ -26,7 +28,7 @@ export async function saveIntake(_: string | null, form: FormData) {
     let value: string;
     if (PROFESSIONAL_KEYS.includes(q.key)) {
       // quem está logado sempre assina; outros profissionais podem ser marcados junto
-      if (!me.registry) return "Informe o seu CRP ou CRESS no perfil antes de salvar.";
+      if (!me.registry && !draft) return "Informe o seu CRP ou CRESS no perfil antes de salvar.";
       if (q.type === "checkbox") {
         const picked = form.getAll(q.key).map((v) => String(v).trim()).filter(Boolean);
         if (!picked.includes(signature)) picked.unshift(signature);
@@ -43,7 +45,7 @@ export async function saveIntake(_: string | null, form: FormData) {
       const other = String(form.get(`${q.key}__outro`) ?? "").trim();
       value = other ? OTHER_PREFIX + other : "";
     }
-    if (q.required && !value) return `Preencha: ${q.label}`;
+    if (q.required && !value && !draft) return `Preencha: ${q.label}`;
     if (value) answers[q.key] = { label: q.label, value };
   }
 
@@ -78,14 +80,31 @@ export async function saveIntake(_: string | null, form: FormData) {
         await saveRecord(before, {}, meta);
       }
     }
+  } else if (draftId) {
+    // continua um rascunho já salvo (ou o finaliza)
+    const rec = await loadRecord(draftId);
+    if (!rec) return "Rascunho não encontrado.";
+    const meta = rec.meta;
+    meta.draft = draft;
+    if (!draft) {
+      meta.history.unshift({
+        at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario", changes: [],
+        note: "concluiu o cadastro inicial", doc: "inicial",
+      });
+    }
+    const r = await saveRecord(rec, { answers }, meta);
+    if (r.error) return "Não foi possível salvar. Tente novamente.";
+    newId = rec.id;
   } else {
+    const row = draft ? { ...answers, _meta: { shared: [], followups: [], history: [], acomps: [], editing: {}, draft: true } } : answers;
     const { data: ins, error } = await supabase
-      .from("intake_records").insert({ form_key: FORM_KEY, created_by: me.id, answers }).select("id").single();
+      .from("intake_records").insert({ form_key: FORM_KEY, created_by: me.id, answers: row }).select("id").single();
     if (error || !ins) return "Não foi possível salvar. Tente novamente.";
     newId = ins.id as string;
   }
   revalidatePath("/banco-de-dados");
   revalidatePath("/banco-de-dados", "layout");
   revalidatePath("/processos");
+  if (draft && newId) return `draft:${newId}`;
   return newId ? `ok:${newId}` : "ok";
 }
