@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardPen, Download, FileText, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
+import { DownloadMenu } from "@/components/DownloadMenu";
 import { deleteFiscalizacao } from "@/app/(app)/fiscalizacoes/actions";
 
 // Botões de uma fiscalização: responder, abrir o relatório, compartilhar, baixar e apagar.
@@ -37,7 +38,7 @@ export function FiscActions({
           note="Só abre para quem estiver logado e tiver acesso."
         />
         {done && (
-          <a href={`/fiscalizacoes/${id}/baixar`}><button type="button" className="ghost"><Download size={16} /> Baixar</button></a>
+          <DownloadMenu href={`/fiscalizacoes/${id}/baixar`} />
         )}
         {canDelete && (!ask ? (
           <button type="button" className="danger" onClick={() => { setErr(null); setAsk(true); }}><Trash2 size={16} /> Deletar</button>

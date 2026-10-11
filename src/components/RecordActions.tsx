@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ClipboardPen, Download, FileText, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
+import { DownloadMenu } from "@/components/DownloadMenu";
 import { deleteCadastro } from "@/app/(app)/cadastrados/records-actions";
 
 // Ações do cartão de cadastro inicial: compartilhar o link ou apagar (com confirmação na tela).
@@ -44,9 +45,7 @@ export function RecordActions({ recordId, nome, canDelete, draft = false, hideOp
             className="ghost"
             note="Só abre para quem estiver logado e tiver acesso."
           />
-          <a href={`/cadastrados/${recordId}/relatorio`}>
-            <button type="button" className="ghost"><Download size={16} /> Baixar</button>
-          </a>
+          <DownloadMenu href={`/cadastrados/${recordId}/relatorio`} />
         </>
       )}
       {canDelete && (!ask ? (

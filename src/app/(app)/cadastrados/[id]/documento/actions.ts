@@ -5,8 +5,9 @@ import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
 import { FISC_KEY } from "@/lib/fisc";
+import { NOTA_KEY } from "@/lib/notes";
 import { accessOf, loadRecord, saveRecord, type HistoryEntry } from "@/lib/records";
-import { cleanParas, parseDocx, serializeDocx, type Para } from "@/lib/docxDoc";
+import { cleanBlocks, cleanComments, isTable, parseDocx, serializeDocx, type Block, type DocComment, type Para } from "@/lib/docxDoc";
 import { ACOMP_GROUPS } from "@/lib/acomp";
 import { DOC_BUCKET, INICIAL, generateDoc, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
 
@@ -15,17 +16,23 @@ const SAME_USER_MS = 30 * 60 * 1000;
 const refOf = (r: unknown): DocRef => {
   const o = (r ?? {}) as { kind?: string; n?: number };
   if (o.kind === "fisc") return { kind: "fisc" };
+  if (o.kind === "nota") return { kind: "nota" };
   if (o.kind === "acomp" && Number.isInteger(o.n)) return { kind: "acomp", n: o.n as number };
   return INICIAL;
 };
 // cadastro inicial/acompanhamento usam registros de processo; fiscalização usa o seu próprio tipo
-const formOf = (ref: DocRef) => (ref.kind === "fisc" ? FISC_KEY : FORM_KEY);
+const formOf = (ref: DocRef) => (ref.kind === "fisc" ? FISC_KEY : ref.kind === "nota" ? NOTA_KEY : FORM_KEY);
+// a nota é só de quem a criou
+const notaDenied = (ref: DocRef, rec: { created_by: string }, me: { id: string }) => ref.kind === "nota" && rec.created_by !== me.id;
 
-const textsOf = (paras: Para[]) => paras.map((p) => p.runs.map((r) => r.t).join("").trim()).filter(Boolean);
+const textsOf = (blocks: Block[]) => {
+  const paras: Para[] = blocks.flatMap((b) => (isTable(b) ? b.rows.flat(2) : [b]));
+  return paras.map((p) => p.runs.map((r) => r.t).join("").trim()).filter(Boolean);
+};
 const cut = (s: string) => (s.length > 220 ? s.slice(0, 220) + "…" : s);
 
 // O que entrou e o que saiu do texto (por parágrafo), para o histórico de atividades.
-function diffParas(before: Para[], after: Para[]): HistoryEntry["changes"] {
+function diffParas(before: Block[], after: Block[]): HistoryEntry["changes"] {
   const left = new Map<string, number>();
   for (const t of textsOf(before)) left.set(t, (left.get(t) ?? 0) + 1);
   const added: string[] = [];
@@ -67,9 +74,14 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
   const me = await requireMember();
   const rec = await loadRecord(id, formOf(ref));
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
-  if (!accessOf(rec, me).canEdit) return { ok: false, msg: "Você não tem permissão para editar." };
-  const clean = cleanParas(paras);
+  if (!accessOf(rec, me).canEdit || notaDenied(ref, rec, me)) return { ok: false, msg: "Você não tem permissão para editar." };
+  // aceita o formato novo {blocks, comments, page} ou só a lista de parágrafos
+  const payload = (paras && typeof paras === "object" && !Array.isArray(paras) ? paras : { blocks: paras }) as { blocks?: unknown; comments?: unknown; page?: Record<string, unknown> };
+  const clean = cleanBlocks(payload.blocks);
   if (!clean) return { ok: false, msg: "Documento inválido." };
+  const pg = payload.page ?? {};
+  const mar = (v: unknown) => (typeof v === "number" && v >= 24 && v <= 240 ? v : undefined);
+  const pageOpts = { top: mar(pg.top), bottom: mar(pg.bottom), left: mar(pg.left), right: mar(pg.right) };
 
   const current = await docVersion(id, ref);
   if (current && base && current !== base) {
@@ -77,11 +89,16 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
   }
   const doc = await loadProcessDoc(rec, ref, me);
   if (!doc) return { ok: false, msg: "Modelo do relatório indisponível." };
-  const changes = diffParas((await parseDocx(doc.buf)).paras, clean);
-  const buf = await serializeDocx(doc.buf, clean);
+  const old = await parseDocx(doc.buf);
+  const changes = diffParas(old.blocks, clean);
+  // comentários novos levam o nome de quem os escreveu (não o que veio do navegador)
+  const known = new Set(old.comments.map((c) => c.id));
+  const comments: DocComment[] = cleanComments(payload.comments).map((c) =>
+    known.has(c.id) ? c : { ...c, author: me.name || me.email, date: new Date().toISOString() });
+  const buf = await serializeDocx(doc.buf, clean, { comments, page: pageOpts });
   const { error } = await storeProcessDoc(id, buf, ref);
   if (error) return { ok: false, msg: "Não foi possível salvar. Tente de novo." };
-  if (changes.length) await note(id, `editou ${label(ref)}`, refKey(ref), changes);
+  if (changes.length && ref.kind !== "nota") await note(id, `editou ${label(ref)}`, refKey(ref), changes);
   revalidatePath(`/cadastrados/${id}`);
   revalidatePath("/processos");
   revalidatePath("/acompanhamento");
@@ -95,9 +112,9 @@ export async function resetDocument(id: string, refIn?: unknown): Promise<{ ok: 
   const me = await requireMember();
   const rec = await loadRecord(id, formOf(ref));
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
-  if (!accessOf(rec, me).canEdit) return { ok: false, msg: "Você não tem permissão para editar." };
+  if (!accessOf(rec, me).canEdit || notaDenied(ref, rec, me)) return { ok: false, msg: "Você não tem permissão para editar." };
   await createAdminClient().storage.from(DOC_BUCKET).remove([docPath(id, ref)]);
-  await note(id, `refez ${label(ref)} do início`, refKey(ref));
+  if (ref.kind !== "nota") await note(id, `refez ${label(ref)} do início`, refKey(ref));
   revalidatePath(`/cadastrados/${id}`);
   return { ok: true, msg: "Documento refeito." };
 }

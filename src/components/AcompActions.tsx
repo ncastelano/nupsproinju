@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ClipboardPen, Download, FileText, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
+import { DownloadMenu } from "@/components/DownloadMenu";
 import { deleteAcompanhamento } from "@/app/(app)/cadastrados/[id]/documento/actions";
 
 // Abrir, baixar e apagar (com confirmação na tela) um relatório de acompanhamento.
@@ -36,7 +37,7 @@ export function AcompActions({ id, n, nome, canDelete, draft = false, hideOpen =
             className="ghost"
             note="Só abre para quem estiver logado e tiver acesso ao processo."
           />
-          <a href={`/cadastrados/${id}/acompanhamento/${n}/baixar`}><button type="button" className="ghost"><Download size={16} /> Baixar</button></a>
+          <DownloadMenu href={`/cadastrados/${id}/acompanhamento/${n}/baixar`} />
         </>
       )}
       {canDelete && (!ask ? (

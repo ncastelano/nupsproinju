@@ -648,3 +648,34 @@ hr.soft { border: 0; border-top: 1px solid var(--line); width: 100%; margin: 8px
 .subtabs.scroll-nav button { white-space: nowrap; }
 .profile-page .light { background: var(--brand-soft); color: var(--brand-dark); }
 .pcard.mini .mini-link p.mini-sub { font-size: 12.5px; opacity: .9; }
+
+/* Editor: ferramentas, tabela, imagem e comentários */
+.doc-tools { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 4px; }
+.doc-tools select { width: auto; padding: 8px 10px; font-size: 13px; }
+.doc-tools button { padding: 8px 10px; font-size: 13px; }
+.doc-color { position: relative; display: inline-grid; place-items: center; width: 38px; height: 36px; border-radius: 10px; background: var(--brand-soft); cursor: pointer; font-weight: 800; color: var(--brand-dark); }
+.doc-color input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; padding: 0; border: 0; }
+.doc-pop { position: relative; }
+.doc-pop-box { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); box-shadow: 0 12px 28px rgba(7,63,73,.16); padding: 12px; display: grid; gap: 8px; min-width: 190px; }
+.doc-pop-box input { width: 80px; padding: 6px 8px; }
+.doc-body { display: flex; gap: 16px; align-items: flex-start; }
+.doc-body .doc-scroll { flex: 1; min-width: 0; }
+.doc-comments { width: 280px; flex: none; position: sticky; top: 90px; display: grid; gap: 10px; max-height: calc(100vh - 110px); overflow: auto; }
+.doc-comments h3 { margin: 0; font-size: 14px; display: flex; gap: 6px; align-items: center; color: var(--brand-dark); }
+.doc-comment { background: var(--card); border: 1px solid var(--line); border-left: 4px solid #f2c94c; border-radius: var(--radius-sm); padding: 10px 12px; display: grid; gap: 6px; cursor: pointer; }
+.doc-comment.on { border-color: var(--brand); border-left-color: var(--brand); box-shadow: 0 6px 16px rgba(7,63,73,.12); }
+.doc-comment.new { border-left-color: var(--brand); cursor: default; }
+.doc-comment-head { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.doc-comment-head span { color: var(--muted); font-size: 12px; flex: 1; }
+.doc-comment-head button { padding: 2px 6px; }
+.doc-comment blockquote { margin: 0; padding: 4px 8px; border-left: 3px solid var(--line); color: var(--muted); font-size: 12.5px; }
+.doc-comment p { margin: 0; font-size: 14px; white-space: pre-wrap; }
+.doc-cm { background: #fff3b0; border-radius: 2px; }
+.doc-table-wrap { position: relative; z-index: 1; margin: 4px 0; }
+.doc-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.doc-table td { border: 1px solid #8a8a8a; padding: 4px 6px; vertical-align: top; }
+.doc-cell { outline: none; min-height: 1.4em; white-space: pre-wrap; word-wrap: break-word; }
+.doc-table-wrap[data-active] .doc-table { outline: 2px solid var(--brand); }
+.doc-para.doc-img { cursor: pointer; line-height: 0; }
+.doc-para.doc-img[data-active] img { outline: 3px solid var(--brand); }
+@media (max-width: 1100px) { .doc-body { flex-direction: column; } .doc-comments { width: 100%; position: static; max-height: none; } }

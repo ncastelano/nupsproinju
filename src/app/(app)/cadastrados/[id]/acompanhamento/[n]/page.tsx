@@ -47,7 +47,7 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
           <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
-      <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/acompanhamento" />
+      <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/acompanhamento" />
       <h2 className="section" style={{ margin: 0 }}>CADASTRO INICIAL</h2>
       <div className="user-grid four">
         <MiniCard
