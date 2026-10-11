@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Check, Italic, Loader2, Plus, RotateCcw, Save, Trash2, Underline,
+  AlignCenter, AlignJustify, ArrowLeft, AlignLeft, AlignRight, Bold, Check, Italic, Loader2, Plus, RotateCcw, Save, Trash2, Underline,
 } from "lucide-react";
 import type { DocData, Para, Run } from "@/lib/docxDoc";
 import { resetDocument, saveDocument } from "@/app/(app)/cadastrados/[id]/documento/actions";
@@ -81,6 +81,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
   const [gaps, setGaps] = useState<number[]>([]);
@@ -324,8 +325,20 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
 
   return (
     <div className="doc-wrap">
-      {canEdit && (
-        <div className="doc-bar">
+      <div className="doc-bar">
+        {confirmLeave ? (
+          <>
+            <span style={{ fontSize: 13 }}>Há alterações não salvas. Sair mesmo assim?</span>
+            <button className="danger" onClick={() => { setDirty(false); router.push("/processos"); }}>Sair sem salvar</button>
+            <button className="ghost" onClick={() => setConfirmLeave(false)}>Continuar editando</button>
+          </>
+        ) : (
+          <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : router.push("/processos"))}>
+            <ArrowLeft size={16} /> Voltar
+          </button>
+        )}
+        {canEdit && (<>
+          <span className="doc-sep" />
           <button className="ghost icon" title="Negrito" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("bold")}><Bold size={16} /></button>
           <button className="ghost icon" title="Itálico" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("italic")}><Italic size={16} /></button>
           <button className="ghost icon" title="Sublinhado" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("underline")}><Underline size={16} /></button>
@@ -359,9 +372,9 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
           <button disabled={busy || !dirty} onClick={save}>
             {busy ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Salvar
           </button>
-        </div>
-      )}
-      {!canEdit && <p style={{ color: "var(--muted)", margin: 0 }}>Você pode ver este documento, mas não editar.</p>}
+        </>)}
+        {!canEdit && <span style={{ color: "var(--muted)", fontSize: 13 }}>Você pode ver este documento, mas não editar.</span>}
+      </div>
 
       <div className="doc-scroll">
         <div className="doc-page" ref={pageRef} style={{ width: page.w, minHeight: gaps.length ? gaps[gaps.length - 1] + GAP + page.h : page.h, padding: `${page.top}px ${page.right}px ${page.bottom}px ${page.left}px` }}>
