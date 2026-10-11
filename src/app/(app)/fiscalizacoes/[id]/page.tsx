@@ -7,6 +7,7 @@ import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
 import { RecordActivity } from "@/components/RecordActivity";
+import { AudioPanel } from "@/components/AudioPanel";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Relatório da fiscalização (gerado das respostas), editável com o padrão do NUPS.
@@ -44,13 +45,14 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
           <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
-      <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/fiscalizacoes" />
+      <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/fiscalizacoes" />
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
             {(v?.professionals ?? []).map((p) => <span key={p} className="chip">{p}</span>)}
             {v?.responded_by && <span className="chip">Respondida por {v.responded_by}</span>}
             <span className="chip">Criada por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
           </div>
+        <AudioPanel recordId={id} doc={"fisc"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "fisc")} canEdit={acc.canEdit} me={me.id} />
         <RecordActivity history={rec.meta.history} createdAt={rec.created_at} ownerName={ownerName} label="" limit={6} showCreated={false} />
       </div>
     </div>

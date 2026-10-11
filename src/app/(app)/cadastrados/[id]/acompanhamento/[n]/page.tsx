@@ -9,6 +9,7 @@ import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
 import { RecordActivity } from "@/components/RecordActivity";
+import { AudioPanel } from "@/components/AudioPanel";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Relatório de acompanhamento e reavaliação: o modelo do NUPS, editável na tela.
@@ -47,7 +48,7 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
           <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
-      <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/acompanhamento" />
+      <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/acompanhamento" />
       <h2 className="section" style={{ margin: 0 }}>CADASTRO INICIAL</h2>
       <div className="user-grid four">
         <MiniCard
@@ -60,6 +61,7 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
           <div className="pcard-chips">
             <span className="chip">Criado por {entry.by_name || "—"} em {new Date(entry.at).toLocaleDateString("pt-BR")}</span>
           </div>
+        <AudioPanel recordId={id} doc={`acomp:${n}`} audios={(rec.meta.audios ?? []).filter((a) => a.doc === `acomp:${n}`)} canEdit={acc.canEdit} me={me.id} />
         <RecordActivity history={rec.meta.history.filter((h) => h.doc === `acomp:${n}`)} createdAt={rec.created_at} ownerName={ownerName} label="" limit={6} showCreated={false} />
       </div>
     </div>

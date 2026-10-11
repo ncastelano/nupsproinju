@@ -17,6 +17,12 @@ export type VisitMeta = {
   responded_at?: string; responded_by?: string;
   draft?: boolean; // questionário respondido pela metade (rascunho)
 };
+export type AudioEntry = {
+  id: string; path: string; mime: string; secs: number; size: number;
+  by_id: string; by_name: string; at: string;
+  doc: string;          // a que documento o áudio se refere (inicial, acomp:N, fisc, nota)
+  transcript: string;
+};
 export type RecMeta = {
   shared: { id: string; name: string }[];
   followups: FollowupEntry[]; // todos os acompanhamentos (o mais recente também fica em "followup")
@@ -26,6 +32,7 @@ export type RecMeta = {
   visit?: VisitMeta;    // só nas fiscalizações
   acompData?: Record<string, Record<string, string>>; // respostas do questionário de cada acompanhamento (por nº)
   draft?: boolean;      // cadastro inicial salvo como rascunho
+  audios?: AudioEntry[]; // áudios gravados neste relatório
 };
 export type Rec = {
   id: string; created_by: string; created_at: string; form_key: string;
@@ -41,7 +48,7 @@ export function metaOf(raw: Record<string, unknown>): RecMeta {
   const editing = Object.fromEntries(
     Object.entries(m.editing ?? {}).filter(([, v]) => now - new Date(v.since).getTime() < STALE_MS),
   );
-  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [], visit: m.visit, acompData: m.acompData, draft: m.draft };
+  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [], visit: m.visit, acompData: m.acompData, draft: m.draft, audios: m.audios };
 }
 
 // formKey: o tipo de registro (padrão: cadastro inicial); null aceita qualquer tipo.

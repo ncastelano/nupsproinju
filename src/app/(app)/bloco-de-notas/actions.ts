@@ -18,7 +18,7 @@ export async function createNote(title?: string): Promise<string> {
   const me = await requireMember();
   const t = (title ?? "").trim().slice(0, 80) || "Nota sem título";
   const { data, error } = await createAdminClient().from("intake_records")
-    .insert({ form_key: NOTA_KEY, created_by: me.id, answers: { titulo: { label: "Título", value: t }, _meta: { shared: [], followups: [], acomps: [], editing: {}, history: [] } } })
+    .insert({ form_key: NOTA_KEY, created_by: me.id, answers: { titulo: { label: "Título", value: t }, visibilidade: { label: "Visibilidade", value: "servico" }, _meta: { shared: [], followups: [], acomps: [], editing: {}, history: [] } } })
     .select("id").single();
   if (error || !data) throw new Error("Não foi possível criar a nota.");
   revalidatePath("/bloco-de-notas");
@@ -51,11 +51,11 @@ export async function deleteNote(id: string): Promise<string> {
   return "ok";
 }
 
-// Quem pode ver a nota: só a pessoa ("privado") ou qualquer pessoa com conta, pelo perfil ("perfil").
-export async function setNoteVisibility(id: string, visibility: "privado" | "perfil"): Promise<string> {
+// Quem pode ver a nota: "servico" (só quem tem conta no sistema) ou "publico" (qualquer pessoa com o link, e no perfil público).
+export async function setNoteVisibility(id: string, visibility: "publico" | "servico"): Promise<string> {
   const m = await mine(id);
   if (!m) return "Nota não encontrada.";
-  const answers = { ...m.rec.answers, visibilidade: { label: "Visibilidade", value: visibility === "perfil" ? "perfil" : "privado" } };
+  const answers = { ...m.rec.answers, visibilidade: { label: "Visibilidade", value: visibility === "publico" ? "publico" : "servico" } };
   const { error } = await createAdminClient().from("intake_records").update({ answers }).eq("id", id);
   if (error) return "Não foi possível alterar.";
   revalidatePath("/bloco-de-notas");

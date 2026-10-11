@@ -733,7 +733,18 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
         <div className="doc-scroll" ref={wrapRef}>
           <div style={{ width: page.w * scale, height: pageH ? pageH * scale : undefined, margin: scale < 1 ? "0" : "0 auto" }}>
           <div
-            className="doc-page" ref={pageRef}
+            className={`doc-page${docRef.kind === "nota" ? " note-mode" : ""}`} ref={pageRef}
+            onMouseDown={(e) => {
+              // clicar no espaço em branco da folha leva o cursor para o fim do texto
+              if (!canEdit || e.target !== pageRef.current) return;
+              const last = [...items].reverse().find((x) => x.kind === "p" && !x.img);
+              const el = last ? refs.current.get(key(last.uid)) : null;
+              if (!el) return;
+              e.preventDefault();
+              el.focus();
+              const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
+              const s = getSelection(); s?.removeAllRanges(); s?.addRange(r);
+            }}
             style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: "top left", margin: 0, width: page.w, minHeight: gaps.length ? gaps[gaps.length - 1] + GAP + page.h : page.h, padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px` }}
           >
             {headerBox(header?.y ?? 0, "h0")}

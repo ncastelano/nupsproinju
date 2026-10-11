@@ -9,6 +9,7 @@ import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
 import { RecordActivity } from "@/components/RecordActivity";
+import { AudioPanel } from "@/components/AudioPanel";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // O documento do processo: o modelo do NUPS preenchido, editável na tela com o mesmo padrão do arquivo.
@@ -44,13 +45,14 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
           <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
-      <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} />
+      <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} />
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
             {rec.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(rec.answers.data_acolhimento.value)}</span>}
             <span className="chip">{rec.meta.acomps.filter((a) => !a.draft).length} {rec.meta.acomps.filter((a) => !a.draft).length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
             <span className="chip">Criado por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
           </div>
+        <AudioPanel recordId={id} doc={"inicial"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "inicial")} canEdit={acc.canEdit} me={me.id} />
         <RecordActivity history={rec.meta.history.filter((h) => !h.doc || h.doc === "inicial")} createdAt={rec.created_at} ownerName={ownerName} label="Criou o cadastro inicial" limit={6} showCreated={true} />
       </div>
     </div>

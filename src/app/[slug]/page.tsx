@@ -10,7 +10,7 @@ import { getMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
 import { FISC_KEY } from "@/lib/fisc";
-import { NOTA_KEY } from "@/lib/notes";
+import { NOTA_KEY, noteVis } from "@/lib/notes";
 import { metaOf } from "@/lib/records";
 
 export const dynamic = "force-dynamic";
@@ -86,8 +86,16 @@ export default async function ProfilePage({
     }
 
     notas = (nts.data ?? [])
-      .filter((r) => mine || r.vis === "perfil")
-      .map((r) => ({ id: r.id as string, title: (r.titulo as string) || "Nota sem título", vis: (r.vis as string) === "perfil" ? "perfil" : "privado", at: (r.upd as string) || (r.created_at as string) }));
+      .map((r) => ({ id: r.id as string, title: (r.titulo as string) || "Nota sem título", vis: noteVis(r.vis), at: (r.upd as string) || (r.created_at as string) }));
+  }
+  // visitantes (sem conta) só veem as notas públicas
+  let publicNotes: typeof notas = [];
+  if (!inside) {
+    const { data } = await createAdminClient().from("intake_records")
+      .select("id, created_at, titulo:answers->titulo->>value, vis:answers->visibilidade->>value, upd:answers->atualizada->>value")
+      .eq("form_key", NOTA_KEY).eq("created_by", p.id).order("created_at", { ascending: false });
+    publicNotes = (data ?? []).filter((r) => noteVis(r.vis) === "publico")
+      .map((r) => ({ id: r.id as string, title: (r.titulo as string) || "Nota sem título", vis: "publico", at: (r.upd as string) || (r.created_at as string) }));
   }
 
   const first = p.name.split(" ")[0];
@@ -120,6 +128,14 @@ export default async function ProfilePage({
           {mine && <Link href="/editar-perfil"><button type="button" className="ghost"><Pencil size={16} /> Editar perfil</button></Link>}
         </div>
       </div>
+      {!inside && publicNotes.length > 0 && (
+        <div className="grid" style={{ gap: 8 }}>
+          <strong>Notas públicas ({publicNotes.length})</strong>
+          {publicNotes.slice(0, 8).map((n) => (
+            <Link key={n.id} href={`/nota/${n.id}`} className="mini-rec dark"><span><strong>{n.title}</strong></span></Link>
+          ))}
+        </div>
+      )}
       {!inside && (
         <div style={{ textAlign: "center", fontSize: 14 }}>
           <Link href="/login">Entrar no sistema</Link>
@@ -163,9 +179,9 @@ export default async function ProfilePage({
 
         {section("notas", mine ? "BLOCO DE NOTAS" : "NOTAS", notas.length, cut(notas).map((n) => (
           <MiniCard
-            key={n.id} href={mine ? `/bloco-de-notas?n=${n.id}` : `/bloco-de-notas/${n.id}`}
+            key={n.id} href={mine ? `/bloco-de-notas?n=${n.id}` : `/nota/${n.id}`}
             title={n.title} line={`Atualizada em ${brDate(n.at)}`}
-            tag={mine ? (n.vis === "perfil" ? "No perfil" : "Só para mim") : undefined}
+            tag={mine ? (n.vis === "publico" ? "Público" : "Serviço") : undefined}
           />
         )), mine ? "Você ainda não tem notas." : "Nenhuma nota aparece neste perfil.")}
       </div>
