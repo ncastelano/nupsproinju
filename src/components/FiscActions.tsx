@@ -26,7 +26,6 @@ export function FiscActions({
         {done ? (
           <>
             <Link href={`/fiscalizacoes/${id}`}><button type="button"><FileText size={16} /> Abrir</button></Link>
-            <Link href={`/fiscalizacoes/${id}/responder`}><button type="button" className="ghost"><ClipboardPen size={16} /> Editar respostas</button></Link>
           </>
         ) : (
           <Link href={`/fiscalizacoes/${id}/responder`}><button type="button"><ClipboardPen size={16} /> Responder questionário</button></Link>

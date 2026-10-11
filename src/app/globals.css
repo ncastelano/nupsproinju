@@ -572,3 +572,15 @@ a.pcard-head:hover h3 { color: var(--brand); text-decoration: underline; }
 .fisc-row { display: grid; gap: 6px; padding: 10px 12px; background: var(--bg); border-radius: var(--radius-sm); }
 .fisc-row-label { font-weight: 600; }
 .prev-text { background: var(--bg); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 6px; white-space: pre-wrap; font-size: 14px; color: var(--text); }
+
+/* Cartões em grade: no máximo 4 por linha */
+.user-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; }
+@media (max-width: 900px) { .user-grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .user-grid.four { grid-template-columns: minmax(0, 1fr); } }
+.user-grid.four .pcard { padding: 14px; gap: 10px; }
+.user-grid.four .pcard-head { flex-direction: column; gap: 8px; }
+.user-grid.four .pcard-head h3 { font-size: 15px; overflow-wrap: anywhere; }
+.user-grid.four .pcard-actions { gap: 6px; }
+.user-grid.four .pcard-actions button { padding: 7px 10px; font-size: 13px; }
+.pcard-by { color: var(--muted); font-size: 13px; }
+a.see-all { font-size: 13.5px; }

@@ -6,6 +6,8 @@ import { accessOf, loadRecord } from "@/lib/records";
 import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
+import { RecordActivity } from "@/components/RecordActivity";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Relatório de acompanhamento e reavaliação: o modelo do NUPS, editável na tela.
 export default async function AcompanhamentoDocPage({ params }: { params: Promise<{ id: string; n: string }> }) {
@@ -24,6 +26,9 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
   }
   const data = await parseDocx(doc.buf);
 
+  const { data: ownerRow } = await createAdminClient().from("members").select("name").eq("id", rec.created_by).maybeSingle();
+  const ownerName = (ownerRow?.name as string) ?? "";
+
   return (
     <div className="grid" style={{ gap: 14 }}>
       <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -37,6 +42,9 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/acompanhamento" />
+      <div className="card">
+        <RecordActivity history={rec.meta.history.filter((h) => h.doc === `acomp:${n}`)} createdAt={rec.created_at} ownerName={ownerName} label="" limit={6} showCreated={false} />
+      </div>
     </div>
   );
 }

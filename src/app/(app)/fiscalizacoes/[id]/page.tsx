@@ -1,12 +1,13 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ClipboardPen, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { accessOf, loadRecord } from "@/lib/records";
 import { FISC_KEY } from "@/lib/fisc";
 import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
+import { RecordActivity } from "@/components/RecordActivity";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Relatório da fiscalização (gerado das respostas), editável com o padrão do NUPS.
 export default async function FiscalizacaoDocPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +27,9 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
   const data = await parseDocx(doc.buf);
   const v = rec.meta.visit;
 
+  const { data: ownerRow } = await createAdminClient().from("members").select("name").eq("id", rec.created_by).maybeSingle();
+  const ownerName = (ownerRow?.name as string) ?? "";
+
   return (
     <div className="grid" style={{ gap: 14 }}>
       <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -34,11 +38,13 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
           <span style={{ color: "var(--muted)" }}>Visita em {v?.date?.split("-").reverse().join("/")}</span>
         </div>
         <div className="row" style={{ flexWrap: "wrap" }}>
-          {acc.canEdit && <Link href={`/fiscalizacoes/${id}/responder`}><button className="ghost"><ClipboardPen size={16} /> Editar respostas</button></Link>}
           <a href={`/fiscalizacoes/${id}/baixar`}><button className="ghost"><Download size={16} /> Baixar .docx</button></a>
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/fiscalizacoes" />
+      <div className="card">
+        <RecordActivity history={rec.meta.history} createdAt={rec.created_at} ownerName={ownerName} label="" limit={6} showCreated={false} />
+      </div>
     </div>
   );
 }

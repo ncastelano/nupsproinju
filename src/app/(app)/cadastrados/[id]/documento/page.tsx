@@ -6,6 +6,8 @@ import { accessOf, loadRecord } from "@/lib/records";
 import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
+import { RecordActivity } from "@/components/RecordActivity";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // O documento do processo: o modelo do NUPS preenchido, editável na tela com o mesmo padrão do arquivo.
 export default async function DocumentoPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,6 +24,9 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
   }
   const data = await parseDocx(doc.buf);
 
+  const { data: ownerRow } = await createAdminClient().from("members").select("name").eq("id", rec.created_by).maybeSingle();
+  const ownerName = (ownerRow?.name as string) ?? "";
+
   return (
     <div className="grid" style={{ gap: 14 }}>
       <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
@@ -35,6 +40,9 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} />
+      <div className="card">
+        <RecordActivity history={rec.meta.history.filter((h) => !h.doc || h.doc === "inicial")} createdAt={rec.created_at} ownerName={ownerName} label="Criou o cadastro inicial" limit={6} showCreated={true} />
+      </div>
     </div>
   );
 }

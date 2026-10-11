@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Download, FileText, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Plus } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
@@ -8,7 +8,6 @@ import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
-import { RecordActivity } from "@/components/RecordActivity";
 import { AcompCard, FiscCard } from "@/components/ProcessCards";
 import { FISC_KEY } from "@/lib/fisc";
 import { RecordActions } from "@/components/RecordActions";
@@ -17,8 +16,26 @@ import { ModeloRelatorio } from "@/components/ModeloRelatorio";
 type Answers = Record<string, { label: string; value: string }>;
 type Rec = { id: string; answers: Answers; followup: Answers | null; followup_at: string | null; created_at: string };
 
+// Seção com título, contagem, "Ver todos" e os cartões em grade (no máximo 4 por linha).
+function Block({ title, count, all, full, empty, children }: {
+  title: string; count: number; all: string; full: boolean; empty: React.ReactNode; children: React.ReactNode;
+}) {
+  return (
+    <section className="grid" style={{ gap: 12 }}>
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <h2 className="section" style={{ margin: 0 }}>{title} ({count})</h2>
+        {!full && count > 0 && <Link href={all} className="see-all">Ver todos ({count})</Link>}
+      </div>
+      {count === 0 ? <div className="card empty">{empty}</div> : <div className="user-grid four">{children}</div>}
+    </section>
+  );
+}
+
 // Lista de formulários e/ou acompanhamentos de uma pessoa (cada aba mostra a sua parte).
-export async function UserRecords({ id, view }: { id: string; view: "formularios" | "acompanhamentos" | "todos" }) {
+export type ListKind = "cadastros" | "acompanhamentos" | "fiscalizacoes";
+const LIMIT = 4;
+
+export async function UserRecords({ id, view, only }: { id: string; view: "formularios" | "acompanhamentos" | "todos"; only?: ListKind }) {
   const me = await requireMember();
   const mine = id === me.id;
   if (!mine && me.role !== "admin") redirect("/processos");
@@ -72,7 +89,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
       <div>
         <h1 style={{ margin: "8px 0 0" }}>
-          {view === "formularios" ? (mine ? "Processos" : `Processos de ${first}`)
+          {only ? { cadastros: "Cadastros iniciais", acompanhamentos: "Acompanhamentos", fiscalizacoes: "Fiscalizações" }[only]
+            : view === "formularios" ? (mine ? "Processos" : `Processos de ${first}`)
             : view === "acompanhamentos" ? (mine ? "Acompanhamentos" : `Acompanhamentos de ${first}`)
             : `Processos de ${first}`}
         </h1>
@@ -86,7 +104,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       </div>
       {mine && (
         <div className="row">
-          {showF && <Link href="/cadastro-inicial"><button><Plus size={16} /> Novo cadastro inicial</button></Link>}
+          {only ? <Link href="/processos"><button className="ghost"><ArrowLeft size={16} /> Voltar a Processos</button></Link>
+            : showF && <Link href="/cadastro-inicial"><button><Plus size={16} /> Novo cadastro inicial</button></Link>}
         </div>
       )}
       </div>
@@ -115,17 +134,16 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         );
       })}
 
-      {mine && showF && <ModeloRelatorio canEdit={me.role === "admin"} />}
+      {mine && showF && !only && <ModeloRelatorio canEdit={me.role === "admin"} />}
 
-      {showF && <h2 className="section" style={{ margin: 0 }}>CADASTROS INICIAIS ({records.length})</h2>}
-      {showF && (records.length === 0 ? (
-        <div className="card empty"><p>Nenhum cadastro inicial ainda.</p></div>
-      ) : (
-        <div className="user-grid wide">
-          {records.map((r) => {
+      {showF && (!only || only === "cadastros") && (
+        <Block
+          title="CADASTROS INICIAIS" count={records.length} all="/processos/cadastros-iniciais" full={!!only}
+          empty={<p>Nenhum cadastro inicial ainda.</p>}
+        >
+          {(only ? records : records.slice(0, LIMIT)).map((r) => {
             const meta = metaOf(r.answers as Record<string, unknown>);
             const nome = r.answers.nomes?.value ?? "(sem nome)";
-            const ownerName = ownerOf(r.created_by);
             return (
               <article key={r.id} className="card pcard">
                 <Link href={`/cadastrados/${r.id}/documento`} className="pcard-head">
@@ -136,57 +154,47 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
                   </span>
                 </Link>
                 <div className="pcard-chips">
-                  {r.answers.unidade?.value && <span className="chip">{r.answers.unidade.value}</span>}
-                  {r.answers.modalidade?.value && <span className="chip">{r.answers.modalidade.value}</span>}
                   {r.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(r.answers.data_acolhimento.value)}</span>}
                   <span className="chip">{meta.acomps.length} {meta.acomps.length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
                 </div>
-                <span style={{ color: "var(--muted)", fontSize: 13.5 }}>
-                  Criado por {ownerName} em {new Date(r.created_at).toLocaleDateString("pt-BR")}
-                </span>
+                <span className="pcard-by">Criado por {ownerOf(r.created_by) || "—"} em {new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
                 <div className="pcard-actions">
                   <RecordActions recordId={r.id} nome={nome} canDelete={canRemove(r.created_by)} />
                 </div>
-                <RecordActivity history={meta.history} createdAt={r.created_at} ownerName={ownerName} />
               </article>
             );
           })}
-        </div>
-      ))}
+        </Block>
+      )}
 
-      {showF && <h2 className="section" style={{ margin: 0 }}>ACOMPANHAMENTOS ({acomps.length})</h2>}
-      {showF && (acomps.length === 0 ? (
-        <div className="card empty">
-          <p>Nenhum acompanhamento ainda. Responda o questionário em <Link href="/acompanhamento">Acompanhamento</Link> para gerar o relatório.</p>
-        </div>
-      ) : (
-        <div className="user-grid wide">
-          {acomps.map((x) => (
+      {showF && (!only || only === "acompanhamentos") && (
+        <Block
+          title="ACOMPANHAMENTOS" count={acomps.length} all="/processos/acompanhamentos" full={!!only}
+          empty={<p>Nenhum acompanhamento ainda. Preencha o formulário em <Link href="/acompanhamento">Acompanhamento</Link> para gerar o relatório.</p>}
+        >
+          {(only ? acomps : acomps.slice(0, LIMIT)).map((x) => (
             <AcompCard
               key={`${x.rid}-${x.a.n}`} recordId={x.rid} nomes={x.nomes} processo={x.processo}
-              n={x.a.n} by={x.a.by_name} at={x.a.at} meta={x.meta} ownerName={x.owner} canDelete={x.canDelete}
+              n={x.a.n} by={x.a.by_name} at={x.a.at} canDelete={x.canDelete}
             />
           ))}
-        </div>
-      ))}
+        </Block>
+      )}
 
-      {showF && <h2 className="section" style={{ margin: 0 }}>FISCALIZAÇÕES ({fiscs.length})</h2>}
-      {showF && (fiscs.length === 0 ? (
-        <div className="card empty">
-          <p>Nenhuma fiscalização realizada ainda. Agende e responda em <Link href="/fiscalizacoes">Fiscalizações</Link>.</p>
-        </div>
-      ) : (
-        <div className="user-grid wide">
-          {fiscs.map((f) => (
+      {showF && (!only || only === "fiscalizacoes") && (
+        <Block
+          title="FISCALIZAÇÕES" count={fiscs.length} all="/processos/fiscalizacoes" full={!!only}
+          empty={<p>Nenhuma fiscalização realizada ainda. Agende e responda em <Link href="/fiscalizacoes">Fiscalizações</Link>.</p>}
+        >
+          {(only ? fiscs : fiscs.slice(0, LIMIT)).map((f) => (
             <FiscCard
               key={f.id} id={f.id} unit={f.meta.visit?.unit ?? ""} date={f.meta.visit?.date ?? ""}
               professionals={f.meta.visit?.professionals ?? []} respondedBy={f.meta.visit?.responded_by}
-              respondedAt={f.meta.visit?.responded_at} meta={f.meta} ownerName={ownerOf(f.owner_id)}
-              createdAt={f.created_at} canDelete={canRemove(f.owner_id)}
+              respondedAt={f.meta.visit?.responded_at} canDelete={canRemove(f.owner_id)}
             />
           ))}
-        </div>
-      ))}
+        </Block>
+      )}
     </div>
   );
 }
