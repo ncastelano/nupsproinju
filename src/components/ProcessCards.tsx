@@ -3,7 +3,7 @@ import { ClipboardCheck, FileText } from "lucide-react";
 import type { RecMeta } from "@/lib/records";
 import { AcompActions } from "@/components/AcompActions";
 import { FiscActions } from "@/components/FiscActions";
-import { AccessLine, RecordActivity } from "@/components/RecordActivity";
+import { RecordActivity } from "@/components/RecordActivity";
 
 const day = (iso: string) => { const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : iso; };
 
@@ -24,7 +24,6 @@ export function AcompCard({
         </span>
       </Link>
       <span style={{ color: "var(--muted)", fontSize: 13.5 }}>Criado por {by || "—"} em {new Date(at).toLocaleDateString("pt-BR")}</span>
-      <AccessLine ownerName={ownerName} shared={meta.shared} />
       <AcompActions id={recordId} n={n} nome={nomes || "(sem nome)"} canDelete={canDelete} />
       <RecordActivity history={meta.history.filter((h) => h.doc === `acomp:${n}`)} createdAt={at} ownerName={by} showCreated={false} />
     </article>
@@ -33,10 +32,10 @@ export function AcompCard({
 
 // Uma fiscalização já respondida: o relatório gerado e as atividades.
 export function FiscCard({
-  id, unit, date, professionals, respondedBy, respondedAt, meta, ownerName, createdAt, canDelete, people,
+  id, unit, date, professionals, respondedBy, respondedAt, meta, ownerName, createdAt, canDelete,
 }: {
   id: string; unit: string; date: string; professionals: string[]; respondedBy?: string; respondedAt?: string;
-  meta: RecMeta; ownerName: string; createdAt: string; canDelete: boolean; people: { id: string; name: string }[];
+  meta: RecMeta; ownerName: string; createdAt: string; canDelete: boolean;
 }) {
   return (
     <article className="card pcard">
@@ -56,11 +55,7 @@ export function FiscCard({
           Respondida por {respondedBy || "—"} em {new Date(respondedAt).toLocaleDateString("pt-BR")}
         </span>
       )}
-      <AccessLine ownerName={ownerName} shared={meta.shared} />
-      <FiscActions
-        id={id} done nome={`${unit} – ${date ? day(date) : ""}`} canDelete={canDelete} canShare={canDelete}
-        shared={meta.shared} people={people.filter((p) => !meta.shared.some((s) => s.id === p.id))}
-      />
+      <FiscActions id={id} done nome={`${unit} – ${date ? day(date) : ""}`} canDelete={canDelete} />
       <RecordActivity history={meta.history} createdAt={createdAt} ownerName={ownerName} showCreated={false} />
     </article>
   );

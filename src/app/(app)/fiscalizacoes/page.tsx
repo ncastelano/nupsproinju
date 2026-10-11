@@ -4,7 +4,7 @@ import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { FISC_KEY, PROFISSIONAIS_PADRAO } from "@/lib/fisc";
-import { AccessLine, RecordActivity } from "@/components/RecordActivity";
+import { RecordActivity } from "@/components/RecordActivity";
 import { FiscActions } from "@/components/FiscActions";
 import { ScheduleVisit } from "@/components/ScheduleVisit";
 
@@ -26,7 +26,7 @@ export default async function FiscalizacoesPage() {
   const rows: Row[] = (all ?? []).map((r) => ({
     id: r.id as string, owner_id: r.created_by as string, owner: names.get(r.created_by as string) ?? "",
     created_at: r.created_at as string, meta: metaOf({ _meta: r.meta ?? {} }),
-  })).filter((r) => (r.owner_id === me.id || r.meta.shared.some((s) => s.id === me.id)) && r.meta.visit?.status !== "realizada");
+  })).filter((r) => r.meta.visit?.status !== "realizada");
 
   // mais próximas primeiro: agendadas por data; as realizadas depois, da mais recente
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Porto_Velho" });
@@ -38,7 +38,6 @@ export default async function FiscalizacoesPage() {
   });
 
   const people = [...new Set([...PROFISSIONAIS_PADRAO, ...approved.map((p) => p.name as string).filter(Boolean)])];
-  const shareable = approved.filter((p) => p.id !== me.id).map((p) => ({ id: p.id as string, name: (p.name as string) || "(sem nome)" }));
 
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -84,11 +83,9 @@ export default async function FiscalizacoesPage() {
                     Respondida por {v.responded_by || "—"} em {new Date(v.responded_at).toLocaleDateString("pt-BR")}
                   </span>
                 )}
-                <AccessLine ownerName={r.owner} shared={r.meta.shared} />
                 <FiscActions
                   id={r.id} done={done} nome={`${unit} – ${v?.date ? day(v.date) : ""}`}
-                  canDelete={isOwner || me.role === "admin"} canShare={isOwner || me.role === "admin"}
-                  shared={r.meta.shared} people={shareable.filter((p) => !r.meta.shared.some((s) => s.id === p.id) && p.id !== r.owner_id)}
+                  canDelete={isOwner || me.role === "admin"}
                 />
                 <RecordActivity history={r.meta.history} createdAt={r.created_at} ownerName={r.owner} label="Agendou a fiscalização" showCreated={false} />
               </article>

@@ -16,7 +16,7 @@ export default async function AcompanhamentoPage() {
   const rows: Row[] = (all ?? []).map((r) => ({
     id: r.id as string, owner_id: r.created_by as string, nomes: (r.nomes as string) ?? "", processo: (r.processo as string) ?? "",
     meta: metaOf({ _meta: r.meta ?? {} }),
-  })).filter((r) => r.owner_id === me.id || r.meta.shared.some((s) => s.id === me.id));
+  }));
 
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -30,7 +30,7 @@ export default async function AcompanhamentoPage() {
       <h2 className="section" style={{ margin: 0 }}>ESCOLHA O PROCESSO ({rows.length})</h2>
       {rows.length === 0 ? (
         <div className="card empty">
-          <p>Nenhum processo seu ou compartilhado com você ainda. Faça um <Link href="/cadastro-inicial">Cadastro inicial</Link> primeiro.</p>
+          <p>Nenhum processo ainda. Faça um <Link href="/cadastro-inicial">Cadastro inicial</Link> primeiro.</p>
         </div>
       ) : (
         <div className="user-grid wide">

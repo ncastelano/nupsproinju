@@ -2,25 +2,23 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ClipboardPen, Download, FileText, Trash2, UserPlus, X } from "lucide-react";
+import { ClipboardPen, Download, FileText, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
-import { deleteFiscalizacao, shareFisc, unshareFisc } from "@/app/(app)/fiscalizacoes/actions";
+import { deleteFiscalizacao } from "@/app/(app)/fiscalizacoes/actions";
 
 // Botões de uma fiscalização: responder, abrir o relatório, compartilhar, baixar e apagar.
 export function FiscActions({
-  id, done, nome, canDelete, canShare, shared, people,
+  id, done, nome, canDelete,
 }: {
-  id: string; done: boolean; nome: string; canDelete: boolean; canShare: boolean;
-  shared: { id: string; name: string }[]; people: { id: string; name: string }[];
+  id: string; done: boolean; nome: string; canDelete: boolean;
 }) {
   const router = useRouter();
   const [ask, setAsk] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const [who, setWho] = useState("");
 
   const run = (fn: () => Promise<string>) =>
-    start(async () => { const r = await fn(); if (r === "ok") { setAsk(false); setWho(""); router.refresh(); } else setErr(r); });
+    start(async () => { const r = await fn(); if (r === "ok") { setAsk(false); router.refresh(); } else setErr(r); });
 
   return (
     <>
@@ -54,28 +52,6 @@ export function FiscActions({
         {err && <span className="export-err">{err}</span>}
       </div>
 
-      {canShare && (
-        <details className="act-more">
-          <summary><UserPlus size={14} style={{ verticalAlign: "-2px" }} /> Quem pode editar</summary>
-          <div className="grid" style={{ gap: 8, marginTop: 8 }}>
-            {shared.map((s) => (
-              <div key={s.id} className="qrow">
-                <strong>{s.name}</strong>
-                <button type="button" className="danger" aria-label={`Remover ${s.name}`} disabled={pending} onClick={() => run(() => unshareFisc(id, s.id))}><X size={16} /></button>
-              </div>
-            ))}
-            {people.length > 0 && (
-              <div className="row">
-                <select value={who} onChange={(e) => setWho(e.target.value)}>
-                  <option value="" disabled>Escolher pessoa...</option>
-                  {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-                <button type="button" disabled={!who || pending} onClick={() => run(() => shareFisc(id, who))}>Dar acesso</button>
-              </div>
-            )}
-          </div>
-        </details>
-      )}
     </>
   );
 }

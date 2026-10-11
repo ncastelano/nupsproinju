@@ -59,11 +59,11 @@ export async function loadRecord(id: string, formKey: string | null = FORM_KEY):
   };
 }
 
+// Todas as pessoas com conta aprovada veem e editam os processos; apagar fica com quem criou e os administradores.
 export function accessOf(rec: Rec, me: { id: string; role: string }) {
   const owner = rec.created_by === me.id;
   const admin = me.role === "admin";
-  const editor = rec.meta.shared.some((s) => s.id === me.id);
-  return { owner, admin, editor, canView: owner || admin || editor, canEdit: owner || admin || editor, canShare: owner || admin };
+  return { owner, admin, editor: true, canView: true, canEdit: true, canShare: false };
 }
 
 export async function saveRecord(

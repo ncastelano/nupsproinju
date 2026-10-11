@@ -103,37 +103,3 @@ export async function deleteFiscalizacao(id: string): Promise<string> {
   refresh();
   return "ok";
 }
-
-export async function shareFisc(id: string, who: string): Promise<string> {
-  const me = await requireMember();
-  const rec = await loadRecord(id, FISC_KEY);
-  if (!rec || !accessOf(rec, me).canShare || who === rec.created_by) return "Sem permissão.";
-  const { data: m } = await createAdminClient().from("members").select("id, name, email, status").eq("id", who).maybeSingle();
-  if (!m || m.status !== "approved") return "Pessoa não encontrada.";
-  const meta = rec.meta;
-  if (!meta.shared.some((s) => s.id === who)) {
-    const nome = (m.name as string) || (m.email as string);
-    meta.shared.push({ id: who, name: nome });
-    meta.history.unshift({ at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario", changes: [], note: `deu acesso para ${nome}`, doc: "fisc" });
-    meta.history = meta.history.slice(0, 200);
-  }
-  await saveRecord(rec, {}, meta);
-  refresh();
-  return "ok";
-}
-
-export async function unshareFisc(id: string, who: string): Promise<string> {
-  const me = await requireMember();
-  const rec = await loadRecord(id, FISC_KEY);
-  if (!rec || !accessOf(rec, me).canShare) return "Sem permissão.";
-  const meta = rec.meta;
-  const removed = meta.shared.find((s) => s.id === who);
-  meta.shared = meta.shared.filter((s) => s.id !== who);
-  if (removed) {
-    meta.history.unshift({ at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario", changes: [], note: `tirou o acesso de ${removed.name}`, doc: "fisc" });
-    meta.history = meta.history.slice(0, 200);
-  }
-  await saveRecord(rec, {}, meta);
-  refresh();
-  return "ok";
-}

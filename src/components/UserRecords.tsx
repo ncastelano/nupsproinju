@@ -2,14 +2,13 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Download, FileText, Plus } from "lucide-react";
 import { requireMember } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
 import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
-import { AccessLine, RecordActivity } from "@/components/RecordActivity";
+import { RecordActivity } from "@/components/RecordActivity";
 import { AcompCard, FiscCard } from "@/components/ProcessCards";
 import { FISC_KEY } from "@/lib/fisc";
 import { RecordActions } from "@/components/RecordActions";
@@ -27,72 +26,46 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
   const showA = view !== "formularios";
 
   const admin = createAdminClient();
-  const supabase = await createClient();
 
-  // tudo em paralelo: cada ida ao banco custa tempo; só buscamos o que a página mostra
-  const [personRes, recordsRes, docs, shared] = await Promise.all([
+  // Todas as pessoas com conta veem todos os processos; na página de uma pessoa (admin), só os dela.
+  let recQ = admin.from("intake_records").select("id, created_by, answers, created_at")
+    .eq("form_key", FORM_KEY).order("created_at", { ascending: false });
+  let fiscQ = admin.from("intake_records").select("id, created_by, created_at, meta:answers->_meta")
+    .eq("form_key", FISC_KEY).order("created_at", { ascending: false });
+  if (!mine) { recQ = recQ.eq("created_by", id); fiscQ = fiscQ.eq("created_by", id); }
+
+  const [personRes, recordsRes, docs, pplRes, fiscRes] = await Promise.all([
     admin.from("members").select("*").eq("id", id).maybeSingle(),
-    supabase
-      .from("intake_records").select("id, answers, followup, followup_at, created_at")
-      .eq("form_key", FORM_KEY).eq("created_by", id).order("created_at", { ascending: false }),
+    recQ,
     listDocs(id),
-    mine && showF
-      ? Promise.all([
-          // só o necessário das fichas dos outros (sem as respostas inteiras)
-          admin.from("intake_records")
-            .select("id, created_by, created_at, meta:answers->_meta, nomes:answers->nomes->>value, processo:answers->processo->>value")
-            .eq("form_key", FORM_KEY).neq("created_by", id),
-          admin.from("members").select("id, name, status"),
-          // fiscalizações (visitas) de qualquer pessoa; filtramos as minhas e as compartilhadas comigo
-          admin.from("intake_records")
-            .select("id, created_by, created_at, meta:answers->_meta")
-            .eq("form_key", FISC_KEY).order("created_at", { ascending: false }),
-        ])
-      : Promise.resolve(null),
+    admin.from("members").select("id, name"),
+    showF ? fiscQ : Promise.resolve({ data: [] as { id: string; created_by: string; created_at: string; meta: unknown }[] }),
   ]);
 
   const person = personRes.data;
   if (!person) notFound();
-  const records = (recordsRes.data ?? []) as Rec[];
+  const records = (recordsRes.data ?? []) as (Rec & { created_by: string })[];
   const first = (person.name || person.email).split(" ")[0];
+  const names = new Map((pplRes.data ?? []).map((p) => [p.id as string, p.name as string]));
+  const ownerOf = (uid: string) => names.get(uid) ?? "";
+  const canRemove = (uid: string) => uid === me.id || me.role === "admin";
 
-  // formulários de outras pessoas que foram compartilhados comigo para editar
-  let sharedWithMe: { id: string; nomes: string; processo: string; owner: string; created_at: string; meta: RecMeta }[] = [];
-  if (shared) {
-    const [{ data: all }, { data: ppl }] = shared;
-    const names = new Map((ppl ?? []).map((p) => [p.id as string, p.name as string]));
-    sharedWithMe = (all ?? [])
-      .filter((r) => ((r.meta as { shared?: { id: string }[] } | null)?.shared ?? []).some((x) => x.id === id))
-      .map((r) => ({
-        id: r.id as string, nomes: (r.nomes as string) ?? "", processo: (r.processo as string) ?? "",
-        owner: names.get(r.created_by as string) ?? "", created_at: r.created_at as string,
-        meta: metaOf({ _meta: r.meta ?? {} }),
-      }));
-  }
-  // acompanhamentos (relatórios de reavaliação) dos meus cadastros e dos compartilhados comigo
-  const acomps = [
-    ...records.flatMap((r) => {
-      const m = metaOf(r.answers as Record<string, unknown>);
-      return m.acomps.map((a) => ({
-        rid: r.id, nomes: r.answers.nomes?.value ?? "", processo: r.answers.processo?.value ?? "",
-        a, meta: m, owner: person.name || person.email, canDelete: true,
-      }));
-    }),
-    ...sharedWithMe.flatMap((r) => r.meta.acomps.map((a) => ({
-      rid: r.id, nomes: r.nomes, processo: r.processo, a, meta: r.meta, owner: r.owner, canDelete: me.role === "admin",
-    }))),
-  ].sort((x, y) => y.a.at.localeCompare(x.a.at));
+  // acompanhamentos (relatórios de reavaliação) de todos os processos
+  const acomps = records.flatMap((r) => {
+    const m = metaOf(r.answers as Record<string, unknown>);
+    return m.acomps.map((a) => ({
+      rid: r.id, nomes: r.answers.nomes?.value ?? "", processo: r.answers.processo?.value ?? "",
+      a, meta: m, owner: ownerOf(r.created_by), canDelete: canRemove(r.created_by),
+    }));
+  }).sort((x, y) => y.a.at.localeCompare(x.a.at));
 
-  // fiscalizações realizadas (minhas ou compartilhadas comigo)
-  const approved = ((shared?.[1].data ?? []) as { id: string; name: string; status: string }[]).filter((p) => p.status === "approved");
-  const shareable = approved.filter((p) => p.id !== id).map((p) => ({ id: p.id, name: p.name || "(sem nome)" }));
-  const nameOf = new Map(approved.map((p) => [p.id, p.name]));
-  const fiscs = (shared?.[2].data ?? [])
+  // fiscalizações já respondidas
+  const fiscs = (fiscRes.data ?? [])
     .map((r) => ({
       id: r.id as string, owner_id: r.created_by as string, created_at: r.created_at as string,
       meta: metaOf({ _meta: r.meta ?? {} }),
     }))
-    .filter((r) => r.meta.visit?.status === "realizada" && (r.owner_id === id || r.meta.shared.some((x) => x.id === id)));
+    .filter((r) => r.meta.visit?.status === "realizada");
 
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -152,7 +125,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
           {records.map((r) => {
             const meta = metaOf(r.answers as Record<string, unknown>);
             const nome = r.answers.nomes?.value ?? "(sem nome)";
-            const ownerName = person.name || person.email;
+            const ownerName = ownerOf(r.created_by);
             return (
               <article key={r.id} className="card pcard">
                 <Link href={`/cadastrados/${r.id}/documento`} className="pcard-head">
@@ -171,9 +144,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
                 <span style={{ color: "var(--muted)", fontSize: 13.5 }}>
                   Criado por {ownerName} em {new Date(r.created_at).toLocaleDateString("pt-BR")}
                 </span>
-                <AccessLine ownerName={ownerName} shared={meta.shared} />
                 <div className="pcard-actions">
-                  <RecordActions recordId={r.id} nome={nome} canDelete={mine || me.role === "admin"} />
+                  <RecordActions recordId={r.id} nome={nome} canDelete={canRemove(r.created_by)} />
                 </div>
                 <RecordActivity history={meta.history} createdAt={r.created_at} ownerName={ownerName} />
               </article>
@@ -181,31 +153,6 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
           })}
         </div>
       ))}
-
-      {showF && sharedWithMe.length > 0 && (
-        <>
-          <h2 className="section" style={{ margin: 0 }}>COMPARTILHADOS COMIGO ({sharedWithMe.length})</h2>
-          <div className="user-grid wide">
-            {sharedWithMe.map((r) => (
-              <article key={r.id} className="card pcard">
-                <Link href={`/cadastrados/${r.id}/documento`} className="pcard-head">
-                  <span className="pcard-ico"><FileText size={20} /></span>
-                  <span>
-                    <h3>{r.nomes || "(sem nome)"}</h3>
-                    <p>Processo {r.processo || "—"}</p>
-                  </span>
-                </Link>
-                <AccessLine ownerName={r.owner} shared={r.meta.shared} />
-                <div className="pcard-actions">
-                  <Link href={`/cadastrados/${r.id}/documento`}><button type="button"><FileText size={16} /> Abrir</button></Link>
-                  <a href={`/cadastrados/${r.id}/relatorio`}><button type="button" className="ghost"><Download size={16} /> Baixar</button></a>
-                </div>
-                <RecordActivity history={r.meta.history} createdAt={r.created_at} ownerName={r.owner} />
-              </article>
-            ))}
-          </div>
-        </>
-      )}
 
       {showF && <h2 className="section" style={{ margin: 0 }}>ACOMPANHAMENTOS ({acomps.length})</h2>}
       {showF && (acomps.length === 0 ? (
@@ -234,9 +181,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
             <FiscCard
               key={f.id} id={f.id} unit={f.meta.visit?.unit ?? ""} date={f.meta.visit?.date ?? ""}
               professionals={f.meta.visit?.professionals ?? []} respondedBy={f.meta.visit?.responded_by}
-              respondedAt={f.meta.visit?.responded_at} meta={f.meta} ownerName={nameOf.get(f.owner_id) ?? ""}
-              createdAt={f.created_at} canDelete={f.owner_id === id || me.role === "admin"}
-              people={shareable.filter((p) => p.id !== f.owner_id)}
+              respondedAt={f.meta.visit?.responded_at} meta={f.meta} ownerName={ownerOf(f.owner_id)}
+              createdAt={f.created_at} canDelete={canRemove(f.owner_id)}
             />
           ))}
         </div>
