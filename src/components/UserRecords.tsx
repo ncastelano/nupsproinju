@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ClipboardPen, FileText, FolderOpen, Plus } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
 import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
-import { metaOf } from "@/lib/records";
+import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
-import { ExportButton } from "@/components/ExportButton";
+import { AccessLine, RecordActivity } from "@/components/RecordActivity";
 import { FollowupActions } from "@/components/FollowupActions";
 import { RecordActions } from "@/components/RecordActions";
 import { ModeloRelatorio } from "@/components/ModeloRelatorio";
@@ -39,7 +39,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       ? Promise.all([
           // só o necessário das fichas dos outros (sem as respostas inteiras)
           admin.from("intake_records")
-            .select("id, created_by, meta:answers->_meta, nomes:answers->nomes->>value, processo:answers->processo->>value")
+            .select("id, created_by, created_at, meta:answers->_meta, nomes:answers->nomes->>value, processo:answers->processo->>value")
             .eq("form_key", FORM_KEY).neq("created_by", id),
           admin.from("members").select("id, name"),
         ])
@@ -52,7 +52,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
   const first = (person.name || person.email).split(" ")[0];
 
   // formulários de outras pessoas que foram compartilhados comigo para editar
-  let sharedWithMe: { id: string; nomes: string; processo: string; owner: string }[] = [];
+  let sharedWithMe: { id: string; nomes: string; processo: string; owner: string; created_at: string; meta: RecMeta }[] = [];
   if (shared) {
     const [{ data: all }, { data: ppl }] = shared;
     const names = new Map((ppl ?? []).map((p) => [p.id as string, p.name as string]));
@@ -60,7 +60,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       .filter((r) => ((r.meta as { shared?: { id: string }[] } | null)?.shared ?? []).some((x) => x.id === id))
       .map((r) => ({
         id: r.id as string, nomes: (r.nomes as string) ?? "", processo: (r.processo as string) ?? "",
-        owner: names.get(r.created_by as string) ?? "",
+        owner: names.get(r.created_by as string) ?? "", created_at: r.created_at as string,
+        meta: metaOf({ _meta: r.meta ?? {} }),
       }));
   }
   // um cartão por acompanhamento (um formulário pode ter vários, um por reavaliação)
@@ -90,8 +91,6 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
       {mine && (
         <div className="row">
           {showF && <Link href="/cadastro-inicial"><button><Plus size={16} /> Novo cadastro inicial</button></Link>}
-          {showF && <ExportButton kind="formulario" />}
-          {showA && <ExportButton kind="acompanhamento" />}
         </div>
       )}
       </div>
@@ -122,41 +121,59 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
 
       {mine && showF && <ModeloRelatorio canEdit={me.role === "admin"} />}
 
-      {showF && <h2 className="section" style={{ margin: 0 }}>PROCESSOS ({records.length})</h2>}
+      {showF && <h2 className="section" style={{ margin: 0 }}>CADASTROS INICIAIS ({records.length})</h2>}
       {showF && (records.length === 0 ? (
-        <div className="card empty"><p>Nenhum processo cadastrado ainda.</p></div>
+        <div className="card empty"><p>Nenhum cadastro inicial ainda.</p></div>
       ) : (
-        <div className="user-grid">
-          {records.map((r) => (
-            <article key={r.id} className="card user-card clickable">
-              <h3><Link href={`/cadastrados/${r.id}/documento`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
-              <p>Proc. {r.answers.processo?.value ?? "—"}</p>
-              {r.answers.unidade?.value && <p>{r.answers.unidade.value}</p>}
-              {r.answers.data_acolhimento?.value && <p>Acolhido em {formatDate(r.answers.data_acolhimento.value)}</p>}
-              <div className="row" style={{ marginTop: 10 }}>
-                <RecordActions
-                  recordId={r.id}
-                  nome={r.answers.nomes?.value ?? "(sem nome)"}
-                  canDelete={mine || me.role === "admin"}
-                />
-              </div>
-            </article>
-          ))}
+        <div className="user-grid wide">
+          {records.map((r) => {
+            const meta = metaOf(r.answers as Record<string, unknown>);
+            const nome = r.answers.nomes?.value ?? "(sem nome)";
+            const ownerName = person.name || person.email;
+            return (
+              <article key={r.id} className="card pcard">
+                <Link href={`/cadastrados/${r.id}/documento`} className="pcard-head">
+                  <span className="pcard-ico"><FileText size={20} /></span>
+                  <span>
+                    <h3>{nome}</h3>
+                    <p>Processo {r.answers.processo?.value ?? "—"}</p>
+                  </span>
+                </Link>
+                <div className="pcard-chips">
+                  {r.answers.unidade?.value && <span className="chip">{r.answers.unidade.value}</span>}
+                  {r.answers.modalidade?.value && <span className="chip">{r.answers.modalidade.value}</span>}
+                  {r.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(r.answers.data_acolhimento.value)}</span>}
+                  <span className="chip">{meta.acomps.length} {meta.acomps.length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
+                </div>
+                <AccessLine ownerName={ownerName} shared={meta.shared} />
+                <div className="pcard-actions">
+                  <RecordActions recordId={r.id} nome={nome} canDelete={mine || me.role === "admin"} />
+                </div>
+                <RecordActivity history={meta.history} createdAt={r.created_at} ownerName={ownerName} />
+              </article>
+            );
+          })}
         </div>
       ))}
 
       {showF && sharedWithMe.length > 0 && (
         <>
           <h2 className="section" style={{ margin: 0 }}>COMPARTILHADOS COMIGO ({sharedWithMe.length})</h2>
-          <div className="user-grid">
+          <div className="user-grid wide">
             {sharedWithMe.map((r) => (
-              <article key={r.id} className="card user-card clickable">
-                <h3><Link href={`/cadastrados/${r.id}/documento`} className="stretch">{r.nomes || "(sem nome)"}</Link></h3>
-                <p>Proc. {r.processo || "—"}</p>
-                <p>Compartilhado por {r.owner || "—"}</p>
-                <div className="row" style={{ marginTop: 6 }}>
-                  <span className="badge">Você pode editar</span>
+              <article key={r.id} className="card pcard">
+                <Link href={`/cadastrados/${r.id}/documento`} className="pcard-head">
+                  <span className="pcard-ico"><FileText size={20} /></span>
+                  <span>
+                    <h3>{r.nomes || "(sem nome)"}</h3>
+                    <p>Processo {r.processo || "—"}</p>
+                  </span>
+                </Link>
+                <AccessLine ownerName={r.owner} shared={r.meta.shared} />
+                <div className="pcard-actions">
+                  <a href={`/cadastrados/${r.id}/relatorio`}><button type="button" className="ghost">Baixar</button></a>
                 </div>
+                <RecordActivity history={r.meta.history} createdAt={r.created_at} ownerName={r.owner} />
               </article>
             ))}
           </div>

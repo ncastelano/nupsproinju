@@ -7,13 +7,16 @@ export type HistoryEntry = {
   at: string; by_id: string; by_name: string; scope: Scope;
   changes: { label: string; from: string; to: string }[];
   note?: string;
+  doc?: string; // "inicial" ou "acomp:N": a que documento a atividade se refere
 };
 export type FollowupEntry = { at: string; by_name: string; answers: Ans };
+export type AcompEntry = { n: number; at: string; by_id: string; by_name: string };
 export type RecMeta = {
   shared: { id: string; name: string }[];
   followups: FollowupEntry[]; // todos os acompanhamentos (o mais recente também fica em "followup")
   history: HistoryEntry[];
   editing: Record<string, { name: string; scope: Scope; since: string }>;
+  acomps: AcompEntry[]; // relatórios de acompanhamento e reavaliação (documentos .docx)
 };
 export type Rec = {
   id: string; created_by: string; created_at: string;
@@ -29,7 +32,7 @@ export function metaOf(raw: Record<string, unknown>): RecMeta {
   const editing = Object.fromEntries(
     Object.entries(m.editing ?? {}).filter(([, v]) => now - new Date(v.since).getTime() < STALE_MS),
   );
-  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing };
+  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [] };
 }
 
 export async function loadRecord(id: string): Promise<Rec | null> {

@@ -1,29 +1,61 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { accessOf, loadRecord, saveRecord } from "@/lib/records";
-import { cleanParas, serializeDocx } from "@/lib/docxDoc";
-import { DOC_BUCKET, docPath, docVersion, loadProcessDoc, storeProcessDoc } from "@/lib/procDoc";
+import { accessOf, loadRecord, saveRecord, type HistoryEntry } from "@/lib/records";
+import { cleanParas, parseDocx, serializeDocx, type Para } from "@/lib/docxDoc";
+import { DOC_BUCKET, INICIAL, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
 
 const SAME_USER_MS = 30 * 60 * 1000;
 
-async function note(id: string, text: string) {
+const refOf = (r: unknown): DocRef =>
+  r && typeof r === "object" && (r as { kind?: string }).kind === "acomp" && Number.isInteger((r as { n?: number }).n)
+    ? { kind: "acomp", n: (r as { n: number }).n } : INICIAL;
+
+const textsOf = (paras: Para[]) => paras.map((p) => p.runs.map((r) => r.t).join("").trim()).filter(Boolean);
+const cut = (s: string) => (s.length > 220 ? s.slice(0, 220) + "…" : s);
+
+// O que entrou e o que saiu do texto (por parágrafo), para o histórico de atividades.
+function diffParas(before: Para[], after: Para[]): HistoryEntry["changes"] {
+  const left = new Map<string, number>();
+  for (const t of textsOf(before)) left.set(t, (left.get(t) ?? 0) + 1);
+  const added: string[] = [];
+  for (const t of textsOf(after)) {
+    const n = left.get(t) ?? 0;
+    if (n > 0) left.set(t, n - 1); else added.push(t);
+  }
+  const removed = [...left.entries()].flatMap(([t, n]) => Array<string>(n).fill(t));
+  return [
+    ...removed.slice(0, 10).map((t) => ({ label: "Removido", from: cut(t), to: "" })),
+    ...added.slice(0, 10).map((t) => ({ label: "Adicionado", from: "", to: cut(t) })),
+  ];
+}
+
+async function note(id: string, text: string, doc: string, changes: HistoryEntry["changes"] = []) {
   const me = await requireMember();
   const rec = await loadRecord(id);
   if (!rec) return;
   const meta = rec.meta;
-  const last = meta.history[meta.history.length - 1];
-  if (last && last.by_id === me.id && last.note === text && Date.now() - new Date(last.at).getTime() < SAME_USER_MS) {
+  const last = meta.history[0];
+  const sameAuthor = last && last.by_id === me.id && last.note === text && last.doc === doc
+    && Date.now() - new Date(last.at).getTime() < SAME_USER_MS;
+  if (sameAuthor) {
+    // mesma pessoa editando em seguida: junta numa atividade só
     last.at = new Date().toISOString();
+    last.changes = [...changes, ...last.changes].slice(0, 20);
   } else {
-    meta.history.push({ at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario", changes: [], note: text });
+    meta.history.unshift({ at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario", changes, note: text, doc });
   }
+  meta.history = meta.history.slice(0, 200);
   await saveRecord(rec, {}, meta);
 }
 
+const label = (ref: DocRef) => (ref.kind === "acomp" ? `o acompanhamento nº ${ref.n}` : "o documento do processo");
+
 // Salva o documento editado na tela. "base" é a versão que a pessoa abriu: se outra pessoa salvou depois, avisa.
-export async function saveDocument(id: string, paras: unknown, base: string): Promise<{ ok: boolean; msg: string; version?: string }> {
+export async function saveDocument(id: string, paras: unknown, base: string, refIn?: unknown): Promise<{ ok: boolean; msg: string; version?: string }> {
+  const ref = refOf(refIn);
   const me = await requireMember();
   const rec = await loadRecord(id);
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
@@ -31,28 +63,71 @@ export async function saveDocument(id: string, paras: unknown, base: string): Pr
   const clean = cleanParas(paras);
   if (!clean) return { ok: false, msg: "Documento inválido." };
 
-  const current = await docVersion(id);
+  const current = await docVersion(id, ref);
   if (current && base && current !== base) {
     return { ok: false, msg: "Outra pessoa salvou este documento depois que você abriu. Recarregue a página para ver a versão mais nova." };
   }
-  const doc = await loadProcessDoc(rec);
+  const doc = await loadProcessDoc(rec, ref, me);
   if (!doc) return { ok: false, msg: "Modelo do relatório indisponível." };
+  const changes = diffParas((await parseDocx(doc.buf)).paras, clean);
   const buf = await serializeDocx(doc.buf, clean);
-  const { error } = await storeProcessDoc(id, buf);
+  const { error } = await storeProcessDoc(id, buf, ref);
   if (error) return { ok: false, msg: "Não foi possível salvar. Tente de novo." };
-  await note(id, "editou o documento do processo");
+  if (changes.length) await note(id, `editou ${label(ref)}`, refKey(ref), changes);
   revalidatePath(`/cadastrados/${id}`);
-  return { ok: true, msg: "Documento salvo.", version: (await docVersion(id)) ?? "" };
+  revalidatePath("/processos");
+  revalidatePath("/acompanhamento");
+  return { ok: true, msg: "Documento salvo.", version: (await docVersion(id, ref)) ?? "" };
 }
 
-// Descarta as edições e gera o documento de novo a partir do Cadastro inicial.
-export async function resetDocument(id: string): Promise<{ ok: boolean; msg: string }> {
+// Descarta as edições e gera o documento de novo a partir do modelo.
+export async function resetDocument(id: string, refIn?: unknown): Promise<{ ok: boolean; msg: string }> {
+  const ref = refOf(refIn);
   const me = await requireMember();
   const rec = await loadRecord(id);
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
   if (!accessOf(rec, me).canEdit) return { ok: false, msg: "Você não tem permissão para editar." };
-  await createAdminClient().storage.from(DOC_BUCKET).remove([docPath(id)]);
-  await note(id, "refez o documento a partir do cadastro inicial");
-  revalidatePath(`/cadastrados/${id}/documento`);
+  await createAdminClient().storage.from(DOC_BUCKET).remove([docPath(id, ref)]);
+  await note(id, `refez ${label(ref)} do início`, refKey(ref));
+  revalidatePath(`/cadastrados/${id}`);
   return { ok: true, msg: "Documento refeito." };
+}
+
+// Novo relatório de acompanhamento e reavaliação do processo.
+export async function createAcompanhamento(id: string) {
+  const me = await requireMember();
+  const rec = await loadRecord(id);
+  if (!rec || !accessOf(rec, me).canEdit) return;
+  const n = Math.max(0, ...rec.meta.acomps.map((a) => a.n)) + 1;
+  const ref: DocRef = { kind: "acomp", n };
+  const doc = await loadProcessDoc(rec, ref, me); // gera do modelo e guarda
+  if (!doc) return;
+  const meta = rec.meta;
+  meta.acomps.push({ n, at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email });
+  meta.history.unshift({
+    at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "acompanhamento",
+    changes: [], note: `criou o acompanhamento nº ${n}`, doc: refKey(ref),
+  });
+  await saveRecord(rec, {}, meta);
+  revalidatePath("/acompanhamento");
+  redirect(`/cadastrados/${id}/acompanhamento/${n}`);
+}
+
+export async function deleteAcompanhamento(id: string, n: number): Promise<string> {
+  const me = await requireMember();
+  const rec = await loadRecord(id);
+  if (!rec) return "Processo não encontrado.";
+  const acc = accessOf(rec, me);
+  if (!acc.owner && !acc.admin) return "Você não tem permissão para apagar.";
+  const meta = rec.meta;
+  meta.acomps = meta.acomps.filter((a) => a.n !== n);
+  meta.history.unshift({
+    at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "acompanhamento",
+    changes: [], note: `apagou o acompanhamento nº ${n}`, doc: `acomp:${n}`,
+  });
+  await createAdminClient().storage.from(DOC_BUCKET).remove([docPath(id, { kind: "acomp", n })]);
+  const r = await saveRecord(rec, {}, meta);
+  if (r.error) return "Não foi possível apagar. Tente de novo.";
+  revalidatePath("/acompanhamento");
+  return "ok";
 }

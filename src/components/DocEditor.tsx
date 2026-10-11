@@ -14,7 +14,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 function runsHtml(runs: Run[]): string {
   return runs.map((r) => {
     const st = `${r.b ? "font-weight:700;" : ""}${r.i ? "font-style:italic;" : ""}${r.u ? "text-decoration:underline;" : ""}font-size:${r.sz / 2}pt`;
-    return `<span style="${st}">${esc(r.t).replace(/\n/g, "<br>")}</span>`;
+    return `<span style="${st}">${esc(r.t).replace(/\[preencher\]/g, '<mark class="doc-todo">[preencher]</mark>').replace(/\n/g, "<br>")}</span>`;
   }).join("");
 }
 
@@ -73,7 +73,11 @@ function readRuns(el: HTMLElement): Run[] {
 let uidSeq = 1;
 const GAP = 28; // vão cinza entre as páginas (px)
 
-export function DocEditor({ id, data, version, canEdit }: { id: string; data: DocData; version: string; canEdit: boolean }) {
+type Ref = { kind: "inicial" } | { kind: "acomp"; n: number };
+
+export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicial" }, backHref = "/processos" }: {
+  id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string;
+}) {
   const [items, setItems] = useState<Item[]>(() =>
     data.paras.map((p) => ({ uid: uidSeq++, jc: p.jc, sp: p.sp, ind: p.ind, sz: p.sz, font: p.font, html: runsHtml(p.runs) })));
   const [active, setActive] = useState<number | null>(null);
@@ -297,11 +301,11 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
     setBusy(true);
     setMsg(null);
     try {
-      const r = await saveDocument(id, collect(), base.current);
+      const r = await saveDocument(id, collect(), base.current, docRef);
       if (r.ok) {
         setDirty(false);
         if (r.version) base.current = r.version;
-        router.push("/processos"); // volta para os cartões
+        router.push(backHref); // volta para os cartões
         return;
       }
       setMsg({ ok: r.ok, text: r.msg });
@@ -313,7 +317,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
 
   async function reset() {
     setBusy(true);
-    const r = await resetDocument(id);
+    const r = await resetDocument(id, docRef);
     if (r.ok) { window.location.reload(); return; }
     setMsg({ ok: false, text: r.msg });
     setBusy(false);
@@ -329,11 +333,11 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
         {confirmLeave ? (
           <>
             <span style={{ fontSize: 13 }}>Há alterações não salvas. Sair mesmo assim?</span>
-            <button className="danger" onClick={() => { setDirty(false); router.push("/processos"); }}>Sair sem salvar</button>
+            <button className="danger" onClick={() => { setDirty(false); router.push(backHref); }}>Sair sem salvar</button>
             <button className="ghost" onClick={() => setConfirmLeave(false)}>Continuar editando</button>
           </>
         ) : (
-          <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : router.push("/processos"))}>
+          <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : router.push(backHref))}>
             <ArrowLeft size={16} /> Voltar
           </button>
         )}
@@ -365,8 +369,8 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
               <button className="ghost" onClick={() => setConfirmReset(false)}>Cancelar</button>
             </>
           ) : (
-            <button className="ghost" title="Refazer o documento a partir do Cadastro inicial" disabled={busy} onClick={() => setConfirmReset(true)}>
-              <RotateCcw size={16} /> Refazer do cadastro
+            <button className="ghost" title={docRef.kind === "acomp" ? "Refazer o relatório a partir do modelo" : "Refazer o documento a partir do Cadastro inicial"} disabled={busy} onClick={() => setConfirmReset(true)}>
+              <RotateCcw size={16} /> {docRef.kind === "acomp" ? "Refazer do modelo" : "Refazer do cadastro"}
             </button>
           )}
           <button disabled={busy || !dirty} onClick={save}>

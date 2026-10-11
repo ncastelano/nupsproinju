@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_ACOMP, FORM_KEY, OTHER_PREFIX, PROFESSIONAL_KEYS } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
+import { removeProcessDocs } from "@/lib/procDoc";
 import { accessOf, loadRecord, saveRecord, type Ans, type HistoryEntry, type Scope } from "@/lib/records";
 
 const scopeOf = (f: FormData): Scope => (f.get("scope") === "acompanhamento" ? "acompanhamento" : "formulario");
@@ -88,12 +89,20 @@ export async function saveRecordEdit(_: string | null, form: FormData) {
 export async function shareRecord(form: FormData) {
   const id = String(form.get("record_id"));
   const who = String(form.get("member_id") ?? "");
-  const { rec, acc } = await open(id);
+  const { me, rec, acc } = await open(id);
   if (!acc.canShare || !who || who === rec.created_by) return;
   const { data: m } = await createAdminClient().from("members").select("id, name, email, status").eq("id", who).maybeSingle();
   if (!m || m.status !== "approved") return;
   const meta = rec.meta;
-  if (!meta.shared.some((s) => s.id === who)) meta.shared.push({ id: who, name: (m.name as string) || (m.email as string) });
+  if (!meta.shared.some((s) => s.id === who)) {
+    const nome = (m.name as string) || (m.email as string);
+    meta.shared.push({ id: who, name: nome });
+    meta.history.unshift({
+      at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email,
+      scope: "formulario", changes: [], note: `deu acesso para ${nome}`,
+    });
+    meta.history = meta.history.slice(0, 200);
+  }
   await saveRecord(rec, {}, meta);
   done(id);
 }
@@ -101,11 +110,19 @@ export async function shareRecord(form: FormData) {
 export async function unshareRecord(form: FormData) {
   const id = String(form.get("record_id"));
   const who = String(form.get("member_id"));
-  const { rec, acc } = await open(id);
+  const { me, rec, acc } = await open(id);
   if (!acc.canShare) return;
   const meta = rec.meta;
+  const removed = meta.shared.find((s) => s.id === who);
   meta.shared = meta.shared.filter((s) => s.id !== who);
   delete meta.editing[who];
+  if (removed) {
+    meta.history.unshift({
+      at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario",
+      changes: [], note: `tirou o acesso de ${removed.name}`,
+    });
+    meta.history = meta.history.slice(0, 200);
+  }
   await saveRecord(rec, {}, meta);
   done(id);
 }
@@ -150,6 +167,7 @@ export async function deleteCadastro(form: FormData): Promise<string> {
   if (!acc.owner && !acc.admin) return "Você não tem permissão para apagar.";
   const { error } = await createAdminClient().from("intake_records").delete().eq("id", rec.id);
   if (error) return "Não foi possível apagar. Tente novamente.";
+  await removeProcessDocs(rec.id).catch(() => {});
   revalidatePath("/usuarios", "layout");
   return "ok";
 }

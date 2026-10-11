@@ -164,3 +164,43 @@ export const PLACEHOLDER_SOURCE: Record<string, string> = {
   QUESTOES_PROXIMO_ACOMPANHAMENTO: "25. Questões pendentes e/ou aspectos a acompanhar",
   LOCAL_DATA: "Gerado automaticamente (cidade e data de hoje)",
 };
+
+// ---- Relatório de acompanhamento e reavaliação ----
+export const ACOMP_PATH = "relatorio-acompanhamento-reavaliacao.docx";
+export const TODO = "[preencher]";
+
+// Identificação vem do Cadastro inicial; os eixos trazem a avaliação anterior para a pessoa comparar.
+export function acompValues(a: Ans, signer: { name: string; registry: string }, now = new Date()): Record<string, string> {
+  const base = reportValues(a, now);
+  const prev = (text: string) => (text && text !== "—" ? `Na avaliação anterior: ${text}\n\nNa presente reavaliação: ${TODO}` : TODO);
+  return {
+    PROCESSO: base.PROCESSO,
+    CRIANCAS: base.NOME_ACOLHIDO,
+    NASCIMENTOS: base.DATA_NASCIMENTO,
+    IDADE: base.IDADE,
+    GENITORA: base.NOME_GENITORA,
+    GENITOR: base.NOME_GENITOR,
+    DATA_ACOLHIMENTO: base.DATA_ACOLHIMENTO,
+    MODALIDADE: base.MODALIDADE,
+    UNIDADE: base.UNIDADE,
+    PROFISSIONAL: base.PROFISSIONAIS,
+    PROCEDIMENTOS: TODO,
+    COMPARATIVO_ACOLHIMENTO: prev(base.ACOLHIMENTO_ADAPTACAO),
+    COMPARATIVO_EDUCACAO: prev(base.EDUCACAO),
+    COMPARATIVO_SAUDE: prev(base.SAUDE),
+    COMPARATIVO_EMOCIONAL: prev(base.ASPECTOS_EMOCIONAIS),
+    COMPARATIVO_CONVIVENCIA_FAMILIAR: prev(base.CONVIVENCIA_FAMILIAR),
+    COMPARATIVO_CONVIVENCIA_COMUNITARIA: prev(base.CONVIVENCIA_COMUNITARIA),
+    SITUACAO_GENITORA: TODO,
+    SITUACAO_GENITOR: TODO,
+    SITUACAO_FAMILIA_EXTENSA: TODO,
+    INFORMACOES_FAMILIARES: TODO,
+    ACOMPANHAMENTO_PENDENCIAS: base.QUESTOES_PROXIMO_ACOMPANHAMENTO && base.QUESTOES_PROXIMO_ACOMPANHAMENTO !== "—"
+      ? `${TODO} (pendências indicadas na avaliação anterior: ${base.QUESTOES_PROXIMO_ACOMPANHAMENTO})`
+      : TODO,
+    PENDENCIAS_PROXIMO_PERIODO: TODO,
+    ANALISE_PSICOSSOCIAL: TODO,
+    LOCAL_DATA: base.LOCAL_DATA,
+    ASSINATURA: [signer.name, signer.registry].filter(Boolean).join(" – "),
+  };
+}

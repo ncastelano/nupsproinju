@@ -31,7 +31,7 @@ export function RecordActions({ recordId, nome, canDelete }: { recordId: string;
         note="Só abre para quem estiver logado e tiver acesso."
       />
       <a href={`/cadastrados/${recordId}/relatorio`}>
-        <button type="button" className="ghost"><Download size={16} /> Relatório</button>
+        <button type="button" className="ghost"><Download size={16} /> Baixar</button>
       </a>
       {canDelete && (!ask ? (
         <button type="button" className="danger" onClick={() => { setErr(null); setAsk(true); }}>
