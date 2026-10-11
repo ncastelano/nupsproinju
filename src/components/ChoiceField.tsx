@@ -52,7 +52,7 @@ export function ChoiceField({
       {hasOther && <input type="hidden" name={`${name}__outro`} value={otherText} />}
 
       <button type="button" className={`choice-box${open ? " open" : ""}`} aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <span className={`choice-values${summary.length ? "" : " empty"}`}>{summary.length ? summary.join("; ") : placeholder}</span>
+        <span className={`choice-values${summary.length ? "" : " placeholder"}`}>{summary.length ? summary.join("; ") : placeholder}</span>
         {multiple && summary.length > 1 && <span className="choice-count">{summary.length}</span>}
         <ChevronDown size={18} />
       </button>
