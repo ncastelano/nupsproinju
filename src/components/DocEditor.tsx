@@ -55,6 +55,7 @@ function readRuns(el: HTMLElement): Run[] {
   const walk = (node: Node, first: boolean) => {
     node.childNodes.forEach((c, idx) => {
       if (c.nodeType === Node.TEXT_NODE) push((c.textContent ?? "").replace(/​/g, ""), node as Element);
+      else if (c.nodeType === Node.ELEMENT_NODE && (c as Element).classList.contains("pgspacer")) return;
       else if (c.nodeName === "BR") push("\n", node as Element);
       else if (c.nodeType === Node.ELEMENT_NODE) {
         if ((c.nodeName === "DIV" || c.nodeName === "P") && !(first && idx === 0)) push("\n", node as Element);
@@ -70,6 +71,7 @@ function readRuns(el: HTMLElement): Run[] {
 }
 
 let uidSeq = 1;
+const GAP = 28; // vão cinza entre as páginas (px)
 
 export function DocEditor({ id, data, version, canEdit }: { id: string; data: DocData; version: string; canEdit: boolean }) {
   const [items, setItems] = useState<Item[]>(() =>
@@ -81,7 +83,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
   const [confirmReset, setConfirmReset] = useState(false);
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
-  const [breaks, setBreaks] = useState<number[]>([]);
+  const [gaps, setGaps] = useState<number[]>([]);
   const base = useRef(version);
   const refs = useRef(new Map<number, HTMLDivElement>());
   const focusNext = useRef<{ uid: number; atStart: boolean } | null>(null);
@@ -106,38 +108,93 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
     s?.removeAllRanges(); s?.addRange(r);
   });
 
-  // Onde o Word quebraria a página: a cada "altura útil" de conteúdo, entre linhas.
-  useEffect(() => {
+  // Paginação: a cada página, deixa a margem inferior, um vão e a margem superior da próxima
+  // (como no Word). O vão é um bloco fixo inserido entre duas linhas, nunca no meio de uma palavra.
+  const composing = useRef(false);
+  const raf = useRef(0);
+  const paginate = () => {
     const page = pageRef.current;
-    if (!page) return;
-    const H = data.page.h - data.page.top - data.page.bottom;
-    const measure = () => {
-      let limit = data.page.top + H;
-      const out: number[] = [];
-      for (const el of page.querySelectorAll<HTMLElement>(".doc-para")) {
-        let top = el.offsetTop;
-        let h = el.offsetHeight;
-        const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
-        let guard = 0;
-        while (top + h > limit && guard++ < 50) {
-          const fit = Math.max(0, Math.floor((limit - top) / lh));
-          const y = top + fit * lh;
-          out.push(y);
-          limit = y + H;
-          h -= y - top;
-          top = y;
-          if (fit === 0 && h <= 0) break;
-        }
-      }
-      setBreaks((cur) => (cur.length === out.length && cur.every((v, i) => v === out[i]) ? cur : out));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(page);
-    return () => ro.disconnect();
-  }, [data.page]);
+    if (!page || composing.current) return;
+    page.querySelectorAll(".pgspacer").forEach((n) => n.remove());
+    const { top: mt, bottom: mb, h: pageH } = data.page;
+    const H = pageH - mt - mb;
+    const origin = () => page.getBoundingClientRect().top + page.clientTop;
+    let limit = mt + H; // y onde o texto da página atual termina
+    const gaps: number[] = [];
 
-  const touch = () => { setDirty(true); setMsg(null); };
+    // primeiro caractere cuja linha começa em y ou depois (busca binária dentro de cada trecho de texto)
+    const lineStart = (el: HTMLElement, after: Node | null, y: number): { node: Text; i: number } | null => {
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      const rg = document.createRange();
+      const topAt = (n: Text, i: number) => {
+        rg.setStart(n, i); rg.setEnd(n, i + 1);
+        const r = rg.getClientRects()[0];
+        return r ? r.top - origin() : null;
+      };
+      let seen = after === null;
+      for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
+        if (!seen) { if (after!.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING) seen = true; else continue; }
+        const len = n.data.length;
+        if (!len) continue;
+        const last = topAt(n, len - 1);
+        if (last === null || last < y - 1) continue;
+        let lo = 0, hi = len - 1;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          const t = topAt(n, mid);
+          if (t !== null && t >= y - 1) hi = mid; else lo = mid + 1;
+        }
+        return { node: n, i: lo };
+      }
+      return null;
+    };
+
+    for (const el of page.querySelectorAll<HTMLElement>(".doc-para")) {
+      let spacer: HTMLElement | null = null;
+      for (let guard = 0; guard < 40; guard++) {
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
+        const bottom = el.offsetTop + el.offsetHeight;
+        if (bottom <= limit + 0.5) break;
+        const top = spacer ? spacer.getBoundingClientRect().bottom - origin() : el.offsetTop;
+        const total = Math.max(1, Math.round((bottom - top) / lh));
+        let fit = Math.max(0, Math.floor((limit - top + 0.5) / lh));
+        if (fit < total) {
+          if (total - fit === 1 && fit >= 3) fit -= 1;      // não deixa uma linha sozinha na página seguinte
+          if (!spacer && fit < 2) fit = 0;                   // nem a primeira linha sozinha no fim da página
+        }
+        const y = top + fit * lh;
+        const sh = limit - y + mb + GAP + mt;
+        const sp = document.createElement("span");
+        sp.className = "pgspacer";
+        sp.contentEditable = "false";
+        sp.style.cssText = `display:block;height:${sh}px;`;
+        if (fit === 0 && !spacer) el.insertBefore(sp, el.firstChild);
+        else {
+          const at = lineStart(el, spacer, y);
+          if (!at) break;
+          if (at.i > 0) at.node.splitText(at.i);
+          const ref = at.i > 0 ? at.node.nextSibling! : at.node;
+          ref.parentNode!.insertBefore(sp, ref);
+        }
+        gaps.push(limit + mb);
+        limit = limit + mb + GAP + mt + H;
+        spacer = sp;
+      }
+    }
+    setGaps((cur) => (cur.length === gaps.length && cur.every((v, i) => v === gaps[i]) ? cur : gaps));
+  };
+  const schedule = () => {
+    cancelAnimationFrame(raf.current);
+    raf.current = requestAnimationFrame(paginate);
+  };
+  const clearSpacers = () => pageRef.current?.querySelectorAll(".pgspacer").forEach((n) => n.remove());
+  useEffect(() => {
+    paginate();
+    void document.fonts?.ready.then(paginate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
+
+  const touch = () => { setDirty(true); setMsg(null); schedule(); };
   const idxOf = (uid: number) => items.findIndex((x) => x.uid === uid);
 
   function exec(cmd: "bold" | "italic" | "underline") {
@@ -174,6 +231,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
     const el = e.currentTarget;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      clearSpacers();
       const sel = getSelection();
       if (!sel || sel.rangeCount === 0) return;
       const r = sel.getRangeAt(0);
@@ -205,6 +263,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
       const at = idxOf(it.uid);
       if (at <= 0) return;
       e.preventDefault();
+      clearSpacers();
       const prev = items[at - 1];
       const prevEl = refs.current.get(prev.uid);
       if (!prevEl) return;
@@ -284,7 +343,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
               {msg.ok && <Check size={14} style={{ verticalAlign: "-2px" }} />} {msg.text}
             </span>
           )}
-          <span style={{ color: "var(--muted)", fontSize: 13 }}>{breaks.length + 1} {breaks.length ? "páginas" : "página"}</span>
+          <span style={{ color: "var(--muted)", fontSize: 13 }}>{gaps.length + 1} {gaps.length ? "páginas" : "página"}</span>
           {dirty && !msg && <span style={{ color: "var(--muted)", fontSize: 13 }}>Alterações não salvas</span>}
           {confirmReset ? (
             <>
@@ -305,7 +364,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
       {!canEdit && <p style={{ color: "var(--muted)", margin: 0 }}>Você pode ver este documento, mas não editar.</p>}
 
       <div className="doc-scroll">
-        <div className="doc-page" ref={pageRef} style={{ width: page.w, minHeight: page.h, padding: `${page.top}px ${page.right}px ${page.bottom}px ${page.left}px` }}>
+        <div className="doc-page" ref={pageRef} style={{ width: page.w, minHeight: gaps.length ? gaps[gaps.length - 1] + GAP + page.h : page.h, padding: `${page.top}px ${page.right}px ${page.bottom}px ${page.left}px` }}>
           {header && (
             <div style={{ position: "absolute", left: header.x, top: header.y, width: header.w, height: header.h, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -315,9 +374,15 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
               />
             </div>
           )}
-          {breaks.map((y, i) => (
-            <div key={`b${i}`} className="doc-break" style={{ top: y }}>
-              <span>Página {i + 2}</span>
+          {gaps.map((y, i) => (
+            <div key={`g${i}`}>
+              <div className="doc-gap" style={{ top: y, height: GAP }}><span>Página {i + 2}</span></div>
+              {header && (
+                <div style={{ position: "absolute", left: header.x, top: y + GAP + header.y, width: header.w, height: header.h, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={header.src} alt="" style={{ position: "absolute", width: hw, height: hh, maxWidth: "none", left: -header.crop.l * hw, top: -header.crop.t * hh }} />
+                </div>
+              )}
             </div>
           ))}
           {items.map((it) => (
@@ -333,6 +398,8 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
               data-active={active === it.uid || undefined}
               onFocus={() => setActive(it.uid)}
               onInput={touch}
+              onCompositionStart={() => { composing.current = true; }}
+              onCompositionEnd={() => { composing.current = false; schedule(); }}
               onKeyDown={(e) => onKeyDown(e, it)}
               onPaste={onPaste}
               dangerouslySetInnerHTML={{ __html: it.html }}

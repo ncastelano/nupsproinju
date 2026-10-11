@@ -521,15 +521,13 @@ label.file-pick { display: inline-flex; gap: 6px; align-items: center; cursor: p
   border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 6px 24px rgba(7, 63, 73, 0.12);
 }
 .doc-para { position: relative; z-index: 1; outline: none; white-space: pre-wrap; tab-size: 8; word-wrap: break-word; border-radius: 3px; }
-.doc-para[contenteditable="true"]:hover { background: rgba(11, 93, 107, 0.04); }
-.doc-para[data-active] { background: rgba(11, 93, 107, 0.07); }
 .spin { animation: docspin 0.9s linear infinite; }
 @keyframes docspin { to { transform: rotate(360deg); } }
-.doc-break {
-  position: absolute; left: -1px; right: -1px; height: 0; z-index: 2; pointer-events: none;
-  border-top: 2px dashed var(--brand);
+.doc-gap {
+  position: absolute; left: -1px; right: -1px; z-index: 2; pointer-events: none; background: var(--bg);
+  box-shadow: inset 0 8px 8px -8px rgba(7, 63, 73, 0.35), inset 0 -8px 8px -8px rgba(7, 63, 73, 0.35);
+  display: flex; align-items: center; justify-content: center;
 }
-.doc-break span {
-  position: absolute; right: 8px; top: -11px; background: var(--brand); color: #fff;
-  font: 600 11px system-ui, sans-serif; padding: 2px 8px; border-radius: 999px;
-}
+.doc-gap span { color: var(--muted); font: 600 11px system-ui, sans-serif; }
+.pgspacer { user-select: none; }
+.doc-page { overflow-anchor: none; }
