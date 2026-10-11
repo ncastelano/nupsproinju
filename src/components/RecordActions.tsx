@@ -38,7 +38,7 @@ export function RecordActions({ recordId, nome, canDelete, draft = false, hideOp
             </Link>
           )}
           <ShareMenu
-            path={`/cadastrados/${recordId}`}
+            path={`/cadastrados/${recordId}/documento`}
             text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – PROINJU):`}
             label="Compartilhar"
             className="ghost"

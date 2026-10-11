@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { metaStore } from "@/lib/reqcache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,7 +34,11 @@ export const getMember = cache(async (): Promise<Member | null> => {
 // Só passa quem está aprovado; pendente/recusado vai pra tela de status.
 export async function requireMember() {
   const m = await getMember();
-  if (!m) redirect("/login");
+  if (!m) {
+    // volta para o endereço pedido depois de entrar (ex.: link de relatório compartilhado)
+    const want = (await headers()).get("x-pathname") ?? "";
+    redirect(want && want !== "/" && !want.startsWith("/login") ? `/login?next=${encodeURIComponent(want)}` : "/login");
+  }
   if (m.status !== "approved") redirect("/acesso");
   return m;
 }

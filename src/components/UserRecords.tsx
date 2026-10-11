@@ -8,7 +8,7 @@ import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
-import { AcompCard, FiscCard, MiniCard } from "@/components/ProcessCards";
+import { AcompCard, FiscCard, MiniCard, brDate } from "@/components/ProcessCards";
 import { FISC_KEY } from "@/lib/fisc";
 import { ReportSearch } from "@/components/ReportSearch";
 
@@ -34,6 +34,7 @@ function Block({ title, count, all, full, empty, children, q }: {
 // Lista de formulários e/ou acompanhamentos de uma pessoa (cada aba mostra a sua parte).
 export type ListKind = "cadastros" | "acompanhamentos" | "fiscalizacoes";
 const LIMIT = 4;
+const latest = (...iso: (string | undefined)[]) => iso.filter(Boolean).sort().pop();
 
 export async function UserRecords({ id, view, only, q = "" }: { id: string; view: "formularios" | "acompanhamentos" | "todos"; only?: ListKind; q?: string }) {
   const me = await requireMember();
@@ -169,7 +170,9 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
               <MiniCard
                 key={r.id}
                 href={meta.draft ? `/cadastro-inicial?rascunho=${r.id}` : `/cadastrados/${r.id}/documento`}
-                title={nome} line={`Processo ${r.answers.processo?.value ?? "—"}`} draft={!!meta.draft}
+                title={`Processo ${r.answers.processo?.value ?? "—"}`} line={nome}
+                sub={`Último relatório: ${brDate(latest(r.created_at, ...meta.history.filter((h) => !h.doc || h.doc === "inicial").map((h) => h.at))!)}`}
+                draft={!!meta.draft}
               >
               </MiniCard>
             );
@@ -186,6 +189,7 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
             <AcompCard
               key={`${x.rid}-${x.a.n}`} recordId={x.rid} nomes={x.nomes} processo={x.processo}
               n={x.a.n} by={x.a.by_name} at={x.a.at} canDelete={x.canDelete} draft={!!x.a.draft}
+              last={latest(x.a.at, ...x.meta.history.filter((h) => h.doc === `acomp:${x.a.n}`).map((h) => h.at))}
             />
           ))}
         </Block>
@@ -201,6 +205,7 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
               key={f.id} id={f.id} unit={f.meta.visit?.unit ?? ""} date={f.meta.visit?.date ?? ""}
               professionals={f.meta.visit?.professionals ?? []} respondedBy={f.meta.visit?.responded_by}
               respondedAt={f.meta.visit?.responded_at} canDelete={canRemove(f.owner_id)}
+              last={latest(f.meta.visit?.responded_at, f.created_at, ...f.meta.history.filter((h) => !h.doc || h.doc === "fisc").map((h) => h.at))}
               draft={f.meta.visit?.status !== "realizada"}
             />
           ))}

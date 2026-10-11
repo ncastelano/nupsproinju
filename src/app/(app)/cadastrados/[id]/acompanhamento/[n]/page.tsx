@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 import { AcompActions } from "@/components/AcompActions";
+import { MiniCard, brDate } from "@/components/ProcessCards";
 import { requireMember } from "@/lib/auth";
 import { accessOf, loadRecord } from "@/lib/records";
 import { parseDocx } from "@/lib/docxDoc";
@@ -47,6 +48,14 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/acompanhamento" />
+      <h2 className="section" style={{ margin: 0 }}>CADASTRO INICIAL</h2>
+      <div className="user-grid four">
+        <MiniCard
+          href={`/cadastrados/${id}/documento`}
+          title={`Processo ${rec.answers.processo?.value ?? "—"}`} line={rec.answers.nomes?.value ?? "(sem nome)"}
+          sub={`Último relatório: ${brDate([rec.created_at, ...rec.meta.history.filter((h) => !h.doc || h.doc === "inicial").map((h) => h.at)].sort().pop()!)}`}
+        />
+      </div>
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
             <span className="chip">Criado por {entry.by_name || "—"} em {new Date(entry.at).toLocaleDateString("pt-BR")}</span>
