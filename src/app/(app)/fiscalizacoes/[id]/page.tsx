@@ -45,6 +45,9 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
           <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <div className="card">
+        <AudioPanel recordId={id} doc={"fisc"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "fisc")} canEdit={acc.canEdit} me={me.id} />
+      </div>
       <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/fiscalizacoes" />
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
@@ -52,7 +55,6 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
             {v?.responded_by && <span className="chip">Respondida por {v.responded_by}</span>}
             <span className="chip">Criada por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
           </div>
-        <AudioPanel recordId={id} doc={"fisc"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "fisc")} canEdit={acc.canEdit} me={me.id} />
         <RecordActivity history={rec.meta.history} createdAt={rec.created_at} ownerName={ownerName} label="" limit={6} showCreated={false} />
       </div>
     </div>

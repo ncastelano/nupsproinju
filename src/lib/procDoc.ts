@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Rec } from "@/lib/records";
-import { ACOMP_PATH, REPORT_BUCKET, REPORT_PATH, acompValues, fillDocx, questionValues, reportValues } from "@/lib/report";
+import { ACOMP_PATH, FISC_BASE_PATH, REPORT_BUCKET, REPORT_PATH, acompValues, fillDocx, questionValues, reportValues } from "@/lib/report";
 import { buildFiscDoc } from "@/lib/fisc";
 import { emptyPara, serializeDocx } from "@/lib/docxDoc";
 import { CONFIG_PATH, applyConfig, type ReportConfig } from "@/lib/reportEdit";
@@ -31,7 +31,9 @@ type Signer = { name: string; registry: string };
 
 export async function generateDoc(rec: Rec, ref: DocRef, signer?: Signer): Promise<Buffer | null> {
   const admin = createAdminClient();
-  const { data } = await admin.storage.from(REPORT_BUCKET).download(ref.kind === "inicial" ? REPORT_PATH : ACOMP_PATH);
+  const basePath = ref.kind === "inicial" ? REPORT_PATH : ref.kind === "fisc" ? FISC_BASE_PATH : ACOMP_PATH;
+  let { data } = await admin.storage.from(REPORT_BUCKET).download(basePath);
+  if (!data && ref.kind === "fisc") data = (await admin.storage.from(REPORT_BUCKET).download(ACOMP_PATH)).data; // sem base própria: usa a do acompanhamento
   if (!data) return null;
   const tpl = Buffer.from(await data.arrayBuffer());
   if (ref.kind === "nota") return serializeDocx(tpl, [emptyPara()]); // folha em branco com o cabeçalho do NUPS

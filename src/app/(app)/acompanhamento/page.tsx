@@ -1,4 +1,6 @@
 import { requireMember } from "@/lib/auth";
+import { ModelCard } from "@/components/ModelCard";
+import { MODELS, modelInfo } from "@/lib/models";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
 import { loadRecord } from "@/lib/records";
@@ -9,7 +11,7 @@ import { DiscardDraft } from "@/components/DiscardDraft";
 
 // Formulário do Relatório de acompanhamento e reavaliação. Ao salvar, o relatório aparece em Processos.
 export default async function AcompanhamentoPage({ searchParams }: { searchParams: Promise<{ processo?: string; n?: string }> }) {
-  await requireMember();
+  const me = await requireMember();
   const { processo, n: nRaw } = await searchParams;
   const { data } = await createAdminClient().from("intake_records")
     .select("id, meta:answers->_meta, nomes:answers->nomes->>value, numero:answers->processo->>value")
@@ -34,6 +36,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
         </p>
       </div>
 
+      <ModelCard kind="acomp" title={MODELS.acomp.title} note={MODELS.acomp.note} info={await modelInfo("acomp")} canEdit={me.role === "admin"} />
       <div className="card q">
         <label className="q-label">Processo <span className="req">*</span></label>
         {options.length === 0 ? (

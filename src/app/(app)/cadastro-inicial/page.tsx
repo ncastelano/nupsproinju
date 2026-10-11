@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/auth";
+import { ModelCard } from "@/components/ModelCard";
+import { MODELS, modelInfo } from "@/lib/models";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
@@ -57,6 +59,7 @@ export default async function FormularioPage({
           Campos com <span className="req">*</span> são obrigatórios.
         </p>
       </div>
+      <ModelCard kind="inicial" title={MODELS.inicial.title} note={MODELS.inicial.note} info={await modelInfo("inicial")} canEdit={me.role === "admin"} />
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
           <h2>Nenhum acolhido registrado</h2>

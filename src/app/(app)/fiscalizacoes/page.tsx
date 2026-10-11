@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { CalendarClock, ClipboardCheck } from "lucide-react";
 import { requireMember } from "@/lib/auth";
+import { ModelCard } from "@/components/ModelCard";
+import { MODELS, modelInfo } from "@/lib/models";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { FISC_KEY, PROFISSIONAIS_PADRAO } from "@/lib/fisc";
@@ -49,6 +51,7 @@ export default async function FiscalizacoesPage() {
         </p>
       </div>
 
+      <ModelCard kind="fisc" title={MODELS.fisc.title} note={MODELS.fisc.note} info={await modelInfo("fisc")} canEdit={me.role === "admin"} />
       <FiscForm id="" initial={{}} redo={false} />
 
       <hr className="soft" />

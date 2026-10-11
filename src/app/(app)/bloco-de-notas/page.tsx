@@ -47,10 +47,10 @@ export default async function BlocoDeNotas({ searchParams }: { searchParams: Pro
         ))}
       </div>
       <NoteBar key={currentId} notes={notes} current={currentId} title={title} visibility={notes.find((x) => x.id === currentId)!.vis} />
-      <DocEditor key={`${currentId}-${doc.version}`} id={currentId} data={parsed} version={doc.version} canEdit author={me.name || me.email} docRef={{ kind: "nota" }} backHref="/" />
       <div className="card">
         <AudioPanel recordId={currentId} doc="nota" audios={rec.meta.audios ?? []} canEdit me={me.id} />
       </div>
+      <DocEditor key={`${currentId}-${doc.version}`} id={currentId} data={parsed} version={doc.version} canEdit author={me.name || me.email} docRef={{ kind: "nota" }} backHref="/" />
     </div>
   );
 }

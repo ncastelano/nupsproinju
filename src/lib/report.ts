@@ -167,6 +167,8 @@ export const PLACEHOLDER_SOURCE: Record<string, string> = {
 
 // ---- Relatório de acompanhamento e reavaliação ----
 export const ACOMP_PATH = "relatorio-acompanhamento-reavaliacao.docx";
+// Base do relatório de fiscalização: cabeçalho, página e estilos (o texto vem do questionário)
+export const FISC_BASE_PATH = "relatorio-fiscalizacao.docx";
 export const TODO = "[preencher]";
 
 // Identificação vem do Cadastro inicial; os demais campos vêm do questionário do acompanhamento.

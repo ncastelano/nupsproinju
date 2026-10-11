@@ -754,3 +754,12 @@ a.app-brand:hover { text-decoration: none; opacity: .85; }
 .audio-item { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; display: grid; gap: 8px; }
 .audio-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
 .audio-head span { color: var(--muted); font-size: 13px; }
+
+/* Cartão do arquivo-base (modelo) */
+.model-card { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding: 14px 16px; }
+.model-ico { width: 44px; height: 44px; border-radius: 14px; background: var(--brand-soft); color: var(--brand-dark); display: grid; place-items: center; flex: none; }
+.model-body { display: grid; gap: 3px; flex: 1; min-width: 220px; }
+.model-file { color: var(--muted); font-size: 13.5px; overflow-wrap: anywhere; }
+.model-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.upload-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; background: var(--brand); color: #fff; font-weight: 600; border-radius: 999px; padding: 10px 16px; }
+.upload-btn:hover { background: var(--brand-dark); }

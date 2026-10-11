@@ -45,6 +45,9 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
           <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <div className="card">
+        <AudioPanel recordId={id} doc={"inicial"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "inicial")} canEdit={acc.canEdit} me={me.id} />
+      </div>
       <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} />
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
@@ -52,7 +55,6 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
             <span className="chip">{rec.meta.acomps.filter((a) => !a.draft).length} {rec.meta.acomps.filter((a) => !a.draft).length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
             <span className="chip">Criado por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
           </div>
-        <AudioPanel recordId={id} doc={"inicial"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "inicial")} canEdit={acc.canEdit} me={me.id} />
         <RecordActivity history={rec.meta.history.filter((h) => !h.doc || h.doc === "inicial")} createdAt={rec.created_at} ownerName={ownerName} label="Criou o cadastro inicial" limit={6} showCreated={true} />
       </div>
     </div>
