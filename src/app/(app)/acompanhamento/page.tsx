@@ -65,7 +65,7 @@ export default async function AcompanhamentoPage() {
                       <div key={a.n} className="acomp-item">
                         <h4>Acompanhamento nº {a.n}</h4>
                         <span style={{ color: "var(--muted)", fontSize: 13.5 }}>Criado por {a.by_name || "—"} em {day(a.at)}</span>
-                        <AcompActions id={r.id} n={a.n} canDelete={r.owner_id === me.id || me.role === "admin"} />
+                        <AcompActions id={r.id} n={a.n} nome={r.nomes || "(sem nome)"} canDelete={r.owner_id === me.id || me.role === "admin"} />
                         <RecordActivity
                           history={r.meta.history.filter((h) => h.doc === `acomp:${a.n}`)}
                           createdAt={a.at} ownerName={a.by_name} showCreated={false} limit={2}

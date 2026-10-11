@@ -3,10 +3,11 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Download, FileText, Trash2 } from "lucide-react";
+import { ShareMenu } from "@/components/ShareMenu";
 import { deleteAcompanhamento } from "@/app/(app)/cadastrados/[id]/documento/actions";
 
 // Abrir, baixar e apagar (com confirmação na tela) um relatório de acompanhamento.
-export function AcompActions({ id, n, canDelete }: { id: string; n: number; canDelete: boolean }) {
+export function AcompActions({ id, n, nome, canDelete }: { id: string; n: number; nome: string; canDelete: boolean }) {
   const router = useRouter();
   const [ask, setAsk] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -22,6 +23,13 @@ export function AcompActions({ id, n, canDelete }: { id: string; n: number; canD
   return (
     <div className="pcard-actions">
       <Link href={`/cadastrados/${id}/acompanhamento/${n}`}><button type="button"><FileText size={16} /> Abrir</button></Link>
+      <ShareMenu
+        path={`/cadastrados/${id}/acompanhamento/${n}`}
+        text={`Acompanhamento nº ${n} de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
+        label="Compartilhar"
+        className="ghost"
+        note="Só abre para quem estiver logado e tiver acesso ao processo."
+      />
       <a href={`/cadastrados/${id}/acompanhamento/${n}/baixar`}><button type="button" className="ghost"><Download size={16} /> Baixar</button></a>
       {canDelete && (!ask ? (
         <button type="button" className="danger" onClick={() => { setErr(null); setAsk(true); }}><Trash2 size={16} /> Deletar</button>
