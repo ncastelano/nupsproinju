@@ -603,3 +603,9 @@ hr.soft { border: 0; border-top: 1px solid var(--line); width: 100%; margin: 8px
 .doc-info { display: grid; gap: 10px; }
 .pcard.mini .pcard-actions { gap: 6px; }
 .pcard.mini .pcard-actions button { padding: 7px 12px; font-size: 13px; }
+.pcard.mini { position: relative; }
+.draft-tag {
+  position: absolute; top: -10px; right: 12px; background: var(--brand); color: #fff;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em; padding: 3px 10px; border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(7,63,73,.25);
+}

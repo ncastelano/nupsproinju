@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
 import { loadRecord } from "@/lib/records";
+import { DiscardDraft } from "@/components/DiscardDraft";
 import { IntakeForm, type Acolhido } from "./IntakeForm";
 
 export default async function FormularioPage({
@@ -68,6 +69,7 @@ export default async function FormularioPage({
           acolhidos={acolhidos} selected={sp.acolhido} cadastroQuestions={cadastroQuestions}
           draftId={draftId} initialAnswers={initialAnswers} />
       )}
+      {draftId && <div><DiscardDraft kind="cadastro" id={draftId} /></div>}
     </div>
   );
 }

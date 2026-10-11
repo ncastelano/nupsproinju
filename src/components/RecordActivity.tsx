@@ -54,8 +54,11 @@ export function RecordActivity({
     })),
     ...(showCreated ? [{ at: createdAt, by: ownerName, text: label.toLowerCase(), changes: [] }] : []),
   ];
-  const shown = events.slice(0, limit);
-  const rest = events.slice(limit);
+  // se o histórico já tem o registro de criação, não repete
+  const hasCreate = history.some((h) => /^criou|^agendou/i.test(h.note ?? ""));
+  const all = hasCreate ? events.filter((e) => !(showCreated && e.at === createdAt && e.changes.length === 0 && e.text === label.toLowerCase())) : events;
+  const shown = all.slice(0, limit);
+  const rest = all.slice(limit);
 
   const row = (e: Ev, i: number) => (
     <li key={`${e.at}-${i}`}>
@@ -76,7 +79,7 @@ export function RecordActivity({
   return (
     <div className="pcard-activity">
       <h4>Atividades</h4>
-      {events.length === 0 && <p style={{ margin: 0, color: "var(--muted)", fontSize: 13.5 }}>Nenhuma atividade ainda.</p>}
+      {all.length === 0 && <p style={{ margin: 0, color: "var(--muted)", fontSize: 13.5 }}>Nenhuma atividade ainda.</p>}
       <ul>{shown.map(row)}</ul>
       {rest.length > 0 && (
         <details className="act-more">

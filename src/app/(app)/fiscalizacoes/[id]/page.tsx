@@ -40,17 +40,17 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
         </div>
       </div>
       <div className="doc-info">
-        <div className="pcard-chips">
-          {(v?.professionals ?? []).map((p) => <span key={p} className="chip">{p}</span>)}
-          {v?.responded_by && <span className="chip">Respondida por {v.responded_by}</span>}
-          <span className="chip">Criada por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
-        </div>
         <div className="pcard-actions">
           <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/fiscalizacoes" />
-      <div className="card">
+      <div className="card grid" style={{ gap: 14 }}>
+          <div className="pcard-chips">
+            {(v?.professionals ?? []).map((p) => <span key={p} className="chip">{p}</span>)}
+            {v?.responded_by && <span className="chip">Respondida por {v.responded_by}</span>}
+            <span className="chip">Criada por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
+          </div>
         <RecordActivity history={rec.meta.history} createdAt={rec.created_at} ownerName={ownerName} label="" limit={6} showCreated={false} />
       </div>
     </div>

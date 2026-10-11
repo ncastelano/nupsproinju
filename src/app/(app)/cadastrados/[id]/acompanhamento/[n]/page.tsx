@@ -41,16 +41,16 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
         </div>
       </div>
       <div className="doc-info">
-        <div className="pcard-chips">
-          <span className="chip">Criado por {entry.by_name || "—"} em {new Date(entry.at).toLocaleDateString("pt-BR")}</span>
-        </div>
         <div className="pcard-actions">
           <Link href={`/cadastrados/${id}/documento`}><button className="ghost"><ClipboardList size={16} /> Cadastro inicial</button></Link>
           <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/acompanhamento" />
-      <div className="card">
+      <div className="card grid" style={{ gap: 14 }}>
+          <div className="pcard-chips">
+            <span className="chip">Criado por {entry.by_name || "—"} em {new Date(entry.at).toLocaleDateString("pt-BR")}</span>
+          </div>
         <RecordActivity history={rec.meta.history.filter((h) => h.doc === `acomp:${n}`)} createdAt={rec.created_at} ownerName={ownerName} label="" limit={6} showCreated={false} />
       </div>
     </div>

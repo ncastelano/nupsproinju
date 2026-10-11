@@ -5,6 +5,7 @@ import { loadRecord } from "@/lib/records";
 import { previousTexts } from "@/lib/acomp";
 import { AcompForm } from "@/components/AcompForm";
 import { ProcessPicker } from "@/components/ProcessPicker";
+import { DiscardDraft } from "@/components/DiscardDraft";
 
 // Formulário do Relatório de acompanhamento e reavaliação. Ao salvar, o relatório aparece em Processos.
 export default async function AcompanhamentoPage({ searchParams }: { searchParams: Promise<{ processo?: string; n?: string }> }) {
@@ -56,6 +57,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
         initial={draftN !== null ? rec?.meta.acompData?.[String(draftN)] ?? {} : {}} redo={false}
         previous={rec ? previousTexts(rec.answers, rec.meta, n) : {}}
       />
+      {rec && draftN !== null && <div><DiscardDraft kind="acompanhamento" id={rec.id} n={draftN} /></div>}
     </div>
   );
 }

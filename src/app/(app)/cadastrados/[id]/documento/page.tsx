@@ -39,18 +39,18 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
       <div className="doc-info">
-        <div className="pcard-chips">
-          {rec.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(rec.answers.data_acolhimento.value)}</span>}
-          <span className="chip">{rec.meta.acomps.filter((a) => !a.draft).length} {rec.meta.acomps.filter((a) => !a.draft).length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
-          <span className="chip">Criado por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
-        </div>
         <div className="pcard-actions">
           <Link href={`/cadastrados/${id}`}><button className="ghost"><ClipboardList size={16} /> Ficha e acompanhamentos</button></Link>
           <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} />
-      <div className="card">
+      <div className="card grid" style={{ gap: 14 }}>
+          <div className="pcard-chips">
+            {rec.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(rec.answers.data_acolhimento.value)}</span>}
+            <span className="chip">{rec.meta.acomps.filter((a) => !a.draft).length} {rec.meta.acomps.filter((a) => !a.draft).length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
+            <span className="chip">Criado por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
+          </div>
         <RecordActivity history={rec.meta.history.filter((h) => !h.doc || h.doc === "inicial")} createdAt={rec.created_at} ownerName={ownerName} label="Criou o cadastro inicial" limit={6} showCreated={true} />
       </div>
     </div>

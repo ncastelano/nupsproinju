@@ -343,25 +343,6 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
         )}
         {canEdit && (<>
           <span className="doc-sep" />
-          <button className="ghost icon" title="Negrito" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("bold")}><Bold size={16} /></button>
-          <button className="ghost icon" title="Itálico" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("italic")}><Italic size={16} /></button>
-          <button className="ghost icon" title="Sublinhado" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("underline")}><Underline size={16} /></button>
-          <span className="doc-sep" />
-          <button className="ghost icon" title="Alinhar à esquerda" onClick={() => align("left")}><AlignLeft size={16} /></button>
-          <button className="ghost icon" title="Centralizar" onClick={() => align("center")}><AlignCenter size={16} /></button>
-          <button className="ghost icon" title="Alinhar à direita" onClick={() => align("right")}><AlignRight size={16} /></button>
-          <button className="ghost icon" title="Justificar" onClick={() => align("both")}><AlignJustify size={16} /></button>
-          <span className="doc-sep" />
-          <button className="ghost icon" title="Novo parágrafo depois do atual" onClick={addAfter}><Plus size={16} /></button>
-          <button className="ghost icon" title="Apagar o parágrafo atual" onClick={removeActive}><Trash2 size={16} /></button>
-          <span className="doc-grow" />
-          {msg && (
-            <span className={msg.ok ? "doc-ok" : "error"} style={{ fontSize: 13 }}>
-              {msg.ok && <Check size={14} style={{ verticalAlign: "-2px" }} />} {msg.text}
-            </span>
-          )}
-          <span style={{ color: "var(--muted)", fontSize: 13 }}>{gaps.length + 1} {gaps.length ? "páginas" : "página"}</span>
-          {dirty && !msg && <span style={{ color: "var(--muted)", fontSize: 13 }}>Alterações não salvas</span>}
           {confirmReset ? (
             <>
               <span style={{ fontSize: 13 }}>Descartar o que foi editado e refazer do cadastro?</span>
@@ -376,6 +357,26 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
           <button disabled={busy || !dirty} onClick={save}>
             {busy ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Salvar
           </button>
+          <span className="doc-grow" />
+          {msg && (
+            <span className={msg.ok ? "doc-ok" : "error"} style={{ fontSize: 13 }}>
+              {msg.ok && <Check size={14} style={{ verticalAlign: "-2px" }} />} {msg.text}
+            </span>
+          )}
+          <span style={{ color: "var(--muted)", fontSize: 13 }}>{gaps.length + 1} {gaps.length ? "páginas" : "página"}</span>
+          {dirty && !msg && <span style={{ color: "var(--muted)", fontSize: 13 }}>Alterações não salvas</span>}
+          <span className="doc-sep" />
+          <button className="ghost icon" title="Negrito" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("bold")}><Bold size={16} /></button>
+          <button className="ghost icon" title="Itálico" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("italic")}><Italic size={16} /></button>
+          <button className="ghost icon" title="Sublinhado" onMouseDown={(e) => e.preventDefault()} onClick={() => exec("underline")}><Underline size={16} /></button>
+          <span className="doc-sep" />
+          <button className="ghost icon" title="Alinhar à esquerda" onClick={() => align("left")}><AlignLeft size={16} /></button>
+          <button className="ghost icon" title="Centralizar" onClick={() => align("center")}><AlignCenter size={16} /></button>
+          <button className="ghost icon" title="Alinhar à direita" onClick={() => align("right")}><AlignRight size={16} /></button>
+          <button className="ghost icon" title="Justificar" onClick={() => align("both")}><AlignJustify size={16} /></button>
+          <span className="doc-sep" />
+          <button className="ghost icon" title="Novo parágrafo depois do atual" onClick={addAfter}><Plus size={16} /></button>
+          <button className="ghost icon" title="Apagar o parágrafo atual" onClick={removeActive}><Trash2 size={16} /></button>
         </>)}
         {!canEdit && <span style={{ color: "var(--muted)", fontSize: 13 }}>Você pode ver este documento, mas não editar.</span>}
       </div>

@@ -10,7 +10,6 @@ import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
 import { AcompCard, FiscCard, MiniCard } from "@/components/ProcessCards";
 import { FISC_KEY } from "@/lib/fisc";
-import { RecordActions } from "@/components/RecordActions";
 import { ReportSearch } from "@/components/ReportSearch";
 
 type Answers = Record<string, { label: string; value: string }>;
@@ -172,7 +171,6 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
                 href={meta.draft ? `/cadastro-inicial?rascunho=${r.id}` : `/cadastrados/${r.id}/documento`}
                 title={nome} line={`Processo ${r.answers.processo?.value ?? "—"}`} draft={!!meta.draft}
               >
-                {meta.draft && <RecordActions recordId={r.id} nome={nome} canDelete={canRemove(r.created_by)} draft />}
               </MiniCard>
             );
           })}
