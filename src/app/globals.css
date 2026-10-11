@@ -679,3 +679,35 @@ hr.soft { border: 0; border-top: 1px solid var(--line); width: 100%; margin: 8px
 .doc-para.doc-img { cursor: pointer; line-height: 0; }
 .doc-para.doc-img[data-active] img { outline: 3px solid var(--brand); }
 @media (max-width: 1100px) { .doc-body { flex-direction: column; } .doc-comments { width: 100%; position: static; max-height: none; } }
+
+/* Responsivo: nada pode empurrar a tela para fora; o documento rola dentro do próprio quadro */
+html, body { max-width: 100%; overflow-x: hidden; }
+.container, .container > *, .grid > *, .doc-wrap, .doc-body, .doc-scroll, .card { min-width: 0; max-width: 100%; }
+.doc-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+img, svg, video, canvas { max-width: 100%; }
+p, h1, h2, h3, h4, label, span, strong, a { overflow-wrap: anywhere; }
+.row { flex-wrap: wrap; }
+table { max-width: 100%; }
+select, input, textarea { max-width: 100%; min-width: 0; }
+@media (max-width: 640px) {
+  .container { padding-left: 12px; padding-right: 12px; }
+  h1 { font-size: 22px; }
+  .doc-bar { padding: 8px; gap: 6px; }
+  .doc-bar > button, .doc-tools button, .doc-tools select { font-size: 13px; }
+  .doc-tools { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .doc-tools > * { flex: none; }
+  .doc-pop-box { position: fixed; left: 12px; right: 12px; top: auto; }
+  .choice-panel { position: fixed; left: 12px; right: 12px; top: auto; bottom: 12px; max-height: 70vh; overflow: auto; }
+  .choice-list { max-height: 45vh; }
+  .user-grid.four { grid-template-columns: minmax(0, 1fr); }
+  .confirm-del { display: flex; flex-wrap: wrap; gap: 6px; }
+  .share-pop { max-width: calc(100vw - 24px); }
+  .report-search input { font-size: 14px; }
+}
+
+/* aparelhos com entalhe / barra de gestos */
+.topbar .inner { padding-top: max(0px, env(safe-area-inset-top)); }
+.container { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+.grid, .doc-wrap { grid-template-columns: minmax(0, 1fr); }
+.doc-bar { max-width: 100%; }
+@media (max-width: 1100px) { .doc-body { display: grid; grid-template-columns: minmax(0, 1fr); } }

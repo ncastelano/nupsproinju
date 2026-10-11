@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 
@@ -11,7 +11,12 @@ const SITE =
   process.env.NEXT_PUBLIC_SITE_URL ??
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "https://nupsproinjur.vercel.app");
 
+export const viewport: Viewport = {
+  width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#0b5d6b",
+};
+
 export const metadata: Metadata = {
+  appleWebApp: { capable: true, title: "NUPS PROINJU", statusBarStyle: "black-translucent" },
   metadataBase: new URL(SITE),
   title: TITLE,
   description: DESCRIPTION,

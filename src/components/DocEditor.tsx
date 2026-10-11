@@ -158,6 +158,10 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
   const [activeCm, setActiveCm] = useState<number | null>(null);
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(true);
+  const [avail, setAvail] = useState(0);
+  const [pageH, setPageH] = useState(0);
   const [gaps, setGaps] = useState<number[]>([]);
   const base = useRef(version);
   const refs = useRef(new Map<string, HTMLDivElement>());
@@ -171,6 +175,17 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  // em telas estreitas a folha inteira é reduzida para caber na largura (ou rola, se a pessoa preferir 100%)
+  useEffect(() => {
+    const wrap = wrapRef.current, pg = pageRef.current;
+    if (!wrap || !pg) return;
+    const ro = new ResizeObserver(() => { setAvail(wrap.clientWidth); setPageH(pg.offsetHeight); });
+    ro.observe(wrap); ro.observe(pg);
+    setAvail(wrap.clientWidth); setPageH(pg.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
+  const scale = fit && avail > 0 ? Math.min(1, avail / data.page.w) : 1;
 
   // guarda a seleção dentro do documento (os controles da barra tiram o foco do texto)
   useEffect(() => {
@@ -208,7 +223,8 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
     const { h: pageH } = data.page;
     const mt = margins.top, mb = margins.bottom;
     const H = pageH - mt - mb;
-    const origin = () => page.getBoundingClientRect().top + page.clientTop;
+    const sc = page.offsetWidth ? page.getBoundingClientRect().width / page.offsetWidth : 1; // escala visual da folha
+    const origin = () => page.getBoundingClientRect().top + page.clientTop * sc;
     let limit = mt + H;
     const gapsOut: number[] = [];
 
@@ -218,7 +234,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
       const topAt = (n: Text, i: number) => {
         rg.setStart(n, i); rg.setEnd(n, i + 1);
         const r = rg.getClientRects()[0];
-        return r ? r.top - origin() : null;
+        return r ? (r.top - origin()) / sc : null;
       };
       let seen = after === null;
       for (let n = walker.nextNode() as Text | null; n; n = walker.nextNode() as Text | null) {
@@ -260,7 +276,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
         }
 
         const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
-        const top = spacer ? spacer.getBoundingClientRect().bottom - origin() : el.offsetTop;
+        const top = spacer ? (spacer.getBoundingClientRect().bottom - origin()) / sc : el.offsetTop;
         const total = Math.max(1, Math.round((bottom - top) / lh));
         let fit = Math.max(0, Math.floor((limit - top + 0.5) / lh));
         if (fit < total) {
@@ -637,6 +653,9 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
             </span>
           )}
           <span style={{ color: "var(--muted)", fontSize: 13 }}>{gaps.length + 1} {gaps.length ? "páginas" : "página"}</span>
+          {avail > 0 && avail < page.w && (
+            <button className="ghost" onClick={() => setFit((v) => !v)}>{fit ? "Tamanho real" : "Ajustar à tela"}</button>
+          )}
           {dirty && !msg && <span style={{ color: "var(--muted)", fontSize: 13 }}>Alterações não salvas</span>}
         </>)}
         {!canEdit && <span style={{ color: "var(--muted)", fontSize: 13 }}>Você pode ver este documento, mas não editar.</span>}
@@ -711,10 +730,11 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
       </div>
 
       <div className="doc-body">
-        <div className="doc-scroll">
+        <div className="doc-scroll" ref={wrapRef}>
+          <div style={{ width: page.w * scale, height: pageH ? pageH * scale : undefined, margin: scale < 1 ? "0" : "0 auto" }}>
           <div
             className="doc-page" ref={pageRef}
-            style={{ width: page.w, minHeight: gaps.length ? gaps[gaps.length - 1] + GAP + page.h : page.h, padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px` }}
+            style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: "top left", margin: 0, width: page.w, minHeight: gaps.length ? gaps[gaps.length - 1] + GAP + page.h : page.h, padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px` }}
           >
             {headerBox(header?.y ?? 0, "h0")}
             {gaps.map((y, i) => (
@@ -791,6 +811,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
                 />
               );
             })}
+          </div>
           </div>
         </div>
 
