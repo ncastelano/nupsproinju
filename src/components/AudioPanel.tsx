@@ -32,11 +32,14 @@ export function AudioPanel({
   const t0 = useRef(0);
   const finalText = useRef("");
 
-  const SR = typeof window !== "undefined"
-    ? ((window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec }).SpeechRecognition
-      ?? (window as unknown as { webkitSpeechRecognition?: new () => Rec }).webkitSpeechRecognition)
-    : undefined;
-  const canRecord = typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined";
+  // suporte do navegador: só se sabe no cliente (evita diferença entre servidor e navegador)
+  const [SR, setSR] = useState<(new () => Rec) | undefined>(undefined);
+  const [canRecord, setCanRecord] = useState(false);
+  useEffect(() => {
+    const w = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
+    setSR(() => w.SpeechRecognition ?? w.webkitSpeechRecognition);
+    setCanRecord(!!navigator.mediaDevices?.getUserMedia && typeof MediaRecorder !== "undefined");
+  }, []);
 
   useEffect(() => () => {
     if (timer.current) clearInterval(timer.current);
