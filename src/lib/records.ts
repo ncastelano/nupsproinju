@@ -11,15 +11,21 @@ export type HistoryEntry = {
 };
 export type FollowupEntry = { at: string; by_name: string; answers: Ans };
 export type AcompEntry = { n: number; at: string; by_id: string; by_name: string };
+export type VisitMeta = {
+  unit: string; date: string; professionals: string[];
+  status: "agendada" | "realizada";
+  responded_at?: string; responded_by?: string;
+};
 export type RecMeta = {
   shared: { id: string; name: string }[];
   followups: FollowupEntry[]; // todos os acompanhamentos (o mais recente também fica em "followup")
   history: HistoryEntry[];
   editing: Record<string, { name: string; scope: Scope; since: string }>;
   acomps: AcompEntry[]; // relatórios de acompanhamento e reavaliação (documentos .docx)
+  visit?: VisitMeta;    // só nas fiscalizações
 };
 export type Rec = {
-  id: string; created_by: string; created_at: string;
+  id: string; created_by: string; created_at: string; form_key: string;
   answers: Ans; followup: Ans | null; meta: RecMeta;
 };
 
@@ -32,19 +38,22 @@ export function metaOf(raw: Record<string, unknown>): RecMeta {
   const editing = Object.fromEntries(
     Object.entries(m.editing ?? {}).filter(([, v]) => now - new Date(v.since).getTime() < STALE_MS),
   );
-  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [] };
+  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [], visit: m.visit };
 }
 
-export async function loadRecord(id: string): Promise<Rec | null> {
-  const { data } = await createAdminClient()
+// formKey: o tipo de registro (padrão: cadastro inicial); null aceita qualquer tipo.
+export async function loadRecord(id: string, formKey: string | null = FORM_KEY): Promise<Rec | null> {
+  let qy = createAdminClient()
     .from("intake_records")
-    .select("id, created_by, created_at, answers, followup")
-    .eq("id", id).eq("form_key", FORM_KEY).maybeSingle();
+    .select("id, created_by, created_at, form_key, answers, followup")
+    .eq("id", id);
+  if (formKey) qy = qy.eq("form_key", formKey);
+  const { data } = await qy.maybeSingle();
   if (!data) return null;
   const raw = (data.answers ?? {}) as Record<string, unknown>;
   const { _meta: _m, ...answers } = raw;
   return {
-    id: data.id as string, created_by: data.created_by as string, created_at: data.created_at as string,
+    id: data.id as string, created_by: data.created_by as string, created_at: data.created_at as string, form_key: data.form_key as string,
     answers: answers as Ans, followup: (data.followup as Ans | null) ?? null, meta: metaOf(raw),
   };
 }

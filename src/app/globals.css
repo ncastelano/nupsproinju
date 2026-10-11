@@ -568,3 +568,6 @@ mark.doc-todo { background: #fff1c2; color: inherit; border-radius: 3px; padding
 .user-grid.wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); align-items: start; }
 a.pcard-head { color: inherit; text-decoration: none; }
 a.pcard-head:hover h3 { color: var(--brand); text-decoration: underline; }
+.fisc-matrix { display: grid; gap: 10px; }
+.fisc-row { display: grid; gap: 6px; padding: 10px 12px; background: var(--bg); border-radius: var(--radius-sm); }
+.fisc-row-label { font-weight: 600; }

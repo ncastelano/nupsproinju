@@ -3,15 +3,22 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { FORM_KEY } from "@/lib/forms";
+import { FISC_KEY } from "@/lib/fisc";
 import { accessOf, loadRecord, saveRecord, type HistoryEntry } from "@/lib/records";
 import { cleanParas, parseDocx, serializeDocx, type Para } from "@/lib/docxDoc";
 import { DOC_BUCKET, INICIAL, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
 
 const SAME_USER_MS = 30 * 60 * 1000;
 
-const refOf = (r: unknown): DocRef =>
-  r && typeof r === "object" && (r as { kind?: string }).kind === "acomp" && Number.isInteger((r as { n?: number }).n)
-    ? { kind: "acomp", n: (r as { n: number }).n } : INICIAL;
+const refOf = (r: unknown): DocRef => {
+  const o = (r ?? {}) as { kind?: string; n?: number };
+  if (o.kind === "fisc") return { kind: "fisc" };
+  if (o.kind === "acomp" && Number.isInteger(o.n)) return { kind: "acomp", n: o.n as number };
+  return INICIAL;
+};
+// cadastro inicial/acompanhamento usam registros de processo; fiscalização usa o seu próprio tipo
+const formOf = (ref: DocRef) => (ref.kind === "fisc" ? FISC_KEY : FORM_KEY);
 
 const textsOf = (paras: Para[]) => paras.map((p) => p.runs.map((r) => r.t).join("").trim()).filter(Boolean);
 const cut = (s: string) => (s.length > 220 ? s.slice(0, 220) + "…" : s);
@@ -34,7 +41,7 @@ function diffParas(before: Para[], after: Para[]): HistoryEntry["changes"] {
 
 async function note(id: string, text: string, doc: string, changes: HistoryEntry["changes"] = []) {
   const me = await requireMember();
-  const rec = await loadRecord(id);
+  const rec = await loadRecord(id, null);
   if (!rec) return;
   const meta = rec.meta;
   const last = meta.history[0];
@@ -51,13 +58,13 @@ async function note(id: string, text: string, doc: string, changes: HistoryEntry
   await saveRecord(rec, {}, meta);
 }
 
-const label = (ref: DocRef) => (ref.kind === "acomp" ? `o acompanhamento nº ${ref.n}` : "o documento do processo");
+const label = (ref: DocRef) => (ref.kind === "acomp" ? `o acompanhamento nº ${ref.n}` : ref.kind === "fisc" ? "o relatório da fiscalização" : "o documento do processo");
 
 // Salva o documento editado na tela. "base" é a versão que a pessoa abriu: se outra pessoa salvou depois, avisa.
 export async function saveDocument(id: string, paras: unknown, base: string, refIn?: unknown): Promise<{ ok: boolean; msg: string; version?: string }> {
   const ref = refOf(refIn);
   const me = await requireMember();
-  const rec = await loadRecord(id);
+  const rec = await loadRecord(id, formOf(ref));
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
   if (!accessOf(rec, me).canEdit) return { ok: false, msg: "Você não tem permissão para editar." };
   const clean = cleanParas(paras);
@@ -77,6 +84,7 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
   revalidatePath(`/cadastrados/${id}`);
   revalidatePath("/processos");
   revalidatePath("/acompanhamento");
+  revalidatePath("/fiscalizacoes");
   return { ok: true, msg: "Documento salvo.", version: (await docVersion(id, ref)) ?? "" };
 }
 
@@ -84,7 +92,7 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
 export async function resetDocument(id: string, refIn?: unknown): Promise<{ ok: boolean; msg: string }> {
   const ref = refOf(refIn);
   const me = await requireMember();
-  const rec = await loadRecord(id);
+  const rec = await loadRecord(id, formOf(ref));
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
   if (!accessOf(rec, me).canEdit) return { ok: false, msg: "Você não tem permissão para editar." };
   await createAdminClient().storage.from(DOC_BUCKET).remove([docPath(id, ref)]);

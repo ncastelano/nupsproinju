@@ -1,17 +1,18 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Rec } from "@/lib/records";
 import { ACOMP_PATH, REPORT_BUCKET, REPORT_PATH, acompValues, fillDocx, questionValues, reportValues } from "@/lib/report";
+import { buildFiscDoc } from "@/lib/fisc";
 import { CONFIG_PATH, applyConfig, type ReportConfig } from "@/lib/reportEdit";
 
 // Os documentos de cada processo: o modelo do NUPS preenchido, guardado à parte para ser editado na tela
 // (e baixado em .docx). Há o do Cadastro inicial e vários de Acompanhamento/reavaliação.
 export const DOC_BUCKET = REPORT_BUCKET; // bucket privado "modelos"
-export type DocRef = { kind: "inicial" } | { kind: "acomp"; n: number };
+export type DocRef = { kind: "inicial" } | { kind: "acomp"; n: number } | { kind: "fisc" };
 export const INICIAL: DocRef = { kind: "inicial" };
 
 export const docPath = (id: string, ref: DocRef = INICIAL) =>
-  ref.kind === "acomp" ? `acompanhamentos/${id}/${ref.n}.docx` : `processos/${id}.docx`;
-export const refKey = (ref: DocRef) => (ref.kind === "acomp" ? `acomp:${ref.n}` : "inicial");
+  ref.kind === "acomp" ? `acompanhamentos/${id}/${ref.n}.docx` : ref.kind === "fisc" ? `fiscalizacoes/${id}.docx` : `processos/${id}.docx`;
+export const refKey = (ref: DocRef) => (ref.kind === "acomp" ? `acomp:${ref.n}` : ref.kind === "fisc" ? "fisc" : "inicial");
 
 export async function docVersion(id: string, ref: DocRef = INICIAL): Promise<string | null> {
   const path = docPath(id, ref);
@@ -26,9 +27,10 @@ type Signer = { name: string; registry: string };
 
 async function generate(rec: Rec, ref: DocRef, signer?: Signer): Promise<Buffer | null> {
   const admin = createAdminClient();
-  const { data } = await admin.storage.from(REPORT_BUCKET).download(ref.kind === "acomp" ? ACOMP_PATH : REPORT_PATH);
+  const { data } = await admin.storage.from(REPORT_BUCKET).download(ref.kind === "inicial" ? REPORT_PATH : ACOMP_PATH);
   if (!data) return null;
   const tpl = Buffer.from(await data.arrayBuffer());
+  if (ref.kind === "fisc") return buildFiscDoc(tpl, rec); // usa o cabeçalho e a página do modelo de acompanhamento
   if (ref.kind === "acomp") {
     return fillDocx(tpl, acompValues(rec.answers, signer ?? { name: "", registry: "" }));
   }
@@ -63,5 +65,5 @@ export async function storeProcessDoc(id: string, buf: Buffer, ref: DocRef = INI
 export async function removeProcessDocs(id: string) {
   const st = createAdminClient().storage.from(DOC_BUCKET);
   const { data } = await st.list(`acompanhamentos/${id}`, { limit: 200 });
-  await st.remove([docPath(id), ...(data ?? []).map((f) => `acompanhamentos/${id}/${f.name}`)]);
+  await st.remove([docPath(id), docPath(id, { kind: "fisc" }), ...(data ?? []).map((f) => `acompanhamentos/${id}/${f.name}`)]);
 }

@@ -73,7 +73,7 @@ function readRuns(el: HTMLElement): Run[] {
 let uidSeq = 1;
 const GAP = 28; // vão cinza entre as páginas (px)
 
-type Ref = { kind: "inicial" } | { kind: "acomp"; n: number };
+type Ref = { kind: "inicial" } | { kind: "acomp"; n: number } | { kind: "fisc" };
 
 export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicial" }, backHref = "/processos" }: {
   id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string;
@@ -369,8 +369,8 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
               <button className="ghost" onClick={() => setConfirmReset(false)}>Cancelar</button>
             </>
           ) : (
-            <button className="ghost" title={docRef.kind === "acomp" ? "Refazer o relatório a partir do modelo" : "Refazer o documento a partir do Cadastro inicial"} disabled={busy} onClick={() => setConfirmReset(true)}>
-              <RotateCcw size={16} /> {docRef.kind === "acomp" ? "Refazer do modelo" : "Refazer do cadastro"}
+            <button className="ghost" title={docRef.kind === "acomp" ? "Refazer o relatório a partir do modelo" : docRef.kind === "fisc" ? "Refazer o relatório a partir das respostas do questionário" : "Refazer o documento a partir do Cadastro inicial"} disabled={busy} onClick={() => setConfirmReset(true)}>
+              <RotateCcw size={16} /> {docRef.kind === "acomp" ? "Refazer do modelo" : docRef.kind === "fisc" ? "Refazer das respostas" : "Refazer do cadastro"}
             </button>
           )}
           <button disabled={busy || !dirty} onClick={save}>
