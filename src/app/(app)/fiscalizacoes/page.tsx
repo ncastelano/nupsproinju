@@ -26,7 +26,7 @@ export default async function FiscalizacoesPage() {
   const rows: Row[] = (all ?? []).map((r) => ({
     id: r.id as string, owner_id: r.created_by as string, owner: names.get(r.created_by as string) ?? "",
     created_at: r.created_at as string, meta: metaOf({ _meta: r.meta ?? {} }),
-  })).filter((r) => r.owner_id === me.id || r.meta.shared.some((s) => s.id === me.id));
+  })).filter((r) => (r.owner_id === me.id || r.meta.shared.some((s) => s.id === me.id)) && r.meta.visit?.status !== "realizada");
 
   // mais próximas primeiro: agendadas por data; as realizadas depois, da mais recente
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Porto_Velho" });
@@ -46,16 +46,16 @@ export default async function FiscalizacoesPage() {
         <div>
           <h1 style={{ margin: "8px 0 0" }}>Fiscalizações</h1>
           <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
-            Agende as visitas às unidades. Depois da visita, responda o questionário e o relatório é gerado para você editar.
+            Agende as visitas às unidades e responda o questionário depois de cada visita. O relatório gerado aparece em <Link href="/processos">Processos</Link>, abaixo dos acompanhamentos.
           </p>
         </div>
       </div>
 
       <ScheduleVisit people={people} me={me.name} />
 
-      <h2 className="section" style={{ margin: 0 }}>VISITAS ({rows.length})</h2>
+      <h2 className="section" style={{ margin: 0 }}>VISITAS A RESPONDER ({rows.length})</h2>
       {rows.length === 0 ? (
-        <div className="card empty"><p>Nenhuma visita agendada ainda.</p></div>
+        <div className="card empty"><p>Nenhuma visita pendente. Agende uma nova visita acima.</p></div>
       ) : (
         <div className="user-grid wide">
           {rows.map((r) => {

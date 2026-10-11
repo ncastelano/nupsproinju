@@ -571,3 +571,4 @@ a.pcard-head:hover h3 { color: var(--brand); text-decoration: underline; }
 .fisc-matrix { display: grid; gap: 10px; }
 .fisc-row { display: grid; gap: 6px; padding: 10px 12px; background: var(--bg); border-radius: var(--radius-sm); }
 .fisc-row-label { font-weight: 600; }
+.prev-text { background: var(--bg); border-radius: var(--radius-sm); padding: 10px 12px; margin-top: 6px; white-space: pre-wrap; font-size: 14px; color: var(--text); }

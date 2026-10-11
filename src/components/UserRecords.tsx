@@ -10,7 +10,8 @@ import { Avatar } from "@/components/Avatar";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
 import { AccessLine, RecordActivity } from "@/components/RecordActivity";
-import { FollowupActions } from "@/components/FollowupActions";
+import { AcompCard, FiscCard } from "@/components/ProcessCards";
+import { FISC_KEY } from "@/lib/fisc";
 import { RecordActions } from "@/components/RecordActions";
 import { ModeloRelatorio } from "@/components/ModeloRelatorio";
 
@@ -41,7 +42,11 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
           admin.from("intake_records")
             .select("id, created_by, created_at, meta:answers->_meta, nomes:answers->nomes->>value, processo:answers->processo->>value")
             .eq("form_key", FORM_KEY).neq("created_by", id),
-          admin.from("members").select("id, name"),
+          admin.from("members").select("id, name, status"),
+          // fiscalizações (visitas) de qualquer pessoa; filtramos as minhas e as compartilhadas comigo
+          admin.from("intake_records")
+            .select("id, created_by, created_at, meta:answers->_meta")
+            .eq("form_key", FISC_KEY).order("created_at", { ascending: false }),
         ])
       : Promise.resolve(null),
   ]);
@@ -64,12 +69,30 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         meta: metaOf({ _meta: r.meta ?? {} }),
       }));
   }
-  // um cartão por acompanhamento (um formulário pode ter vários, um por reavaliação)
-  const entries = records.flatMap((r) => {
-    const all = metaOf(r.answers as Record<string, unknown>).followups;
-    const list = all.length ? all : r.followup ? [{ at: r.followup_at ?? r.created_at, answers: r.followup }] : [];
-    return list.map((f) => ({ r, f }));
-  }).sort((a, b) => b.f.at.localeCompare(a.f.at));
+  // acompanhamentos (relatórios de reavaliação) dos meus cadastros e dos compartilhados comigo
+  const acomps = [
+    ...records.flatMap((r) => {
+      const m = metaOf(r.answers as Record<string, unknown>);
+      return m.acomps.map((a) => ({
+        rid: r.id, nomes: r.answers.nomes?.value ?? "", processo: r.answers.processo?.value ?? "",
+        a, meta: m, owner: person.name || person.email, canDelete: true,
+      }));
+    }),
+    ...sharedWithMe.flatMap((r) => r.meta.acomps.map((a) => ({
+      rid: r.id, nomes: r.nomes, processo: r.processo, a, meta: r.meta, owner: r.owner, canDelete: me.role === "admin",
+    }))),
+  ].sort((x, y) => y.a.at.localeCompare(x.a.at));
+
+  // fiscalizações realizadas (minhas ou compartilhadas comigo)
+  const approved = ((shared?.[1].data ?? []) as { id: string; name: string; status: string }[]).filter((p) => p.status === "approved");
+  const shareable = approved.filter((p) => p.id !== id).map((p) => ({ id: p.id, name: p.name || "(sem nome)" }));
+  const nameOf = new Map(approved.map((p) => [p.id, p.name]));
+  const fiscs = (shared?.[2].data ?? [])
+    .map((r) => ({
+      id: r.id as string, owner_id: r.created_by as string, created_at: r.created_at as string,
+      meta: metaOf({ _meta: r.meta ?? {} }),
+    }))
+    .filter((r) => r.meta.visit?.status === "realizada" && (r.owner_id === id || r.meta.shared.some((x) => x.id === id)));
 
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -184,23 +207,37 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         </>
       )}
 
-      {showA && <h2 className="section" style={{ margin: 0 }}>ACOMPANHAMENTOS ({entries.length})</h2>}
-      {showA && (entries.length === 0 ? (
-        <div className="card empty"><p>Nenhum acompanhamento preenchido ainda.</p></div>
+      {showF && <h2 className="section" style={{ margin: 0 }}>ACOMPANHAMENTOS ({acomps.length})</h2>}
+      {showF && (acomps.length === 0 ? (
+        <div className="card empty">
+          <p>Nenhum acompanhamento ainda. Responda o questionário em <Link href="/acompanhamento">Acompanhamento</Link> para gerar o relatório.</p>
+        </div>
       ) : (
-        <div className="user-grid">
-          {entries.map(({ r, f }, i) => (
-            <article key={`${r.id}-${f.at}-${i}`} className="card user-card clickable">
-              <h3><Link href={`/cadastrados/${r.id}/documento`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
-              <p>Reavaliação {f.answers.acomp_2?.value ? formatDate(f.answers.acomp_2.value) : new Date(f.at).toLocaleDateString("pt-BR")}</p>
-              {f.answers.acomp_1?.value && <p>{f.answers.acomp_1.value}</p>}
-              <p>Proc. {r.answers.processo?.value ?? "—"}</p>
-              {mine && (
-                <div className="row" style={{ marginTop: 8 }}>
-                  <FollowupActions recordId={r.id} at={f.at} nome={r.answers.nomes?.value ?? "(sem nome)"} />
-                </div>
-              )}
-            </article>
+        <div className="user-grid wide">
+          {acomps.map((x) => (
+            <AcompCard
+              key={`${x.rid}-${x.a.n}`} recordId={x.rid} nomes={x.nomes} processo={x.processo}
+              n={x.a.n} by={x.a.by_name} at={x.a.at} meta={x.meta} ownerName={x.owner} canDelete={x.canDelete}
+            />
+          ))}
+        </div>
+      ))}
+
+      {showF && <h2 className="section" style={{ margin: 0 }}>FISCALIZAÇÕES ({fiscs.length})</h2>}
+      {showF && (fiscs.length === 0 ? (
+        <div className="card empty">
+          <p>Nenhuma fiscalização realizada ainda. Agende e responda em <Link href="/fiscalizacoes">Fiscalizações</Link>.</p>
+        </div>
+      ) : (
+        <div className="user-grid wide">
+          {fiscs.map((f) => (
+            <FiscCard
+              key={f.id} id={f.id} unit={f.meta.visit?.unit ?? ""} date={f.meta.visit?.date ?? ""}
+              professionals={f.meta.visit?.professionals ?? []} respondedBy={f.meta.visit?.responded_by}
+              respondedAt={f.meta.visit?.responded_at} meta={f.meta} ownerName={nameOf.get(f.owner_id) ?? ""}
+              createdAt={f.created_at} canDelete={f.owner_id === id || me.role === "admin"}
+              people={shareable.filter((p) => p.id !== f.owner_id)}
+            />
           ))}
         </div>
       ))}

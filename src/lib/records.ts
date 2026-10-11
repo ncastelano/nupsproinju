@@ -23,6 +23,7 @@ export type RecMeta = {
   editing: Record<string, { name: string; scope: Scope; since: string }>;
   acomps: AcompEntry[]; // relatórios de acompanhamento e reavaliação (documentos .docx)
   visit?: VisitMeta;    // só nas fiscalizações
+  acompData?: Record<string, Record<string, string>>; // respostas do questionário de cada acompanhamento (por nº)
 };
 export type Rec = {
   id: string; created_by: string; created_at: string; form_key: string;
@@ -38,7 +39,7 @@ export function metaOf(raw: Record<string, unknown>): RecMeta {
   const editing = Object.fromEntries(
     Object.entries(m.editing ?? {}).filter(([, v]) => now - new Date(v.since).getTime() < STALE_MS),
   );
-  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [], visit: m.visit };
+  return { shared: m.shared ?? [], followups: m.followups ?? [], history: m.history ?? [], editing, acomps: m.acomps ?? [], visit: m.visit, acompData: m.acompData };
 }
 
 // formKey: o tipo de registro (padrão: cadastro inicial); null aceita qualquer tipo.

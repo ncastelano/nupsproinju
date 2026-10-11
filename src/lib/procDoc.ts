@@ -25,14 +25,14 @@ export async function docVersion(id: string, ref: DocRef = INICIAL): Promise<str
 
 type Signer = { name: string; registry: string };
 
-async function generate(rec: Rec, ref: DocRef, signer?: Signer): Promise<Buffer | null> {
+export async function generateDoc(rec: Rec, ref: DocRef, signer?: Signer): Promise<Buffer | null> {
   const admin = createAdminClient();
   const { data } = await admin.storage.from(REPORT_BUCKET).download(ref.kind === "inicial" ? REPORT_PATH : ACOMP_PATH);
   if (!data) return null;
   const tpl = Buffer.from(await data.arrayBuffer());
   if (ref.kind === "fisc") return buildFiscDoc(tpl, rec); // usa o cabeçalho e a página do modelo de acompanhamento
   if (ref.kind === "acomp") {
-    return fillDocx(tpl, acompValues(rec.answers, signer ?? { name: "", registry: "" }));
+    return fillDocx(tpl, acompValues(rec.answers, signer ?? { name: "", registry: "" }, rec.meta.acompData?.[String(ref.n)] ?? {}));
   }
   let cfg: ReportConfig | null = null;
   const c = await admin.storage.from(REPORT_BUCKET).download(CONFIG_PATH);
@@ -48,7 +48,7 @@ export async function loadProcessDoc(rec: Rec, ref: DocRef = INICIAL, signer?: S
   if (got.data) {
     return { buf: Buffer.from(await got.data.arrayBuffer()), version: (await docVersion(rec.id, ref)) ?? "" };
   }
-  const buf = await generate(rec, ref, signer);
+  const buf = await generateDoc(rec, ref, signer);
   if (!buf) return null;
   await storeProcessDoc(rec.id, buf, ref);
   return { buf, version: (await docVersion(rec.id, ref)) ?? "" };

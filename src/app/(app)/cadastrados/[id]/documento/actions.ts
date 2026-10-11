@@ -7,7 +7,8 @@ import { FORM_KEY } from "@/lib/forms";
 import { FISC_KEY } from "@/lib/fisc";
 import { accessOf, loadRecord, saveRecord, type HistoryEntry } from "@/lib/records";
 import { cleanParas, parseDocx, serializeDocx, type Para } from "@/lib/docxDoc";
-import { DOC_BUCKET, INICIAL, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
+import { ACOMP_GROUPS } from "@/lib/acomp";
+import { DOC_BUCKET, INICIAL, generateDoc, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
 
 const SAME_USER_MS = 30 * 60 * 1000;
 
@@ -101,23 +102,43 @@ export async function resetDocument(id: string, refIn?: unknown): Promise<{ ok: 
   return { ok: true, msg: "Documento refeito." };
 }
 
-// Novo relatório de acompanhamento e reavaliação do processo.
-export async function createAcompanhamento(id: string) {
+// Salva o questionário do acompanhamento (novo ou já existente) e gera o relatório a partir das respostas.
+export async function saveAcompanhamento(_: string | null, form: FormData): Promise<string | null> {
+  const id = String(form.get("record_id"));
+  const nRaw = String(form.get("n") ?? "");
   const me = await requireMember();
   const rec = await loadRecord(id);
-  if (!rec || !accessOf(rec, me).canEdit) return;
-  const n = Math.max(0, ...rec.meta.acomps.map((a) => a.n)) + 1;
-  const ref: DocRef = { kind: "acomp", n };
-  const doc = await loadProcessDoc(rec, ref, me); // gera do modelo e guarda
-  if (!doc) return;
+  if (!rec) return "Processo não encontrado.";
+  if (!accessOf(rec, me).canEdit) return "Você não tem permissão para editar.";
+
   const meta = rec.meta;
-  meta.acomps.push({ n, at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email });
+  const isNew = nRaw === "";
+  const n = isNew ? Math.max(0, ...meta.acomps.map((a) => a.n)) + 1 : Number(nRaw);
+  if (!isNew && !meta.acomps.some((a) => a.n === n)) return "Acompanhamento não encontrado.";
+
+  const answers: Record<string, string> = {};
+  for (const g of ACOMP_GROUPS) for (const f of g.fields) {
+    const v = String(form.get(f.key) ?? "").replace(/\r/g, "").trim().slice(0, 8000);
+    if (v) answers[f.key] = v;
+  }
+  meta.acompData = { ...(meta.acompData ?? {}), [String(n)]: answers };
+  const at = new Date().toISOString();
+  if (isNew) meta.acomps.push({ n, at, by_id: me.id, by_name: me.name || me.email });
   meta.history.unshift({
-    at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "acompanhamento",
-    changes: [], note: `criou o acompanhamento nº ${n}`, doc: refKey(ref),
+    at, by_id: me.id, by_name: me.name || me.email, scope: "acompanhamento", changes: [], doc: `acomp:${n}`,
+    note: isNew ? `criou o acompanhamento nº ${n}` : `atualizou as respostas do acompanhamento nº ${n} (documento refeito)`,
   });
-  await saveRecord(rec, {}, meta);
+  meta.history = meta.history.slice(0, 200);
+
+  const ref: DocRef = { kind: "acomp", n };
+  const buf = await generateDoc({ ...rec, meta }, ref, me);
+  if (!buf) return "Modelo do acompanhamento indisponível.";
+  const up = await storeProcessDoc(id, buf, ref);
+  if (up.error) return "Não foi possível gerar o documento. Tente de novo.";
+  const r = await saveRecord(rec, {}, meta);
+  if (r.error) return "Não foi possível salvar.";
   revalidatePath("/acompanhamento");
+  revalidatePath("/processos");
   redirect(`/cadastrados/${id}/acompanhamento/${n}`);
 }
 

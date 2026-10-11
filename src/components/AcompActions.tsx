@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, FileText, Trash2 } from "lucide-react";
+import { ClipboardPen, Download, FileText, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
 import { deleteAcompanhamento } from "@/app/(app)/cadastrados/[id]/documento/actions";
 
@@ -23,6 +23,7 @@ export function AcompActions({ id, n, nome, canDelete }: { id: string; n: number
   return (
     <div className="pcard-actions">
       <Link href={`/cadastrados/${id}/acompanhamento/${n}`}><button type="button"><FileText size={16} /> Abrir</button></Link>
+      <Link href={`/acompanhamento/${id}?n=${n}`}><button type="button" className="ghost"><ClipboardPen size={16} /> Editar respostas</button></Link>
       <ShareMenu
         path={`/cadastrados/${id}/acompanhamento/${n}`}
         text={`Acompanhamento nº ${n} de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}

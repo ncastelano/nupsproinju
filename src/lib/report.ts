@@ -169,10 +169,12 @@ export const PLACEHOLDER_SOURCE: Record<string, string> = {
 export const ACOMP_PATH = "relatorio-acompanhamento-reavaliacao.docx";
 export const TODO = "[preencher]";
 
-// Identificação vem do Cadastro inicial; os eixos trazem a avaliação anterior para a pessoa comparar.
-export function acompValues(a: Ans, signer: { name: string; registry: string }, now = new Date()): Record<string, string> {
+// Identificação vem do Cadastro inicial; os demais campos vêm do questionário do acompanhamento.
+export function acompValues(
+  a: Ans, signer: { name: string; registry: string }, answers: Record<string, string> = {}, now = new Date(),
+): Record<string, string> {
   const base = reportValues(a, now);
-  const prev = (text: string) => (text && text !== "—" ? `Na avaliação anterior: ${text}\n\nNa presente reavaliação: ${TODO}` : TODO);
+  const mine = (k: string) => (answers[k] ?? "").trim() || TODO;
   return {
     PROCESSO: base.PROCESSO,
     CRIANCAS: base.NOME_ACOLHIDO,
@@ -184,22 +186,20 @@ export function acompValues(a: Ans, signer: { name: string; registry: string }, 
     MODALIDADE: base.MODALIDADE,
     UNIDADE: base.UNIDADE,
     PROFISSIONAL: base.PROFISSIONAIS,
-    PROCEDIMENTOS: TODO,
-    COMPARATIVO_ACOLHIMENTO: prev(base.ACOLHIMENTO_ADAPTACAO),
-    COMPARATIVO_EDUCACAO: prev(base.EDUCACAO),
-    COMPARATIVO_SAUDE: prev(base.SAUDE),
-    COMPARATIVO_EMOCIONAL: prev(base.ASPECTOS_EMOCIONAIS),
-    COMPARATIVO_CONVIVENCIA_FAMILIAR: prev(base.CONVIVENCIA_FAMILIAR),
-    COMPARATIVO_CONVIVENCIA_COMUNITARIA: prev(base.CONVIVENCIA_COMUNITARIA),
-    SITUACAO_GENITORA: TODO,
-    SITUACAO_GENITOR: TODO,
-    SITUACAO_FAMILIA_EXTENSA: TODO,
-    INFORMACOES_FAMILIARES: TODO,
-    ACOMPANHAMENTO_PENDENCIAS: base.QUESTOES_PROXIMO_ACOMPANHAMENTO && base.QUESTOES_PROXIMO_ACOMPANHAMENTO !== "—"
-      ? `${TODO} (pendências indicadas na avaliação anterior: ${base.QUESTOES_PROXIMO_ACOMPANHAMENTO})`
-      : TODO,
-    PENDENCIAS_PROXIMO_PERIODO: TODO,
-    ANALISE_PSICOSSOCIAL: TODO,
+    PROCEDIMENTOS: mine("PROCEDIMENTOS"),
+    COMPARATIVO_ACOLHIMENTO: mine("COMPARATIVO_ACOLHIMENTO"),
+    COMPARATIVO_EDUCACAO: mine("COMPARATIVO_EDUCACAO"),
+    COMPARATIVO_SAUDE: mine("COMPARATIVO_SAUDE"),
+    COMPARATIVO_EMOCIONAL: mine("COMPARATIVO_EMOCIONAL"),
+    COMPARATIVO_CONVIVENCIA_FAMILIAR: mine("COMPARATIVO_CONVIVENCIA_FAMILIAR"),
+    COMPARATIVO_CONVIVENCIA_COMUNITARIA: mine("COMPARATIVO_CONVIVENCIA_COMUNITARIA"),
+    SITUACAO_GENITORA: mine("SITUACAO_GENITORA"),
+    SITUACAO_GENITOR: mine("SITUACAO_GENITOR"),
+    SITUACAO_FAMILIA_EXTENSA: mine("SITUACAO_FAMILIA_EXTENSA"),
+    INFORMACOES_FAMILIARES: mine("INFORMACOES_FAMILIARES"),
+    ACOMPANHAMENTO_PENDENCIAS: mine("ACOMPANHAMENTO_PENDENCIAS"),
+    PENDENCIAS_PROXIMO_PERIODO: mine("PENDENCIAS_PROXIMO_PERIODO"),
+    ANALISE_PSICOSSOCIAL: mine("ANALISE_PSICOSSOCIAL"),
     LOCAL_DATA: base.LOCAL_DATA,
     ASSINATURA: [signer.name, signer.registry].filter(Boolean).join(" – "),
   };
