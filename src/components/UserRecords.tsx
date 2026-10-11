@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { FileText, Plus } from "lucide-react";
+import { Download, FileText, Plus } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -145,6 +145,9 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
                   {r.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(r.answers.data_acolhimento.value)}</span>}
                   <span className="chip">{meta.acomps.length} {meta.acomps.length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
                 </div>
+                <span style={{ color: "var(--muted)", fontSize: 13.5 }}>
+                  Criado por {ownerName} em {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                </span>
                 <AccessLine ownerName={ownerName} shared={meta.shared} />
                 <div className="pcard-actions">
                   <RecordActions recordId={r.id} nome={nome} canDelete={mine || me.role === "admin"} />
@@ -171,7 +174,8 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
                 </Link>
                 <AccessLine ownerName={r.owner} shared={r.meta.shared} />
                 <div className="pcard-actions">
-                  <a href={`/cadastrados/${r.id}/relatorio`}><button type="button" className="ghost">Baixar</button></a>
+                  <Link href={`/cadastrados/${r.id}/documento`}><button type="button"><FileText size={16} /> Abrir</button></Link>
+                  <a href={`/cadastrados/${r.id}/relatorio`}><button type="button" className="ghost"><Download size={16} /> Baixar</button></a>
                 </div>
                 <RecordActivity history={r.meta.history} createdAt={r.created_at} ownerName={r.owner} />
               </article>

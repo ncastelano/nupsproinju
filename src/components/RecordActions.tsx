@@ -1,7 +1,8 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Download, FileText, Trash2 } from "lucide-react";
 import { ShareMenu } from "@/components/ShareMenu";
 import { deleteCadastro } from "@/app/(app)/cadastrados/records-actions";
 
@@ -23,6 +24,9 @@ export function RecordActions({ recordId, nome, canDelete }: { recordId: string;
 
   return (
     <>
+      <Link href={`/cadastrados/${recordId}/documento`}>
+        <button type="button"><FileText size={16} /> Abrir</button>
+      </Link>
       <ShareMenu
         path={`/cadastrados/${recordId}`}
         text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – VPIJ Porto Velho):`}
