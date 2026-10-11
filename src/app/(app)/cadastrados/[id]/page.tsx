@@ -84,6 +84,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
           className=""
           note="Só abre para quem estiver logado e tiver acesso a este formulário."
         />
+        <Link href={`/cadastrados/${id}/documento`}><button><FileText size={16} /> Abrir documento do processo</button></Link>
         <a href={`/cadastrados/${id}/relatorio`}><button className="ghost"><Download size={16} /> Baixar relatório (.docx)</button></a>
         <Link href={`/banco-de-dados/${id}/resumo`}><button className="ghost"><FileText size={16} /> Resumo A4 / Imprimir</button></Link>
         {(acc.owner || acc.admin) && (

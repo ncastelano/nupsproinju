@@ -503,3 +503,25 @@ label.file-pick { display: inline-flex; gap: 6px; align-items: center; cursor: p
 .para-edit select { width: auto; max-width: 150px; font-size: 13px; padding: 8px; }
 .edited-tag { color: var(--muted); font-size: 12px; }
 @media (max-width: 560px) { .para-edit { grid-template-columns: 1fr; } .para-edit select { max-width: 100%; } }
+
+/* Editor do documento do processo (.docx) */
+.doc-wrap { display: grid; gap: 12px; }
+.doc-bar {
+  position: sticky; top: 8px; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px;
+  box-shadow: 0 4px 14px rgba(7, 63, 73, 0.08);
+}
+.doc-bar button.icon { padding: 8px 10px; }
+.doc-sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 4px; }
+.doc-grow { flex: 1; }
+.doc-ok { color: var(--brand-dark); font-weight: 600; }
+.doc-scroll { overflow-x: auto; padding: 4px 0 24px; }
+.doc-page {
+  position: relative; margin: 0 auto; background: #fff; color: #000;
+  border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 6px 24px rgba(7, 63, 73, 0.12);
+}
+.doc-para { position: relative; z-index: 1; outline: none; white-space: pre-wrap; tab-size: 8; word-wrap: break-word; border-radius: 3px; }
+.doc-para[contenteditable="true"]:hover { background: rgba(11, 93, 107, 0.04); }
+.doc-para[data-active] { background: rgba(11, 93, 107, 0.07); }
+.spin { animation: docspin 0.9s linear infinite; }
+@keyframes docspin { to { transform: rotate(360deg); } }

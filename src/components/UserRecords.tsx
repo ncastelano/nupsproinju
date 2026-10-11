@@ -129,7 +129,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         <div className="user-grid">
           {records.map((r) => (
             <article key={r.id} className="card user-card clickable">
-              <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
+              <h3><Link href={`/cadastrados/${r.id}/documento`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
               <p>Proc. {r.answers.processo?.value ?? "—"}</p>
               {r.answers.unidade?.value && <p>{r.answers.unidade.value}</p>}
               {r.answers.data_acolhimento?.value && <p>Acolhido em {formatDate(r.answers.data_acolhimento.value)}</p>}
@@ -151,7 +151,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
           <div className="user-grid">
             {sharedWithMe.map((r) => (
               <article key={r.id} className="card user-card clickable">
-                <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.nomes || "(sem nome)"}</Link></h3>
+                <h3><Link href={`/cadastrados/${r.id}/documento`} className="stretch">{r.nomes || "(sem nome)"}</Link></h3>
                 <p>Proc. {r.processo || "—"}</p>
                 <p>Compartilhado por {r.owner || "—"}</p>
                 <div className="row" style={{ marginTop: 6 }}>
@@ -170,7 +170,7 @@ export async function UserRecords({ id, view }: { id: string; view: "formularios
         <div className="user-grid">
           {entries.map(({ r, f }, i) => (
             <article key={`${r.id}-${f.at}-${i}`} className="card user-card clickable">
-              <h3><Link href={`/cadastrados/${r.id}`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
+              <h3><Link href={`/cadastrados/${r.id}/documento`} className="stretch">{r.answers.nomes?.value ?? "(sem nome)"}</Link></h3>
               <p>Reavaliação {f.answers.acomp_2?.value ? formatDate(f.answers.acomp_2.value) : new Date(f.at).toLocaleDateString("pt-BR")}</p>
               {f.answers.acomp_1?.value && <p>{f.answers.acomp_1.value}</p>}
               <p>Proc. {r.answers.processo?.value ?? "—"}</p>

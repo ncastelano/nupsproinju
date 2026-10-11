@@ -11,7 +11,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 function textOf(p: string) {
   const parts: string[] = [];
-  const body = p.replace(/<w:br\s*\/>/g, "\u0001").replace(/<w:tab\s*\/>/g, "\t");
+  const body = p.replace(/<w:br[^>]*\/>/g, "\u0001").replace(/<w:tab\s*\/>/g, "\t");
   for (const m of body.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>|\u0001/g)) parts.push(m[0] === "\u0001" ? "\n" : unesc(m[1]));
   return parts.join("");
 }
