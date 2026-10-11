@@ -8,9 +8,9 @@ import { deleteFiscalizacao } from "@/app/(app)/fiscalizacoes/actions";
 
 // Botões de uma fiscalização: responder, abrir o relatório, compartilhar, baixar e apagar.
 export function FiscActions({
-  id, done, nome, canDelete, draft = false,
+  id, done, nome, canDelete, draft = false, hideOpen = false, after,
 }: {
-  id: string; done: boolean; nome: string; canDelete: boolean; draft?: boolean;
+  id: string; done: boolean; nome: string; canDelete: boolean; draft?: boolean; hideOpen?: boolean; after?: string;
 }) {
   const router = useRouter();
   const [ask, setAsk] = useState(false);
@@ -18,14 +18,14 @@ export function FiscActions({
   const [pending, start] = useTransition();
 
   const run = (fn: () => Promise<string>) =>
-    start(async () => { const r = await fn(); if (r === "ok") { setAsk(false); router.refresh(); } else setErr(r); });
+    start(async () => { const r = await fn(); if (r === "ok") { setAsk(false); if (after) router.push(after); else router.refresh(); } else setErr(r); });
 
   return (
     <>
       <div className="pcard-actions">
         {done ? (
           <>
-            <Link href={`/fiscalizacoes/${id}`}><button type="button"><FileText size={16} /> Abrir</button></Link>
+            {!hideOpen && <Link href={`/fiscalizacoes/${id}`}><button type="button"><FileText size={16} /> Abrir</button></Link>}
           </>
         ) : (
           <Link href={`/fiscalizacoes/${id}/responder`}><button type="button"><ClipboardPen size={16} /> {draft ? "Continuar" : "Responder questionário"}</button></Link>

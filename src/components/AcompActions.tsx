@@ -7,7 +7,9 @@ import { ShareMenu } from "@/components/ShareMenu";
 import { deleteAcompanhamento } from "@/app/(app)/cadastrados/[id]/documento/actions";
 
 // Abrir, baixar e apagar (com confirmação na tela) um relatório de acompanhamento.
-export function AcompActions({ id, n, nome, canDelete, draft = false }: { id: string; n: number; nome: string; canDelete: boolean; draft?: boolean }) {
+export function AcompActions({ id, n, nome, canDelete, draft = false, hideOpen = false, after }: {
+  id: string; n: number; nome: string; canDelete: boolean; draft?: boolean; hideOpen?: boolean; after?: string;
+}) {
   const router = useRouter();
   const [ask, setAsk] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -16,7 +18,7 @@ export function AcompActions({ id, n, nome, canDelete, draft = false }: { id: st
   function remove() {
     start(async () => {
       const r = await deleteAcompanhamento(id, n);
-      if (r === "ok") { setAsk(false); router.refresh(); } else setErr(r);
+      if (r === "ok") { setAsk(false); if (after) router.push(after); else router.refresh(); } else setErr(r);
     });
   }
 
@@ -26,7 +28,7 @@ export function AcompActions({ id, n, nome, canDelete, draft = false }: { id: st
         <Link href={`/acompanhamento?processo=${id}&n=${n}`}><button type="button"><ClipboardPen size={16} /> Continuar</button></Link>
       ) : (
         <>
-          <Link href={`/cadastrados/${id}/acompanhamento/${n}`}><button type="button"><FileText size={16} /> Abrir</button></Link>
+          {!hideOpen && <Link href={`/cadastrados/${id}/acompanhamento/${n}`}><button type="button"><FileText size={16} /> Abrir</button></Link>}
           <ShareMenu
             path={`/cadastrados/${id}/acompanhamento/${n}`}
             text={`Acompanhamento nº ${n} de ${nome} (Núcleo Psicossocial – PROINJU):`}

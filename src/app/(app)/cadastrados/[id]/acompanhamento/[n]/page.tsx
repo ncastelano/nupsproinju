@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ClipboardList, Download } from "lucide-react";
+import { ClipboardList } from "lucide-react";
+import { AcompActions } from "@/components/AcompActions";
 import { requireMember } from "@/lib/auth";
 import { accessOf, loadRecord } from "@/lib/records";
 import { parseDocx } from "@/lib/docxDoc";
@@ -38,9 +39,14 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
           <h1 style={{ margin: 0 }}>Acompanhamento nº {n}</h1>
           <span style={{ color: "var(--muted)" }}>{rec.answers.nomes?.value ?? "Processo"} · Processo {rec.answers.processo?.value ?? "—"}</span>
         </div>
-        <div className="row" style={{ flexWrap: "wrap" }}>
-          <Link href={`/cadastrados/${id}`}><button className="ghost"><ClipboardList size={16} /> Ficha do processo</button></Link>
-          <a href={`/cadastrados/${id}/acompanhamento/${n}/baixar`}><button className="ghost"><Download size={16} /> Baixar .docx</button></a>
+      </div>
+      <div className="doc-info">
+        <div className="pcard-chips">
+          <span className="chip">Criado por {entry.by_name || "—"} em {new Date(entry.at).toLocaleDateString("pt-BR")}</span>
+        </div>
+        <div className="pcard-actions">
+          <Link href={`/cadastrados/${id}/documento`}><button className="ghost"><ClipboardList size={16} /> Cadastro inicial</button></Link>
+          <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/acompanhamento" />

@@ -7,7 +7,9 @@ import { ShareMenu } from "@/components/ShareMenu";
 import { deleteCadastro } from "@/app/(app)/cadastrados/records-actions";
 
 // Ações do cartão de cadastro inicial: compartilhar o link ou apagar (com confirmação na tela).
-export function RecordActions({ recordId, nome, canDelete, draft = false }: { recordId: string; nome: string; canDelete: boolean; draft?: boolean }) {
+export function RecordActions({ recordId, nome, canDelete, draft = false, hideOpen = false, after }: {
+  recordId: string; nome: string; canDelete: boolean; draft?: boolean; hideOpen?: boolean; after?: string;
+}) {
   const router = useRouter();
   const [ask, setAsk] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export function RecordActions({ recordId, nome, canDelete, draft = false }: { re
     fd.set("record_id", recordId);
     start(async () => {
       const r = await deleteCadastro(fd);
-      if (r === "ok") { setAsk(false); router.refresh(); } else setErr(r);
+      if (r === "ok") { setAsk(false); if (after) router.push(after); else router.refresh(); } else setErr(r);
     });
   }
 
@@ -30,9 +32,11 @@ export function RecordActions({ recordId, nome, canDelete, draft = false }: { re
         </Link>
       ) : (
         <>
-          <Link href={`/cadastrados/${recordId}/documento`}>
-            <button type="button"><FileText size={16} /> Abrir</button>
-          </Link>
+          {!hideOpen && (
+            <Link href={`/cadastrados/${recordId}/documento`}>
+              <button type="button"><FileText size={16} /> Abrir</button>
+            </Link>
+          )}
           <ShareMenu
             path={`/cadastrados/${recordId}`}
             text={`Cadastro inicial de ${nome} (Núcleo Psicossocial – PROINJU):`}

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ClipboardList, Download } from "lucide-react";
+import { ClipboardList } from "lucide-react";
+import { RecordActions } from "@/components/RecordActions";
+import { formatDate } from "@/components/RecordView";
 import { requireMember } from "@/lib/auth";
 import { accessOf, loadRecord } from "@/lib/records";
 import { parseDocx } from "@/lib/docxDoc";
@@ -26,6 +28,7 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
 
   const { data: ownerRow } = await createAdminClient().from("members").select("name").eq("id", rec.created_by).maybeSingle();
   const ownerName = (ownerRow?.name as string) ?? "";
+  const ownerNameTop = ownerName;
 
   return (
     <div className="grid" style={{ gap: 14 }}>
@@ -34,9 +37,16 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
           <h1 style={{ margin: 0 }}>{rec.answers.nomes?.value ?? "Processo"}</h1>
           <span style={{ color: "var(--muted)" }}>Processo {rec.answers.processo?.value ?? "—"}</span>
         </div>
-        <div className="row" style={{ flexWrap: "wrap" }}>
+      </div>
+      <div className="doc-info">
+        <div className="pcard-chips">
+          {rec.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(rec.answers.data_acolhimento.value)}</span>}
+          <span className="chip">{rec.meta.acomps.filter((a) => !a.draft).length} {rec.meta.acomps.filter((a) => !a.draft).length === 1 ? "acompanhamento" : "acompanhamentos"}</span>
+          <span className="chip">Criado por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
+        </div>
+        <div className="pcard-actions">
           <Link href={`/cadastrados/${id}`}><button className="ghost"><ClipboardList size={16} /> Ficha e acompanhamentos</button></Link>
-          <a href={`/cadastrados/${id}/relatorio`}><button className="ghost"><Download size={16} /> Baixar .docx</button></a>
+          <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} />

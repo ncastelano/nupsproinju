@@ -97,7 +97,7 @@ export function FiscForm({ id, initial, redo }: { id: string; initial: Vals; red
 
   return (
     <form action={action} className="grid" style={{ gap: 14 }}>
-      <input type="hidden" name="record_id" value={id} />
+      {id && <input type="hidden" name="record_id" value={id} />}
       {redo && (
         <p className="help" style={{ margin: 0 }}>
           Ao salvar, o relatório será refeito a partir das respostas. Edições feitas à mão no documento serão substituídas.

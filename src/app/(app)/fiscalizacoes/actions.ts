@@ -37,11 +37,8 @@ export async function scheduleVisit(_: string | null, form: FormData): Promise<s
 
 // Salva as respostas do questionário e (re)gera o relatório da fiscalização.
 export async function saveResponses(_: string | null, form: FormData): Promise<string | null> {
-  const id = String(form.get("record_id"));
+  let id = String(form.get("record_id") ?? "");
   const me = await requireMember();
-  const rec = await loadRecord(id, FISC_KEY);
-  if (!rec) return "Fiscalização não encontrada.";
-  if (!accessOf(rec, me).canEdit) return "Você não tem permissão para editar.";
 
   const draft = form.get("intent") === "draft";
   const next: Ans = {};
@@ -70,6 +67,19 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
     }
   }
 
+  // formulário novo (aba Fiscalizações): cria o registro agora; senão, continua o existente
+  if (!id) {
+    if (!draft && !(next.q1?.value && next.q2?.value && next.q3?.value)) return "Preencha a unidade, a data e os profissionais.";
+    const blank = { _meta: { shared: [], followups: [], acomps: [], editing: {}, history: [], visit: { unit: "", date: "", professionals: [], status: "agendada" } } };
+    const { data: ins, error } = await createAdminClient().from("intake_records")
+      .insert({ form_key: FISC_KEY, created_by: me.id, answers: blank }).select("id").single();
+    if (error || !ins) return "Não foi possível salvar. Tente de novo.";
+    id = ins.id as string;
+  }
+  const rec = await loadRecord(id, FISC_KEY);
+  if (!rec) return "Fiscalização não encontrada.";
+  if (!accessOf(rec, me).canEdit) return "Você não tem permissão para editar.";
+
   const unit = next.q1?.value ?? rec.meta.visit?.unit ?? "";
   const date = next.q2?.value ?? rec.meta.visit?.date ?? "";
   const professionals = (next.q3?.value ?? "").split("; ").filter(Boolean);
@@ -89,7 +99,7 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
     if (r.error) return "Não foi possível salvar o rascunho.";
     refresh();
     revalidatePath("/processos");
-    redirect("/fiscalizacoes");
+    redirect("/processos");
   }
   meta.visit = {
     unit, date, professionals, status: "realizada", draft: false,

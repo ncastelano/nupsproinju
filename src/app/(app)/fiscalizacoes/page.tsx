@@ -7,6 +7,7 @@ import { FISC_KEY, PROFISSIONAIS_PADRAO } from "@/lib/fisc";
 import { RecordActivity } from "@/components/RecordActivity";
 import { FiscActions } from "@/components/FiscActions";
 import { ScheduleVisit } from "@/components/ScheduleVisit";
+import { FiscForm } from "@/components/FiscForm";
 
 type Row = { id: string; owner_id: string; owner: string; created_at: string; meta: RecMeta };
 
@@ -41,18 +42,21 @@ export default async function FiscalizacoesPage() {
 
   return (
     <div className="grid" style={{ gap: 16 }}>
-      <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h1 style={{ margin: "8px 0 0" }}>Fiscalizações</h1>
-          <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
-            Agende as visitas às unidades e responda o questionário depois de cada visita. O relatório gerado aparece em <Link href="/processos">Relatórios</Link>, abaixo dos acompanhamentos.
-          </p>
-        </div>
+      <div>
+        <h1 style={{ margin: "8px 0 0" }}>Fiscalização Mensal de Unidade de Acolhimento</h1>
+        <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
+          Responda o formulário da visita. Ao salvar, o relatório é gerado no padrão do NUPS e fica em <Link href="/processos">Relatórios</Link>, para você editar. Use <b>Salvar rascunho</b> para continuar depois.
+        </p>
       </div>
 
+      <FiscForm id="" initial={{}} redo={false} />
+
+      <hr className="soft" />
+      <h2 className="section" style={{ margin: 0 }}>VISITAS AGENDADAS</h2>
+      <p style={{ margin: 0, color: "var(--muted)" }}>Programe uma visita antes e responda o formulário depois, no dia.</p>
       <ScheduleVisit people={people} me={me.name} />
 
-      <h2 className="section" style={{ margin: 0 }}>VISITAS A RESPONDER ({rows.length})</h2>
+      <h2 className="section" style={{ margin: 0 }}>A RESPONDER ({rows.length})</h2>
       {rows.length === 0 ? (
         <div className="card empty"><p>Nenhuma visita pendente. Agende uma nova visita acima.</p></div>
       ) : (

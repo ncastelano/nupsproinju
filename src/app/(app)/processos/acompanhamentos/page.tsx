@@ -1,7 +1,8 @@
 import { requireMember } from "@/lib/auth";
 import { UserRecords } from "@/components/UserRecords";
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const me = await requireMember();
-  return <UserRecords id={me.id} view="formularios" only="acompanhamentos" />;
+  const { q } = await searchParams;
+  return <UserRecords id={me.id} view="formularios" only="acompanhamentos" q={q ?? ""} />;
 }

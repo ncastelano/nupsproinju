@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { Download } from "lucide-react";
+import { FiscActions } from "@/components/FiscActions";
 import { requireMember } from "@/lib/auth";
 import { accessOf, loadRecord } from "@/lib/records";
 import { FISC_KEY } from "@/lib/fisc";
@@ -29,6 +29,7 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
 
   const { data: ownerRow } = await createAdminClient().from("members").select("name").eq("id", rec.created_by).maybeSingle();
   const ownerName = (ownerRow?.name as string) ?? "";
+  const ownerNameTop = ownerName;
 
   return (
     <div className="grid" style={{ gap: 14 }}>
@@ -37,8 +38,15 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
           <h1 style={{ margin: 0 }}>Fiscalização — {v?.unit}</h1>
           <span style={{ color: "var(--muted)" }}>Visita em {v?.date?.split("-").reverse().join("/")}</span>
         </div>
-        <div className="row" style={{ flexWrap: "wrap" }}>
-          <a href={`/fiscalizacoes/${id}/baixar`}><button className="ghost"><Download size={16} /> Baixar .docx</button></a>
+      </div>
+      <div className="doc-info">
+        <div className="pcard-chips">
+          {(v?.professionals ?? []).map((p) => <span key={p} className="chip">{p}</span>)}
+          {v?.responded_by && <span className="chip">Respondida por {v.responded_by}</span>}
+          <span className="chip">Criada por {ownerNameTop || "—"} em {new Date(rec.created_at).toLocaleDateString("pt-BR")}</span>
+        </div>
+        <div className="pcard-actions">
+          <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
       <DocEditor id={id} data={data} version={doc.version} canEdit={acc.canEdit} docRef={ref} backHref="/fiscalizacoes" />
