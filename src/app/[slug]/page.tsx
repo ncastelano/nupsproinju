@@ -40,7 +40,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ slug: 
   return (
     <div className="login-wrap">
       <section className="login-brand">
-        <h1>Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho</h1>
+        <h1>Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho/RO</h1>
         <p>{professionOf(p.registry)}</p>
       </section>
       <section className="login-form">

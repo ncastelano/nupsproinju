@@ -26,7 +26,7 @@ export function ResumoA4({
   return (
     <article className="a4">
       <header className="a4-head">
-        <div className="a4-org">Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho</div>
+        <div className="a4-org">Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho/RO</div>
         <h1>Acompanhamento e reavaliação — criança/adolescente acolhido</h1>
       </header>
 

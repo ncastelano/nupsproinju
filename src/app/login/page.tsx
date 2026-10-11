@@ -14,14 +14,14 @@ export default function LoginPage() {
         <form action={action} className="card grid" style={{ gap: 14 }}>
           <div>
             <h2>Entrar</h2>
-            <span style={{ color: "var(--muted)" }}>Acesse com o seu e-mail e senha.</span>
+            <span style={{ color: "var(--muted)" }}>Acesse com seu e-mail e senha institucional.</span>
           </div>
           <input name="email" type="email" placeholder="E-mail" autoComplete="email" required />
           <PasswordInput name="password" placeholder="Senha" autoComplete="current-password" required />
           <button disabled={pending}>{pending ? "Entrando..." : "Entrar"}</button>
           {error && <p className="error">{error}</p>}
           <div style={{ textAlign: "center" }}>
-            Ainda não tem conta? <Link href="/cadastro">Solicitar acesso</Link>
+            Não possui acesso? <Link href="/cadastro">Solicite aqui</Link>
           </div>
         </form>
       </section>

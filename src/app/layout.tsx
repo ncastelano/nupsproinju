@@ -4,7 +4,7 @@ import "./globals.css";
 
 const TITLE = "Núcleo Psicossocial | Vara de Proteção à Infância e Juventude de Porto Velho";
 const DESCRIPTION =
-  "Sistema do Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho (TJRO): formulários e acompanhamentos.";
+  "Sistema do Núcleo Psicossocial da Vara de Proteção à Infância e Juventude de Porto Velho/RO (TJRO): formulários e acompanhamentos.";
 
 // Endereço público (necessário para o link de compartilhamento ter a imagem com endereço completo).
 const SITE =
