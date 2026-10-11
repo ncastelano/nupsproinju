@@ -18,12 +18,16 @@ export function NavTabs({ userId, isAdmin, slug }: { userId: string; isAdmin: bo
     ...(isAdmin ? [{ href: "/usuarios", label: "Usuários", on: path.startsWith("/usuarios") }] : []),
   ];
   return (
-    <nav ref={nav} className="subtabs main-nav scroll-nav">
-      {items.map((i) => (
-        <Link key={i.href} href={i.href}>
-          <button type="button" className={i.on ? "on" : ""}>{i.label}</button>
-        </Link>
-      ))}
-    </nav>
+    <header className="app-header">
+      <div className="inner">
+        <nav ref={nav} className="subtabs main-nav scroll-nav" aria-label="Menu principal">
+          {items.map((i) => (
+            <Link key={i.href} href={i.href}>
+              <button type="button" className={i.on ? "on" : ""}>{i.label}</button>
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </header>
   );
 }

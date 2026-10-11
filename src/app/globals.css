@@ -711,3 +711,18 @@ select, input, textarea { max-width: 100%; min-width: 0; }
 .grid, .doc-wrap { grid-template-columns: minmax(0, 1fr); }
 .doc-bar { max-width: 100%; }
 @media (max-width: 1100px) { .doc-body { display: grid; grid-template-columns: minmax(0, 1fr); } }
+
+/* Cabeçalho = as abas */
+:root { --head-h: 60px; }
+.app-header {
+  position: sticky; top: 0; z-index: 60;
+  background: linear-gradient(135deg, var(--brand-dark), var(--brand));
+  padding-top: env(safe-area-inset-top);
+  box-shadow: 0 4px 14px rgba(7, 63, 73, 0.18);
+}
+.app-header .inner { max-width: 960px; margin: 0 auto; padding: 10px 16px; }
+.app-header .main-nav a button { background: rgba(255,255,255,.16); color: #fff; }
+.app-header .main-nav a button:hover { background: rgba(255,255,255,.28); }
+.app-header .main-nav a button.on { background: #fff; color: var(--brand-dark); }
+.doc-bar { top: calc(var(--head-h) + 8px); }
+.doc-comments { top: calc(var(--head-h) + 30px); max-height: calc(100vh - var(--head-h) - 50px); }
