@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Check, Italic, Loader2, Plus, RotateCcw, Save, Trash2, Underline,
 } from "lucide-react";
@@ -78,6 +79,9 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const router = useRouter();
+  const pageRef = useRef<HTMLDivElement>(null);
+  const [breaks, setBreaks] = useState<number[]>([]);
   const base = useRef(version);
   const refs = useRef(new Map<number, HTMLDivElement>());
   const focusNext = useRef<{ uid: number; atStart: boolean } | null>(null);
@@ -101,6 +105,37 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
     const s = getSelection();
     s?.removeAllRanges(); s?.addRange(r);
   });
+
+  // Onde o Word quebraria a página: a cada "altura útil" de conteúdo, entre linhas.
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+    const H = data.page.h - data.page.top - data.page.bottom;
+    const measure = () => {
+      let limit = data.page.top + H;
+      const out: number[] = [];
+      for (const el of page.querySelectorAll<HTMLElement>(".doc-para")) {
+        let top = el.offsetTop;
+        let h = el.offsetHeight;
+        const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
+        let guard = 0;
+        while (top + h > limit && guard++ < 50) {
+          const fit = Math.max(0, Math.floor((limit - top) / lh));
+          const y = top + fit * lh;
+          out.push(y);
+          limit = y + H;
+          h -= y - top;
+          top = y;
+          if (fit === 0 && h <= 0) break;
+        }
+      }
+      setBreaks((cur) => (cur.length === out.length && cur.every((v, i) => v === out[i]) ? cur : out));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(page);
+    return () => ro.disconnect();
+  }, [data.page]);
 
   const touch = () => { setDirty(true); setMsg(null); };
   const idxOf = (uid: number) => items.findIndex((x) => x.uid === uid);
@@ -203,7 +238,12 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
     setMsg(null);
     try {
       const r = await saveDocument(id, collect(), base.current);
-      if (r.ok) { setDirty(false); if (r.version) base.current = r.version; }
+      if (r.ok) {
+        setDirty(false);
+        if (r.version) base.current = r.version;
+        router.push("/processos"); // volta para os cartões
+        return;
+      }
       setMsg({ ok: r.ok, text: r.msg });
     } catch {
       setMsg({ ok: false, text: "Não foi possível salvar. Tente de novo." });
@@ -244,6 +284,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
               {msg.ok && <Check size={14} style={{ verticalAlign: "-2px" }} />} {msg.text}
             </span>
           )}
+          <span style={{ color: "var(--muted)", fontSize: 13 }}>{breaks.length + 1} {breaks.length ? "páginas" : "página"}</span>
           {dirty && !msg && <span style={{ color: "var(--muted)", fontSize: 13 }}>Alterações não salvas</span>}
           {confirmReset ? (
             <>
@@ -264,7 +305,7 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
       {!canEdit && <p style={{ color: "var(--muted)", margin: 0 }}>Você pode ver este documento, mas não editar.</p>}
 
       <div className="doc-scroll">
-        <div className="doc-page" style={{ width: page.w, minHeight: page.h, padding: `${page.top}px ${page.right}px ${page.bottom}px ${page.left}px` }}>
+        <div className="doc-page" ref={pageRef} style={{ width: page.w, minHeight: page.h, padding: `${page.top}px ${page.right}px ${page.bottom}px ${page.left}px` }}>
           {header && (
             <div style={{ position: "absolute", left: header.x, top: header.y, width: header.w, height: header.h, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -274,6 +315,11 @@ export function DocEditor({ id, data, version, canEdit }: { id: string; data: Do
               />
             </div>
           )}
+          {breaks.map((y, i) => (
+            <div key={`b${i}`} className="doc-break" style={{ top: y }}>
+              <span>Página {i + 2}</span>
+            </div>
+          ))}
           {items.map((it) => (
             <div
               key={it.uid}
