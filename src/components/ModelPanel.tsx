@@ -1,8 +1,9 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Download, FileText, ListChecks, Loader2, Lock, Upload, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Download, FileText, ListChecks, Loader2, Lock, Pencil, Upload, X } from "lucide-react";
 import { DocEditor } from "@/components/DocEditor";
-import { getModelDoc, replaceModel } from "@/app/(app)/modelos/actions";
+import { getModelDoc, replaceModel, saveModelDoc } from "@/app/(app)/modelos/actions";
 import type { DocData } from "@/lib/docxDoc";
 import type { ModelInfo, ModelKind } from "@/lib/models";
 import type { PreviewSection } from "@/lib/preview";
@@ -44,7 +45,9 @@ export function ModelPanel({
   kind: ModelKind; reportTitle: string; note: string; info: ModelInfo | null;
   sections: PreviewSection[]; questionnaireNote: string;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState<"doc" | "q" | null>(null);
+  const [edit, setEdit] = useState(false);
   const [data, setData] = useState<DocData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [msg, action, pending] = useActionState(replaceModel, null);
@@ -59,6 +62,7 @@ export function ModelPanel({
       .catch(() => live && setErr("Não foi possível abrir o modelo."));
     return () => { live = false; };
   }, [open, kind, msg]);
+  useEffect(() => { if (!open) setEdit(false); }, [open]);
 
   const ok = msg?.startsWith("ok:") ? msg.slice(3) : null;
 
@@ -86,23 +90,30 @@ export function ModelPanel({
         sub={info ? `${info.name}${info.by ? ` · por ${info.by}` : ""}` : undefined}
         actions={(
           <>
-            {info && <a href={`/modelos/${kind}/baixar`}><button type="button" className="ghost"><Download size={16} /> Baixar</button></a>}
+            {info && !edit && <button type="button" onClick={() => setEdit(true)}><Pencil size={16} /> Editar</button>}
+            {info && edit && <button type="button" className="ghost" onClick={() => setEdit(false)}>Concluir edição</button>}
+            {info && <a href={`/modelos/${kind}/baixar`}><button type="button" className="ghost"><Download size={16} /> Exportar</button></a>}
             <form ref={form} action={action}>
               <input type="hidden" name="kind" value={kind} />
-              <label className="upload-btn">
-                {pending ? <Loader2 size={16} className="spin" /> : <Upload size={16} />} {pending ? "Enviando..." : "Trocar modelo"}
+              <label className="upload-btn ghost-upload">
+                {pending ? <Loader2 size={16} className="spin" /> : <Upload size={16} />} {pending ? "Enviando..." : "Importar arquivo"}
                 <input type="file" name="file" accept=".docx" hidden disabled={pending} onChange={(e) => { if (e.target.files?.length) form.current?.requestSubmit(); }} />
               </label>
             </form>
           </>
         )}
       >
-        <p className="help" style={{ margin: "0 0 10px" }}>{note} Somente leitura: para mudar, use “Trocar modelo”.</p>
+        <p className="help" style={{ margin: "0 0 10px" }}>{note} {edit ? "Modo de edição: ajuste o texto e clique em Salvar. Mantenha os campos {{ASSIM}} entre chaves duplas." : "Somente leitura: use “Editar” para alterar ou “Importar arquivo” para trocar por um .docx."}</p>
         {ok && <p className="doc-ok">{ok}</p>}
         {msg && !ok && <p className="error">{msg}</p>}
         {err && <p className="error">{err}</p>}
         {!data && !err && <p><Loader2 size={16} className="spin" /> Abrindo o documento...</p>}
-        {data && <DocEditor id="modelo" data={data} version="" canEdit={false} bare />}
+        {data && (
+          <DocEditor
+            key={edit ? "edit" : "view"} id="modelo" data={data} version="" canEdit={edit} bare={!edit}
+            docRef={{ kind: "modelo" }} onSave={(p) => saveModelDoc(kind, p)} onSaved={() => router.refresh()}
+          />
+        )}
       </Dialog>
 
       <Dialog open={open === "q"} onClose={() => setOpen(null)} title="Modelo do questionário" sub={`${total} perguntas em ${sections.length} seções`}>

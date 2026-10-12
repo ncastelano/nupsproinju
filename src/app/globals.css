@@ -848,3 +848,7 @@ dialog.model-dialog { width: min(980px, calc(100vw - 16px)); max-height: calc(10
   .model-row { grid-template-columns: minmax(0, 1fr); }
   .model-chip { width: 100%; }
 }
+.upload-btn.ghost-upload { background: var(--brand-soft); color: var(--brand-dark); }
+.upload-btn.ghost-upload:hover { background: #cfe6ea; }
+dialog.model-dialog .doc-bar { top: 0; }
+dialog.model-dialog .doc-comments { top: 0; max-height: none; }

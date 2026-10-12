@@ -121,7 +121,8 @@ function splitLines(runs: Run[]): Run[][] {
 let uidSeq = 1;
 const GAP = 28; // vão cinza entre as páginas (px)
 
-type Ref = { kind: "inicial" } | { kind: "acomp"; n: number } | { kind: "fisc" } | { kind: "nota" };
+type Ref = { kind: "inicial" } | { kind: "acomp"; n: number } | { kind: "fisc" } | { kind: "nota" } | { kind: "modelo" };
+type SaveResult = { ok: boolean; msg: string; version?: string };
 
 const toItem = (b: Block): Item => {
   if (isTable(b)) {
@@ -139,8 +140,10 @@ const toItem = (b: Block): Item => {
   return { uid: uidSeq++, kind: "p", jc: b.jc, sp: b.sp, ind: b.ind, sz: b.sz, font: b.font, html: runsHtml(b.runs, b.font), img: b.img };
 };
 
-export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false }: {
+export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, onSave, onSaved }: {
   id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string; bare?: boolean;
+  onSave?: (payload: { blocks: Block[]; comments: DocComment[]; page: { top: number; bottom: number; left: number; right: number } }) => Promise<SaveResult>;
+  onSaved?: () => void;
 }) {
   const [items, setItems] = useState<Item[]>(() => data.blocks.map(toItem));
   const [comments, setComments] = useState<DocComment[]>(data.comments);
@@ -578,10 +581,11 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
     setMsg(null);
     try {
       const payload = { ...collect(), page: margins };
-      const r = await saveDocument(id, payload, base.current, docRef);
+      const r = onSave ? await onSave(payload) : await saveDocument(id, payload, base.current, docRef as never);
       if (r.ok) {
         setDirty(false);
         if (r.version) base.current = r.version;
+        if (docRef.kind === "modelo") { setMsg({ ok: true, text: r.msg }); setBusy(false); onSaved?.(); return; } // o modelo continua aberto
         if (docRef.kind === "nota") { setMsg({ ok: true, text: "Nota salva." }); setBusy(false); return; } // a nota continua aberta
         router.push(backHref);
         return;
@@ -619,7 +623,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
   return (
     <div className="doc-wrap">
       {!bare && <div className="doc-bar">
-        {docRef.kind !== "nota" && (confirmLeave ? (
+        {docRef.kind !== "nota" && docRef.kind !== "modelo" && (confirmLeave ? (
           <>
             <span style={{ fontSize: 13 }}>Há alterações não salvas. Sair mesmo assim?</span>
             <button className="danger" onClick={() => { setDirty(false); router.push(backHref); }}>Sair sem salvar</button>
@@ -631,8 +635,8 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
           </button>
         ))}
         {canEdit && (<>
-          {docRef.kind !== "nota" && <span className="doc-sep" />}
-          {confirmReset ? (
+          {docRef.kind !== "nota" && docRef.kind !== "modelo" && <span className="doc-sep" />}
+          {docRef.kind !== "modelo" && (confirmReset ? (
             <>
               <span style={{ fontSize: 13 }}>Descartar o que foi editado e refazer?</span>
               <button className="danger" disabled={busy} onClick={reset}>Sim, refazer</button>
@@ -642,7 +646,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
             <button className="ghost" disabled={busy} onClick={() => setConfirmReset(true)}>
               <RotateCcw size={16} /> {resetLabel}
             </button>
-          )}
+          ))}
           <button disabled={busy || !dirty} onClick={save}>
             {busy ? <Loader2 size={16} className="spin" /> : <Save size={16} />} Salvar
           </button>

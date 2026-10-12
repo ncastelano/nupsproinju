@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { REPORT_BUCKET, markersOf } from "@/lib/report";
-import { parseDocx, type DocData } from "@/lib/docxDoc";
+import { cleanBlocks, cleanComments, parseDocx, serializeDocx, type DocData } from "@/lib/docxDoc";
 import { MODELS, knownMarkers, readInfoFile, writeInfoFile, type ModelKind } from "@/lib/models";
 
 // Troca o arquivo-base de um tipo de relatório (só o administrador). A versão anterior fica guardada.
@@ -57,4 +57,38 @@ export async function getModelDoc(kind: ModelKind): Promise<DocData | null> {
   const { data } = await createAdminClient().storage.from(REPORT_BUCKET).download(MODELS[kind].path);
   if (!data) return null;
   return parseDocx(Buffer.from(await data.arrayBuffer()));
+}
+
+// Salva o modelo editado na própria tela (só administrador). A versão anterior fica guardada.
+export async function saveModelDoc(
+  kind: ModelKind, payload: unknown,
+): Promise<{ ok: boolean; msg: string; version?: string }> {
+  const me = await requireAdmin();
+  if (!(kind in MODELS)) return { ok: false, msg: "Tipo de modelo inválido." };
+  const pl = (payload && typeof payload === "object" ? payload : {}) as { blocks?: unknown; comments?: unknown; page?: Record<string, number> };
+  const blocks = cleanBlocks(pl.blocks);
+  if (!blocks) return { ok: false, msg: "Documento inválido." };
+  const mar = (v: unknown) => (typeof v === "number" && v >= 24 && v <= 240 ? v : undefined);
+  const pg = pl.page ?? {};
+
+  const st = createAdminClient().storage.from(REPORT_BUCKET);
+  const path = MODELS[kind].path;
+  const { data: old } = await st.download(path);
+  if (!old) return { ok: false, msg: "Nenhum arquivo-base enviado ainda. Use “Importar arquivo”." };
+  const oldBuf = Buffer.from(await old.arrayBuffer());
+  await st.upload(`anteriores/${kind}-${new Date().toISOString().replace(/[:.]/g, "-")}.docx`, oldBuf, { contentType: "application/octet-stream" });
+
+  const buf = await serializeDocx(oldBuf, blocks, {
+    comments: cleanComments(pl.comments),
+    page: { top: mar(pg.top), bottom: mar(pg.bottom), left: mar(pg.left), right: mar(pg.right) },
+  });
+  const up = await st.upload(path, buf, { upsert: true, contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+  if (up.error) return { ok: false, msg: "Não foi possível salvar o modelo. Tente de novo." };
+  if (kind === "inicial") await st.remove(["relatorio-config.json"]);
+
+  const info = await readInfoFile();
+  info[kind] = { original: info[kind]?.original || MODELS[kind].file, at: new Date().toISOString(), by: me.name || me.email };
+  await writeInfoFile(info);
+  revalidatePath("/cadastro-inicial"); revalidatePath("/acompanhamento"); revalidatePath("/fiscalizacoes");
+  return { ok: true, msg: "Modelo salvo. Os próximos relatórios usam esta versão." };
 }
