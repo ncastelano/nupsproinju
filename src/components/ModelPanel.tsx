@@ -64,7 +64,7 @@ export function ModelPanel({
 
   return (
     <section className="model-section">
-      <div className="model-notice"><Lock size={14} /> Área restrita: somente administradores veem e alteram os modelos-base deste formulário.</div>
+      <div className="model-notice"><Lock size={14} /> Somente administradores podem visualizar e editar os modelos deste formulário.</div>
     <div className="model-row">
       <button type="button" className="model-chip" onClick={() => setOpen("doc")}>
         <span className="model-ico"><FileText size={20} /></span>
