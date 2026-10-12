@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowLeft, Bold, Check, Image as ImageIcon, IndentDecrease, IndentIncrease,
-  Italic, Loader2, MessageSquarePlus, MessageSquareText, Plus, RotateCcw, Save, Table2, Trash2, Underline, X,
+  Italic, Loader2, MessageSquarePlus, MessageSquareText, Pencil, Plus, RotateCcw, Save, Table2, Trash2, Underline, X,
 } from "lucide-react";
 import { isTable, type Block, type DocComment, type DocData, type ImgData, type Para, type Run } from "@/lib/docxDoc";
 import { resetDocument, saveDocument } from "@/app/(app)/cadastrados/[id]/documento/actions";
@@ -140,11 +140,14 @@ const toItem = (b: Block): Item => {
   return { uid: uidSeq++, kind: "p", jc: b.jc, sp: b.sp, ind: b.ind, sz: b.sz, font: b.font, html: runsHtml(b.runs, b.font), img: b.img };
 };
 
-export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, onSave, onSaved }: {
+export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, viewFirst = false, onSave, onSaved }: {
   id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string; bare?: boolean;
+  viewFirst?: boolean; // abre só para ler; "Editar" (embaixo do documento) liga a edição e a barra de ferramentas
   onSave?: (payload: { blocks: Block[]; comments: DocComment[]; page: { top: number; bottom: number; left: number; right: number } }) => Promise<SaveResult>;
   onSaved?: () => void;
 }) {
+  const [editing, setEditing] = useState(!viewFirst);
+  const canEdit = canEditProp && editing;
   const [items, setItems] = useState<Item[]>(() => data.blocks.map(toItem));
   const [comments, setComments] = useState<DocComment[]>(data.comments);
   const [margins, setMargins] = useState({ top: data.page.top, bottom: data.page.bottom, left: data.page.left, right: data.page.right });
@@ -620,18 +623,17 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
     </div>
   );
 
-  return (
-    <div className="doc-wrap">
-      {!bare && <div className="doc-bar">
+  const bar = !bare && (!viewFirst || editing) ? (
+    <div className={`doc-bar${viewFirst ? " bottom" : ""}`}>
         {docRef.kind !== "nota" && docRef.kind !== "modelo" && (confirmLeave ? (
           <>
-            <span style={{ fontSize: 13 }}>Há alterações não salvas. Sair mesmo assim?</span>
-            <button className="danger" onClick={() => { setDirty(false); router.push(backHref); }}>Sair sem salvar</button>
+            <span style={{ fontSize: 13 }}>Há alterações não salvas. {viewFirst ? "Descartar?" : "Sair mesmo assim?"}</span>
+            <button className="danger" onClick={() => { setDirty(false); if (viewFirst) window.location.reload(); else router.push(backHref); }}>{viewFirst ? "Descartar alterações" : "Sair sem salvar"}</button>
             <button className="ghost" onClick={() => setConfirmLeave(false)}>Continuar editando</button>
           </>
         ) : (
-          <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : router.push(backHref))}>
-            <ArrowLeft size={16} /> Voltar
+          <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : viewFirst ? setEditing(false) : router.push(backHref))}>
+            <ArrowLeft size={16} /> {viewFirst ? "Cancelar edição" : "Voltar"}
           </button>
         ))}
         {canEdit && (<>
@@ -662,7 +664,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
           )}
           {dirty && !msg && <span style={{ color: "var(--muted)", fontSize: 13 }}>Alterações não salvas</span>}
         </>)}
-        {!canEdit && <span style={{ color: "var(--muted)", fontSize: 13 }}>Você pode ver este documento, mas não editar.</span>}
+        {!canEditProp && !viewFirst && <span style={{ color: "var(--muted)", fontSize: 13 }}>Você pode ver este documento, mas não editar.</span>}
 
         {canEdit && (
           <div className="doc-tools">
@@ -731,7 +733,12 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
             <button className="ghost icon" title="Apagar o bloco atual (parágrafo, imagem ou tabela)" onMouseDown={preventFocus} onClick={removeActive}><Trash2 size={16} /></button>
           </div>
         )}
-      </div>}
+    </div>
+  ) : null;
+
+  return (
+    <div className="doc-wrap">
+      {!viewFirst && bar}
 
       <div className="doc-body">
         <div className="doc-scroll" ref={wrapRef}>
@@ -861,6 +868,17 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
           </aside>
         )}
       </div>
+      {viewFirst && !editing && !bare && (
+        <div className="doc-view-actions">
+          {canEditProp ? (
+            <button type="button" onClick={() => setEditing(true)}><Pencil size={16} /> Editar</button>
+          ) : (
+            <span style={{ color: "var(--muted)", fontSize: 14 }}>Você pode ver este documento, mas não editar.</span>
+          )}
+          <button type="button" className="ghost" onClick={() => router.push(backHref)}><ArrowLeft size={16} /> Voltar</button>
+        </div>
+      )}
+      {viewFirst && bar}
     </div>
   );
 }

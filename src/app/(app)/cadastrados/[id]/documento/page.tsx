@@ -45,10 +45,10 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
           <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <DocEditor viewFirst key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} />
       <div className="card">
         <AudioPanel recordId={id} doc={"inicial"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "inicial")} canEdit={acc.canEdit} me={me.id} />
       </div>
-      <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} />
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
             {rec.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(rec.answers.data_acolhimento.value)}</span>}

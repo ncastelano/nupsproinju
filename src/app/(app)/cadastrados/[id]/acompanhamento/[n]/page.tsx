@@ -48,10 +48,10 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
           <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <DocEditor viewFirst key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/acompanhamento" />
       <div className="card">
         <AudioPanel recordId={id} doc={`acomp:${n}`} audios={(rec.meta.audios ?? []).filter((a) => a.doc === `acomp:${n}`)} canEdit={acc.canEdit} me={me.id} />
       </div>
-      <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/acompanhamento" />
       <h2 className="section" style={{ margin: 0 }}>CADASTRO INICIAL</h2>
       <div className="user-grid four">
         <MiniCard

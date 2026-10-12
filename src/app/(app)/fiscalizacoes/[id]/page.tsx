@@ -45,10 +45,10 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
           <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <DocEditor viewFirst key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/fiscalizacoes" />
       <div className="card">
         <AudioPanel recordId={id} doc={"fisc"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "fisc")} canEdit={acc.canEdit} me={me.id} />
       </div>
-      <DocEditor key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/fiscalizacoes" />
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
             {(v?.professionals ?? []).map((p) => <span key={p} className="chip">{p}</span>)}

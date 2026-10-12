@@ -896,3 +896,7 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 .gf-edit-btns { display: flex; gap: 6px; }
 .gf-edit-btns .icon { padding: 8px 10px; }
 .gf-edit code { background: var(--brand-soft); color: var(--brand-dark); padding: 1px 6px; border-radius: 6px; font-size: 12.5px; }
+
+/* Documento aberto para leitura: "Editar" embaixo; barra de edição embaixo, presa à tela */
+.doc-view-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.doc-bar.bottom { position: sticky; top: auto; bottom: 8px; z-index: 40; }
