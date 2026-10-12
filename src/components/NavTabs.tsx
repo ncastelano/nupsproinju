@@ -2,13 +2,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus } from "lucide-react";
 
 export function NavTabs({ userId, isAdmin, slug, pending = 0 }: { userId: string; isAdmin: boolean; slug: string; pending?: number }) {
   const path = usePathname();
   const nav = useRef<HTMLElement>(null);
   const [n, setN] = useState(pending);
-  const [toast, setToast] = useState<string | null>(null);
   const last = useRef(pending);
 
   // a aba atual fica visível na rolagem
@@ -26,10 +25,6 @@ export function NavTabs({ userId, isAdmin, slug, pending = 0 }: { userId: string
         const r = await fetch("/usuarios/pendentes", { cache: "no-store" });
         if (!r.ok || !live) return;
         const { n: now } = (await r.json()) as { n: number };
-        if (now > last.current) {
-          const novos = now - last.current;
-          setToast(novos === 1 ? "Nova solicitação de acesso aguardando aprovação." : `${novos} novas solicitações de acesso aguardando aprovação.`);
-        }
         last.current = now;
         setN(now);
       } catch { /* sem rede: tenta de novo depois */ }
@@ -65,12 +60,12 @@ export function NavTabs({ userId, isAdmin, slug, pending = 0 }: { userId: string
           ))}
         </nav>
       </div>
-      {toast && (
+      {/* o aviso fica enquanto houver pedidos aguardando (some só na própria página de Usuários) */}
+      {isAdmin && n > 0 && !path.startsWith("/usuarios") && (
         <div className="toast-access" role="status">
           <UserPlus size={16} />
-          <span>{toast}</span>
-          <Link href="/usuarios" onClick={() => setToast(null)}>Ver</Link>
-          <button type="button" className="ghost icon" aria-label="Fechar aviso" onClick={() => setToast(null)}><X size={14} /></button>
+          <span>{n === 1 ? "1 solicitação de acesso aguardando aprovação." : `${n} solicitações de acesso aguardando aprovação.`}</span>
+          <Link href="/usuarios">Ver</Link>
         </div>
       )}
     </header>
