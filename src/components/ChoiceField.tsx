@@ -49,7 +49,7 @@ export function ChoiceField({
   const label = (s: string) => (s === OUTRO ? `Outro${otherText ? `: ${otherText}` : ""}` : s);
   const summary = selected.map(label);
   // a caixa tem sempre o mesmo tamanho: uma linha (com "…" se for longo); as várias escolhas aparecem como etiquetas embaixo
-  const boxText = !summary.length ? placeholder : multiple && summary.length > 1 ? `${summary.length} selecionados` : summary[0];
+  const boxText = !summary.length ? placeholder : summary[0];
   const close = () => { setOpen(false); setFilter(""); };
 
   return (
@@ -59,20 +59,21 @@ export function ChoiceField({
         : selected[0] !== undefined && <input type="hidden" name={name} value={selected[0] === OUTRO ? singleOtherValue : selected[0]} />}
       {hasOther && <input type="hidden" name={`${name}__outro`} value={otherText} />}
 
-      <button type="button" className={`choice-box${open ? " open" : ""}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-        <span className={`choice-values${summary.length ? "" : " placeholder"}`} title={summary.join("; ")}>{boxText}</span>
-        <ChevronDown size={18} />
-      </button>
-      {multiple && selected.length > 0 && (
-        <div className="choice-tags">
-          {selected.map((s) => (
-            <span key={s} className="choice-tag">
-              {label(s)}
-              <button type="button" aria-label={`Remover ${label(s)}`} onClick={() => commit(selected.filter((x) => x !== s), otherText)}><X size={12} /></button>
-            </span>
-          ))}
-        </div>
-      )}
+      <div
+        role="button" tabIndex={0} className={`choice-box${open ? " open" : ""}`} aria-haspopup="dialog" aria-expanded={open}
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(true); } }}
+      >
+        {multiple && summary.length > 0 ? (
+          // várias escolhas: etiquetas numa linha só (rola para o lado); a caixa nunca muda de altura
+          <span className="choice-chips">
+            {summary.map((t, i) => <span key={i} className="choice-tag">{t}</span>)}
+          </span>
+        ) : (
+          <span className={`choice-values${summary.length ? "" : " placeholder"}`} title={summary.join("; ")}>{boxText}</span>
+        )}
+        <ChevronDown size={18} style={{ flex: "none" }} />
+      </div>
 
       {open && (
         <div className="choice-overlay" onMouseDown={close}>

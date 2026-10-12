@@ -828,3 +828,8 @@ dialog.model-dialog .doc-scroll { padding-bottom: 8px; }
 .choice-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--brand-dark); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 13.5px; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; }
 .choice-tag button { background: rgba(7,63,73,.12); color: var(--brand-dark); padding: 3px; border-radius: 50%; display: grid; place-items: center; }
 .choice-tag button:hover { background: rgba(7,63,73,.25); box-shadow: none; }
+
+.choice-box { overflow: hidden; }
+.choice-chips { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: center; overflow-x: auto; white-space: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.choice-chips::-webkit-scrollbar { display: none; }
+.choice-chips .choice-tag { flex: none; padding: 4px 12px; font-size: 13.5px; }
