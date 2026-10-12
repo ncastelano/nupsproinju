@@ -73,7 +73,6 @@ export function reportValues(a: Ans, now = new Date()): Record<string, string> {
         : v("convivencia_comunitaria") && `Vínculos significativos externos ao serviço de acolhimento: ${v("convivencia_comunitaria")}`,
       v("convivencia_comunitaria_info"),
     ),
-    ),
     SITUACAO_GENITORA: withInfo(lower(v("situacao_genitora")), v("situacao_genitora_info")),
     SITUACAO_GENITOR: withInfo(lower(v("situacao_genitor")), v("situacao_genitor_info")),
     SITUACAO_FAMILIA_EXTENSA: withInfo(lower(v("situacao_familia_extensa")), v("familia_extensa_info")),
