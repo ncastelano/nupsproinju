@@ -8,7 +8,7 @@ const OUTRO = "Outro";
 // Envia como campos ocultos com o mesmo nome do formulário: `name` (um por opção marcada) e `name__outro` (texto de "Outro").
 export function ChoiceField({
   name, options, multiple = false, other = false, initial = [], initialOther = "", title,
-  onChange, placeholder = "Selecione...", singleOtherValue = OUTRO,
+  onChange, placeholder = "Selecione...", singleOtherValue = OUTRO, searchable = false, searchPlaceholder = "Buscar...",
 }: {
   name: string;
   options: string[];
@@ -20,6 +20,8 @@ export function ChoiceField({
   onChange?: (selected: string[], otherText: string) => void;
   placeholder?: string;
   singleOtherValue?: string;       // valor enviado quando a escolha única é "Outro"
+  searchable?: boolean;            // sempre mostra a busca (senão, só com mais de 8 opções)
+  searchPlaceholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>(initial);
@@ -85,8 +87,8 @@ export function ChoiceField({
               <strong>{title ?? "Escolha uma opção"}</strong>
               <button type="button" className="ghost icon" aria-label="Fechar" onClick={close}><X size={18} /></button>
             </div>
-            {all.length > 8 && (
-              <input type="search" className="choice-search" placeholder="Buscar..." value={filter} onChange={(e) => setFilter(e.target.value)} />
+            {(searchable || all.length > 8) && (
+              <input type="search" className="choice-search" placeholder={searchPlaceholder} value={filter} onChange={(e) => setFilter(e.target.value)} />
             )}
             <div className="choice-list" role="listbox">
               {shown.map((o) => {

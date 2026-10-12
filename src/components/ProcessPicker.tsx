@@ -9,7 +9,7 @@ export function ProcessPicker({ options, value }: { options: { id: string; label
   return (
     <ChoiceField
       key={value} name="processo_escolhido" title="Número do processo" placeholder="Selecione o processo..."
-      options={options.map((o) => o.label)} initial={current ? [current.label] : []}
+      options={options.map((o) => o.label)} searchable searchPlaceholder="Buscar por número do processo ou nome..." initial={current ? [current.label] : []}
       onChange={(sel) => {
         const id = options.find((o) => o.label === sel[0])?.id;
         router.push(id ? `/acompanhamento?processo=${id}` : "/acompanhamento");
