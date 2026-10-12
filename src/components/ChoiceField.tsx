@@ -30,9 +30,11 @@ export function ChoiceField({
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+    // trava a rolagem da página enquanto o quadro está aberto (a roda do mouse rola só as opções)
+    const html = document.documentElement, body = document.body;
+    const prevHtml = html.style.overflow, prevBody = body.style.overflow;
+    html.style.overflow = "hidden"; body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); html.style.overflow = prevHtml; body.style.overflow = prevBody; };
   }, [open]);
 
   const commit = (sel: string[], text: string) => { setSelected(sel); setOtherText(text); onChange?.(sel, text); };

@@ -804,3 +804,6 @@ dialog.model-dialog::backdrop { background: rgba(7,63,73,.5); }
 .q-prev-opts { display: flex; gap: 6px; flex-wrap: wrap; }
 .q-prev-rows { font-size: 13px; color: var(--muted); }
 dialog.model-dialog .doc-scroll { padding-bottom: 8px; }
+
+.choice-overlay, .choice-panel, .choice-list, .model-dialog-body { overscroll-behavior: contain; }
+.choice-list { scrollbar-width: thin; }

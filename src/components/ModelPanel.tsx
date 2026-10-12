@@ -16,8 +16,11 @@ function Dialog({ open, onClose, title, sub, actions, children }: {
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
+    const html = document.documentElement;
+    if (open && !d.open) { d.showModal(); html.style.overflow = "hidden"; }
     if (!open && d.open) d.close();
+    if (!open) html.style.overflow = "";
+    return () => { html.style.overflow = ""; };
   }, [open]);
   return (
     <dialog ref={ref} className="model-dialog" onClose={onClose} onClick={(e) => { if (e.target === ref.current) onClose(); }}>
