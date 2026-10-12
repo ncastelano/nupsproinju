@@ -816,3 +816,7 @@ dialog.model-dialog .doc-scroll { padding-bottom: 8px; }
 .toast-access { max-width: 960px; margin: 0 auto; display: flex; align-items: center; gap: 10px; padding: 8px 16px 10px; color: #fff; font-size: 14px; font-weight: 600; }
 .toast-access a { color: #fff; text-decoration: underline; }
 .toast-access button { background: rgba(255,255,255,.16); color: #fff; padding: 4px 6px; }
+
+/* o que foi escolhido aparece inteiro (quebra em mais linhas em vez de cortar) */
+.choice-values { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.35; }
+.choice-box { align-items: center; min-height: 51px; }

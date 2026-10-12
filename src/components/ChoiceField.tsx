@@ -70,7 +70,7 @@ export function ChoiceField({
               <button type="button" className="ghost icon" aria-label="Fechar" onClick={close}><X size={18} /></button>
             </div>
             {all.length > 8 && (
-              <input type="search" className="choice-search" placeholder="Buscar..." value={filter} onChange={(e) => setFilter(e.target.value)} autoFocus />
+              <input type="search" className="choice-search" placeholder="Buscar..." value={filter} onChange={(e) => setFilter(e.target.value)} />
             )}
             <div className="choice-list" role="listbox">
               {shown.map((o) => {

@@ -64,7 +64,7 @@ export function NavTabs({ userId, isAdmin, slug, pending = 0 }: { userId: string
       {isAdmin && n > 0 && !path.startsWith("/usuarios") && (
         <div className="toast-access" role="status">
           <UserPlus size={16} />
-          <span>{n === 1 ? "1 solicitação de acesso aguardando aprovação." : `${n} solicitações de acesso aguardando aprovação.`}</span>
+          <span>{n === 1 ? "1 solicitação" : `${n} solicitações`}</span>
           <Link href="/usuarios">Ver</Link>
         </div>
       )}
