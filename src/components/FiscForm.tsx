@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
 import { Save } from "lucide-react";
-import { FISC_SECTIONS, OTHER, rowKey, visible, type FQ } from "@/lib/fisc";
+import { FISC_SECTIONS, OTHER, rowKey, visible, type FQ, type FSection } from "@/lib/fisc";
 import { ChoiceField } from "@/components/ChoiceField";
 import { saveResponses } from "@/app/(app)/fiscalizacoes/actions";
 
@@ -57,7 +57,7 @@ export function QInput({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v
 }
 
 // Questionário da fiscalização: uma pergunta por cartão; as que dependem de outra resposta só aparecem quando cabem.
-export function FiscForm({ id, initial, redo }: { id: string; initial: Vals; redo: boolean }) {
+export function FiscForm({ id, initial, redo, sections }: { id: string; initial: Vals; redo: boolean; sections?: FSection[] }) {
   const [vals, setVals] = useState<Vals>(initial);
   const [msg, action, pending] = useActionState(saveResponses, null);
   const set = (k: string, v: string) => setVals((cur) => ({ ...cur, [k]: v }));
@@ -71,7 +71,7 @@ export function FiscForm({ id, initial, redo }: { id: string; initial: Vals; red
           Ao salvar, o relatório será refeito a partir das respostas. Edições feitas à mão no documento serão substituídas.
         </p>
       )}
-      {FISC_SECTIONS.map((sec) => {
+      {(sections ?? FISC_SECTIONS).map((sec) => {
         const qs = sec.questions.filter((qn) => visible(qn, get));
         return (
           <section key={sec.title} className="grid" style={{ gap: 12 }}>

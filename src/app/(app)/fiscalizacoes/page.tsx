@@ -2,11 +2,11 @@ import Link from "next/link";
 import { CalendarClock, ClipboardCheck } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { ModelPanel } from "@/components/ModelPanel";
-import { previewOf } from "@/lib/preview";
 import { MODELS, modelInfo } from "@/lib/models";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { metaOf, type RecMeta } from "@/lib/records";
-import { FISC_KEY, FISC_SECTIONS, PROFISSIONAIS_PADRAO } from "@/lib/fisc";
+import { FISC_KEY, PROFISSIONAIS_PADRAO } from "@/lib/fisc";
+import { loadSections } from "@/lib/questionnaires";
 import { RecordActivity } from "@/components/RecordActivity";
 import { FiscActions } from "@/components/FiscActions";
 import { ScheduleVisit } from "@/components/ScheduleVisit";
@@ -19,6 +19,7 @@ const day = (iso: string) => { const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/); 
 // Fiscalizações: visitas às unidades de acolhimento; cada uma tem um questionário e gera um relatório editável.
 export default async function FiscalizacoesPage() {
   const me = await requireMember();
+  const fiscSections = await loadSections("fisc");
   const admin = createAdminClient();
   const [{ data: all }, { data: ppl }] = await Promise.all([
     admin.from("intake_records").select("id, created_by, created_at, meta:answers->_meta")
@@ -56,10 +57,10 @@ export default async function FiscalizacoesPage() {
         <ModelPanel
           kind="fisc" reportTitle={MODELS.fisc.title} note={MODELS.fisc.note} info={await modelInfo("fisc")}
           formTitle="Fiscalização Mensal de Unidade de Acolhimento" formDescription="Registro da visita mensal de fiscalização às unidades de acolhimento: recursos humanos, estrutura, documentação, atendimento, saúde, educação, convivência familiar, escuta, ocorrências e pendências."
-          sections={previewOf(FISC_SECTIONS)} questionnaireNote={"Perguntas do formulário de Fiscalização Mensal de Unidade de Acolhimento. As respostas geram o texto do relatório."}
+          sections={fiscSections} questionnaireNote={"Perguntas do formulário de Fiscalização Mensal de Unidade de Acolhimento. As respostas geram o texto do relatório."}
         />
       )}
-      <FiscForm id="" initial={{}} redo={false} />
+      <FiscForm id="" initial={{}} redo={false} sections={fiscSections} />
 
       <hr className="soft" />
       <h2 className="section" style={{ margin: 0 }}>VISITAS AGENDADAS</h2>

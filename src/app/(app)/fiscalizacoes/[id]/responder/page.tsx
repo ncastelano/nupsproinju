@@ -5,6 +5,7 @@ import { requireMember } from "@/lib/auth";
 import { accessOf, loadRecord } from "@/lib/records";
 import { FISC_KEY } from "@/lib/fisc";
 import { FiscForm } from "@/components/FiscForm";
+import { loadSections } from "@/lib/questionnaires";
 import { DiscardDraft } from "@/components/DiscardDraft";
 
 // Questionário da visita (Fiscalização Mensal de Unidade de Acolhimento).
@@ -27,7 +28,7 @@ export default async function ResponderPage({ params }: { params: Promise<{ id: 
         </div>
         <Link href="/fiscalizacoes"><button className="ghost"><ArrowLeft size={16} /> Voltar</button></Link>
       </div>
-      <FiscForm id={id} initial={initial} redo={v?.status === "realizada"} />
+      <FiscForm id={id} initial={initial} redo={v?.status === "realizada"} sections={await loadSections("fisc")} />
       {v?.status !== "realizada" && (acc.owner || acc.admin) && <div><DiscardDraft kind="fiscalizacao" id={id} /></div>}
     </div>
   );

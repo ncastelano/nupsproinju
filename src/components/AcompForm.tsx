@@ -2,17 +2,17 @@
 import { useActionState, useState } from "react";
 import { Save } from "lucide-react";
 import { ACOMP_SECTIONS } from "@/lib/acomp";
-import { visible } from "@/lib/fisc";
+import { visible, type FSection } from "@/lib/fisc";
 import { ChoiceField } from "@/components/ChoiceField";
 import { QInput } from "@/components/FiscForm";
 import { saveAcompanhamento } from "@/app/(app)/cadastrados/[id]/documento/actions";
 
 // Questionário do acompanhamento: um cartão por pergunta, com a avaliação anterior para comparar.
 export function AcompForm({
-  id, n, initial, previous, redo, proOptions, signature,
+  id, n, initial, previous, redo, proOptions, signature, sections,
 }: {
   id: string; n: number | null; initial: Record<string, string>; previous: Record<string, string>; redo: boolean;
-  proOptions: string[]; signature: string;
+  proOptions: string[]; signature: string; sections?: FSection[];
 }) {
   const [msg, action, pending] = useActionState(saveAcompanhamento, null);
   const [vals, setVals] = useState<Record<string, string>>(initial);
@@ -30,7 +30,7 @@ export function AcompForm({
           Ao salvar, o relatório será refeito a partir das respostas. Edições feitas à mão no documento serão substituídas.
         </p>
       )}
-      {ACOMP_SECTIONS.map((sec) => (
+      {(sections ?? ACOMP_SECTIONS).map((sec) => (
         <section key={sec.title} className="grid" style={{ gap: 12 }}>
           <h2 className="section">{sec.title.toUpperCase()}</h2>
           {sec.questions.filter((q) => visible(q, get)).map((q) => (

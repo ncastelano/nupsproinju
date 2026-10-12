@@ -5,7 +5,8 @@ import { requireMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { accessOf, loadRecord, saveRecord, type Ans, type HistoryEntry } from "@/lib/records";
 import { DOC_BUCKET, docPath, removeProcessDocs } from "@/lib/procDoc";
-import { FISC_KEY, FISC_SECTIONS, OTHER, UNIDADES, rowKey, visible } from "@/lib/fisc";
+import { FISC_KEY, OTHER, UNIDADES, rowKey, visible } from "@/lib/fisc";
+import { loadSections } from "@/lib/questionnaires";
 
 const refresh = () => revalidatePath("/fiscalizacoes");
 
@@ -43,7 +44,7 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
   const draft = form.get("intent") === "draft";
   const next: Ans = {};
   const get = (k: string) => (next[k]?.value ?? "").trim();
-  for (const sec of FISC_SECTIONS) {
+  for (const sec of await loadSections("fisc")) {
     for (const qn of sec.questions) {
       if (!visible(qn, get)) continue;
       if (qn.type === "matrix") {

@@ -3,10 +3,12 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, FileText, ListChecks, Loader2, Lock, Pencil, Upload, X } from "lucide-react";
 import { DocEditor } from "@/components/DocEditor";
-import { getModelDoc, replaceModel, saveModelDoc } from "@/app/(app)/modelos/actions";
+import { getModelDoc, replaceModel, saveModelDoc, saveQuestionnaire } from "@/app/(app)/modelos/actions";
 import type { DocData } from "@/lib/docxDoc";
 import type { ModelInfo, ModelKind } from "@/lib/models";
-import type { PreviewItem, PreviewSection } from "@/lib/preview";
+import { previewOf, type PreviewItem } from "@/lib/preview";
+import type { FSection, FType } from "@/lib/fisc";
+import { QuestionnaireEditor } from "@/components/QuestionnaireEditor";
 
 const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
@@ -43,7 +45,7 @@ export function ModelPanel({
   kind, reportTitle, note, info, sections, questionnaireNote, formTitle, formDescription,
 }: {
   kind: ModelKind; reportTitle: string; note: string; info: ModelInfo | null;
-  sections: PreviewSection[]; questionnaireNote: string; formTitle: string; formDescription?: string;
+  sections: FSection[]; questionnaireNote: string; formTitle: string; formDescription?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<"doc" | "q" | null>(null);
@@ -52,7 +54,21 @@ export function ModelPanel({
   const [err, setErr] = useState<string | null>(null);
   const [msg, action, pending] = useActionState(replaceModel, null);
   const form = useRef<HTMLFormElement>(null);
-  const total = sections.reduce((n, s) => n + s.items.length, 0);
+  const [editQ, setEditQ] = useState(false);
+  const [draft, setDraft] = useState<FSection[]>(sections);
+  const [qMsg, setQMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const preview = previewOf(sections);
+  const total = preview.reduce((n, s) => n + s.items.length, 0);
+  const types: FType[] = kind === "inicial" ? ["text", "textarea", "date", "select", "radio", "checkbox"] : ["text", "textarea", "number", "date", "select", "radio", "checkbox", "matrix"];
+  useEffect(() => { if (open !== "q") { setEditQ(false); setQMsg(null); } }, [open]);
+  async function saveQ() {
+    setSaving(true);
+    const r = await saveQuestionnaire(kind, draft);
+    setSaving(false);
+    setQMsg({ ok: r.ok, t: r.msg });
+    if (r.ok) { router.refresh(); setEditQ(false); }
+  }
 
   useEffect(() => {
     if (open !== "doc") return;
@@ -81,7 +97,7 @@ export function ModelPanel({
         <span className="model-ico"><ListChecks size={20} /></span>
         <span className="model-text">
           <strong>Modelo do questionário</strong>
-          <em>{total} perguntas · {sections.length} seções</em>
+          <em>{total} perguntas · {preview.length} seções</em>
         </span>
       </button>
 
@@ -115,22 +131,41 @@ export function ModelPanel({
         )}
       </Dialog>
 
-      <Dialog open={open === "q"} onClose={() => setOpen(null)} title="Modelo do questionário" sub={`${total} perguntas em ${sections.length} seções`}>
+      <Dialog open={open === "q"} onClose={() => setOpen(null)} title="Modelo do questionário" sub={`${total} perguntas em ${preview.length} seções`}
+        actions={editQ ? (
+          <>
+            <button type="button" disabled={saving} onClick={saveQ}>{saving ? "Salvando..." : "Salvar questionário"}</button>
+            <button type="button" className="ghost" disabled={saving} onClick={() => { setEditQ(false); setDraft(sections); }}>Cancelar</button>
+          </>
+        ) : (
+          <button type="button" onClick={() => { setDraft(sections); setEditQ(true); setQMsg(null); }}><Pencil size={16} /> Editar perguntas</button>
+        )}
+      >
         <p className="help" style={{ margin: "0 0 10px" }}>{questionnaireNote}</p>
+        {qMsg && <p className={qMsg.ok ? "doc-ok" : "error"}>{qMsg.t}</p>}
+        {editQ ? (
+          <QuestionnaireEditor
+            initial={sections} allowedTypes={types} onChange={setDraft}
+            hint={kind === "fisc"
+              ? "Mudanças aqui valem para os próximos preenchimentos; as perguntas novas entram sozinhas no relatório da fiscalização."
+              : "Mudanças aqui valem para os próximos preenchimentos. Para uma pergunta nova aparecer no relatório, coloque o campo indicado em cada pergunta (por exemplo {{Q:chave}}) no modelo do relatório."}
+          />
+        ) : (
         <div className="gf">
           <div className="gf-card gf-title">
             <h2>{formTitle}</h2>
             {formDescription && <p>{formDescription}</p>}
             <small><span className="req">*</span> Indica uma pergunta obrigatória</small>
           </div>
-          {sections.map((sec, si) => (
+          {preview.map((sec, si) => (
             <div key={si} className="gf-section">
-              {sections.length > 1 && <div className="gf-tab">Seção {si + 1} de {sections.length}</div>}
+              {preview.length > 1 && <div className="gf-tab">Seção {si + 1} de {preview.length}</div>}
               <div className="gf-card gf-sec-head"><h3>{sec.title}</h3></div>
               {sec.items.map((it, i) => <GfQuestion key={i} it={it} />)}
             </div>
           ))}
         </div>
+        )}
       </Dialog>
     </div>
     </section>

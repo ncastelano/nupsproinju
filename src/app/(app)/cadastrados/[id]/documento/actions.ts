@@ -8,7 +8,7 @@ import { FISC_KEY } from "@/lib/fisc";
 import { NOTA_KEY } from "@/lib/notes";
 import { accessOf, loadRecord, saveRecord, type HistoryEntry } from "@/lib/records";
 import { cleanBlocks, cleanComments, isTable, parseDocx, serializeDocx, type Block, type DocComment, type Para } from "@/lib/docxDoc";
-import { ACOMP_SECTIONS } from "@/lib/acomp";
+import { loadSections } from "@/lib/questionnaires";
 import { OTHER } from "@/lib/fisc";
 import { DOC_BUCKET, INICIAL, generateDoc, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
 
@@ -143,7 +143,7 @@ export async function saveAcompanhamento(_: string | null, form: FormData): Prom
 
   const answers: Record<string, string> = {};
   const signature = [me.name || me.email, me.registry].filter(Boolean).join(" - ");
-  for (const sec of ACOMP_SECTIONS) for (const q of sec.questions) {
+  for (const sec of await loadSections("acomp")) for (const q of sec.questions) {
     let v: string;
     if (q.key === "prof") {
       // quem está logado sempre assina; outros profissionais podem ser marcados junto

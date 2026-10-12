@@ -226,5 +226,7 @@ export function acompValues(
     ANALISE_PSICOSSOCIAL: mine("ANALISE_PSICOSSOCIAL"),
     LOCAL_DATA: t.LOCAL_DATA || base.LOCAL_DATA,
     ASSINATURA: [signer.name, signer.registry].filter(Boolean).join(" – "),
+    // perguntas novas do questionário: use {{Q:chave}} no modelo para colocar a resposta
+    ...Object.fromEntries(Object.entries(answers).filter(([k]) => /^[A-Za-z0-9_]+$/.test(k)).map(([k, v]) => [`Q:${k}`, String(v)])),
   };
 }

@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Rec } from "@/lib/records";
 import { ACOMP_PATH, FISC_BASE_PATH, REPORT_BUCKET, REPORT_PATH, acompValues, fillDocx, questionValues, reportValues } from "@/lib/report";
 import { buildFiscDoc } from "@/lib/fisc";
+import { loadSections } from "@/lib/questionnaires";
 import { emptyPara, serializeDocx } from "@/lib/docxDoc";
 import { CONFIG_PATH, applyConfig, type ReportConfig } from "@/lib/reportEdit";
 
@@ -37,7 +38,7 @@ export async function generateDoc(rec: Rec, ref: DocRef, signer?: Signer): Promi
   if (!data) return null;
   const tpl = Buffer.from(await data.arrayBuffer());
   if (ref.kind === "nota") return serializeDocx(tpl, [emptyPara()]); // folha em branco com o cabeçalho do NUPS
-  if (ref.kind === "fisc") return buildFiscDoc(tpl, rec); // usa o cabeçalho e a página do modelo de acompanhamento
+  if (ref.kind === "fisc") return buildFiscDoc(tpl, rec, await loadSections("fisc")); // usa o cabeçalho e a página do modelo de acompanhamento
   if (ref.kind === "acomp") {
     return fillDocx(tpl, acompValues(rec.answers, signer ?? { name: "", registry: "" }, rec.meta.acompData?.[String(ref.n)] ?? {}));
   }

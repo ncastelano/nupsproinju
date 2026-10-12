@@ -380,7 +380,7 @@ const iso = (v: string) => { const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); ret
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
 // Monta o relatório da fiscalização (mesmo padrão do Cadastro inicial e do Acompanhamento).
-function parasOf(answers: Ans, now = new Date()): Para[] {
+function parasOf(answers: Ans, sections: FSection[] = FISC_SECTIONS, now = new Date()): Para[] {
   const font = "Times New Roman";
   const mk = (runs: Run[], o: { jc?: Para["jc"]; line?: string; before?: string; after?: string; left?: string; first?: string } = {}): Para => ({
     jc: o.jc, font, sz: 24,
@@ -398,7 +398,7 @@ function parasOf(answers: Ans, now = new Date()): Para[] {
     blank(),
   ];
 
-  for (const sec of FISC_SECTIONS) {
+  for (const sec of sections) {
     const items: Para[] = [];
     for (const qn of sec.questions) {
       if (!visible(qn, get)) continue;
@@ -434,6 +434,6 @@ function parasOf(answers: Ans, now = new Date()): Para[] {
   return out;
 }
 
-export async function buildFiscDoc(base: Buffer, rec: Rec): Promise<Buffer> {
-  return serializeDocx(base, parasOf(rec.answers));
+export async function buildFiscDoc(base: Buffer, rec: Rec, sections: FSection[] = FISC_SECTIONS): Promise<Buffer> {
+  return serializeDocx(base, parasOf(rec.answers, sections));
 }

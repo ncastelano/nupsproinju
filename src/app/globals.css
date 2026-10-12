@@ -884,3 +884,15 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 .gf-grid tbody th { text-align: left; font-weight: 500; }
 .gf-grid td .gf-circle { display: inline-block; }
 @media (max-width: 640px) { .gf { margin: -10px -10px -20px; padding: 10px; } .gf-card { padding: 14px; } .gf-title h2 { font-size: 20px; } }
+
+/* Editor do questionário */
+.gf-edit-row { display: flex; gap: 8px; align-items: center; }
+.gf-edit-row input { flex: 1; font-size: 18px; }
+.gf-edit { display: grid; gap: 10px; }
+.gf-edit textarea, .gf-edit input, .gf-edit select { font-size: 14.5px; }
+.gf-edit-opts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.gf-edit-opts select { width: auto; flex: 0 1 240px; }
+.gf-edit-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gf-edit-btns { display: flex; gap: 6px; }
+.gf-edit-btns .icon { padding: 8px 10px; }
+.gf-edit code { background: var(--brand-soft); color: var(--brand-dark); padding: 1px 6px; border-radius: 6px; font-size: 12.5px; }

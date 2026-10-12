@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { REPORT_BUCKET, markersOf } from "@/lib/report";
 import { cleanBlocks, cleanComments, parseDocx, serializeDocx, type DocData } from "@/lib/docxDoc";
 import { MODELS, knownMarkers, readInfoFile, writeInfoFile, type ModelKind } from "@/lib/models";
+import { FORM_KEY } from "@/lib/forms";
+import { INICIAL_TYPES, cleanSections, storeSections } from "@/lib/questionnaires";
 
 // Troca o arquivo-base de um tipo de relatório (só o administrador). A versão anterior fica guardada.
 export async function replaceModel(_: string | null, form: FormData): Promise<string> {
@@ -91,4 +93,47 @@ export async function saveModelDoc(
   await writeInfoFile(info);
   revalidatePath("/cadastro-inicial"); revalidatePath("/acompanhamento"); revalidatePath("/fiscalizacoes");
   return { ok: true, msg: "Modelo salvo. Os próximos relatórios usam esta versão." };
+}
+
+// Salva o questionário editado (somente administrador): Acompanhamento e Fiscalizações ficam em arquivo;
+// o Cadastro inicial atualiza a tabela de perguntas.
+export async function saveQuestionnaire(kind: ModelKind, input: unknown): Promise<{ ok: boolean; msg: string }> {
+  await requireAdmin();
+  const sections = cleanSections(input);
+  if (!sections || sections.every((s) => s.questions.length === 0)) {
+    return { ok: false, msg: "O questionário precisa ter pelo menos uma pergunta." };
+  }
+
+  if (kind === "inicial") {
+    const admin = createAdminClient();
+    const { data: existing } = await admin.from("form_questions").select("id, key").eq("form_key", FORM_KEY).is("owner_id", null);
+    const byKey = new Map((existing ?? []).map((r) => [r.key as string, r.id as string]));
+    const kept = new Set<string>();
+    let n = 0;
+    for (const sec of sections) {
+      for (const q of sec.questions) {
+        n++;
+        kept.add(q.key);
+        const t = INICIAL_TYPES.includes(q.type) ? q.type : "text";
+        const row = {
+          form_key: FORM_KEY, key: q.key, position: n * 10, section: sec.title, label: q.label, help: q.help ?? "",
+          type: t === "radio" && q.other ? "radio_other" : t,
+          options: ["select", "radio", "checkbox"].includes(t) ? [...(q.options ?? []), ...(t === "checkbox" && q.other ? ["Outro"] : [])] : [],
+          required: !!q.required, active: true,
+        };
+        const id = byKey.get(q.key);
+        const r = id ? await admin.from("form_questions").update(row).eq("id", id) : await admin.from("form_questions").insert(row);
+        if (r.error) return { ok: false, msg: "Não foi possível salvar o questionário. Tente de novo." };
+      }
+    }
+    const gone = [...byKey.entries()].filter(([k]) => !kept.has(k)).map(([, id]) => id);
+    if (gone.length) await admin.from("form_questions").delete().in("id", gone);
+  } else {
+    // a lista de profissionais vem do cadastro de pessoas, não do questionário
+    for (const sec of sections) for (const q of sec.questions) if (q.key === "prof") q.options = [];
+    const r = await storeSections(kind, sections);
+    if (r.error) return { ok: false, msg: "Não foi possível salvar o questionário. Tente de novo." };
+  }
+  revalidatePath("/cadastro-inicial"); revalidatePath("/acompanhamento"); revalidatePath("/fiscalizacoes");
+  return { ok: true, msg: "Questionário salvo. Já vale para os próximos preenchimentos." };
 }

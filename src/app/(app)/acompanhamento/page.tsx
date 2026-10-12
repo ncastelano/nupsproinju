@@ -1,7 +1,6 @@
 import { requireMember } from "@/lib/auth";
 import { ModelPanel } from "@/components/ModelPanel";
-import { previewOf } from "@/lib/preview";
-import { ACOMP_SECTIONS } from "@/lib/acomp";
+import { loadSections } from "@/lib/questionnaires";
 import { MODELS, modelInfo } from "@/lib/models";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
@@ -16,6 +15,7 @@ import { DiscardDraft } from "@/components/DiscardDraft";
 // Formulário do Relatório de acompanhamento e reavaliação. Ao salvar, o relatório aparece em Processos.
 export default async function AcompanhamentoPage({ searchParams }: { searchParams: Promise<{ processo?: string; n?: string }> }) {
   const me = await requireMember();
+  const acompSections = await loadSections("acomp");
   const { processo, n: nRaw } = await searchParams;
   const { data } = await createAdminClient().from("intake_records")
     .select("id, meta:answers->_meta, nomes:answers->nomes->>value, numero:answers->processo->>value")
@@ -49,7 +49,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
         <ModelPanel
           kind="acomp" reportTitle={MODELS.acomp.title} note={MODELS.acomp.note} info={await modelInfo("acomp")}
           formTitle="ACOMPANHAMENTO E REAVALIAÇÃO DA SITUAÇÃO DA CRIANÇA/ADOLESCENTE ACOLHIDO" formDescription="Instrumento destinado ao registro periódico do acompanhamento e da reavaliação da situação da criança, adolescente ou grupo de irmãos em medida de acolhimento, com ênfase nas alterações ocorridas desde a avaliação anterior, nas intervenções realizadas e nas perspectivas atuais de encaminhamento."
-          sections={previewOf(ACOMP_SECTIONS.map((sec) => ({ ...sec, questions: sec.questions.map((q) => (q.key === "prof" ? { ...q, options: proOptions } : q)) })))} questionnaireNote={"Perguntas do formulário de acompanhamento e reavaliação (Google Forms do NUPS). As respostas preenchem o arquivo-base ao lado."}
+          sections={acompSections.map((sec) => ({ ...sec, questions: sec.questions.map((q) => (q.key === "prof" ? { ...q, options: proOptions } : q)) }))} questionnaireNote={"Perguntas do formulário de acompanhamento e reavaliação (Google Forms do NUPS). As respostas preenchem o arquivo-base ao lado."}
         />
       )}
       <div className="card q">
@@ -74,7 +74,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
         key={`${rec?.id ?? "novo"}-${draftN ?? ""}`} id={rec?.id ?? ""} n={draftN}
         initial={draftN !== null ? rec?.meta.acompData?.[String(draftN)] ?? {} : {}} redo={false}
         previous={rec ? previousTexts(rec.answers, rec.meta, n) : {}}
-        proOptions={proOptions} signature={signature}
+        proOptions={proOptions} signature={signature} sections={acompSections}
       />
       {rec && draftN !== null && <div><DiscardDraft kind="acompanhamento" id={rec.id} n={draftN} /></div>}
     </div>
