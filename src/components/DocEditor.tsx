@@ -6,8 +6,9 @@ import {
   Italic, Loader2, MessageSquarePlus, MessageSquareText, Pencil, Plus, RotateCcw, Save, Table2, Trash2, Underline, X,
 } from "lucide-react";
 import { isTable, type Block, type DocComment, type DocData, type ImgData, type Para, type Run } from "@/lib/docxDoc";
-import { resetDocument, saveDocument } from "@/app/(app)/cadastrados/[id]/documento/actions";
+import { fetchLiveDoc, resetDocument, saveDocument } from "@/app/(app)/cadastrados/[id]/documento/actions";
 import { pingEditing } from "@/app/(app)/presence-actions";
+import { merge3, sigBlock } from "@/lib/liveMerge";
 
 type Cell = { html: string; jc?: Para["jc"]; sp: Record<string, string>; ind: Record<string, string>; sz: number; font: string };
 type PItem = { uid: number; kind: "p"; jc?: Para["jc"]; sp: Record<string, string>; ind: Record<string, string>; sz: number; font: string; html: string; img?: ImgData };
@@ -171,6 +172,11 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const [pageH, setPageH] = useState(0);
   const [gaps, setGaps] = useState<number[]>([]);
   const base = useRef(version);
+  const baseBlocks = useRef<Block[]>(data.blocks); // o que está salvo (como o servidor lê), base da mescla
+  const editSeq = useRef(0);                       // conta as edições, para saber se algo mudou durante um salvamento
+  const liveBusy = useRef(false);
+  const dirtyRef = useRef(false);
+  const tickRef = useRef<(mergeOnly?: boolean) => Promise<boolean>>(async () => false);
   const [others, setOthers] = useState<string[]>([]); // quem mais está editando este documento agora
   const [stale, setStale] = useState(false);          // outra pessoa salvou uma versão mais nova
   const watch = !bare && (docRef.kind === "inicial" || docRef.kind === "acomp" || docRef.kind === "fisc");
@@ -189,14 +195,38 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
         const r = await pingEditing(id, docRef, canEditProp && editing);
         if (!alive) return;
         setOthers(r.others);
-        if (r.version && base.current && r.version !== base.current) setStale(true);
+        if (r.version && base.current && r.version !== base.current && !(canEditProp && editing)) {
+          // só olhando: atualiza sozinho quando alguém salva uma versão nova
+          if (!dirtyRef.current) router.refresh(); else setStale(true);
+        }
       } catch { /* sem rede: tenta de novo no próximo ciclo */ }
     };
     tick();
-    const t = setInterval(tick, editing ? 20_000 : 30_000);
+    const t = setInterval(tick, editing ? 10_000 : 6_000);
     return () => { alive = false; clearInterval(t); if (canEditProp && editing) pingEditing(id, docRef, false).catch(() => {}); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watch, editing, canEditProp, id]);
+
+  // edição ao mesmo tempo: a cada 3 s traz o que os outros salvaram (mesclando por parágrafo) e salva o que mudou
+  const live = watch && canEditProp && editing;
+  const flagKey = `doc-editing:${id}:${docRef.kind === "acomp" ? `acomp:${docRef.n}` : docRef.kind}`;
+  const setFlag = (on: boolean) => { try { if (on) sessionStorage.setItem(flagKey, String(Date.now())); else sessionStorage.removeItem(flagKey); } catch { /* sem armazenamento */ } };
+  useEffect(() => {
+    if (!live) return;
+    setFlag(true);
+    const t = setInterval(() => { setFlag(true); void tickRef.current(); }, 3_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live]);
+  // a página se renovou sozinha (ex.: gravou um áudio) enquanto editava: volta para a edição
+  useEffect(() => {
+    if (!watch || !canEditProp || !viewFirst) return;
+    try {
+      const at = Number(sessionStorage.getItem(flagKey));
+      if (at && Date.now() - at < 8_000) setEditing(true);
+    } catch { /* sem armazenamento */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } };
@@ -343,7 +373,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length, margins]);
 
-  const touch = () => { setDirty(true); setMsg(null); schedule(); };
+  const touch = () => { editSeq.current++; setDirty(true); setMsg(null); schedule(); };
   const idxOf = (uid: number) => items.findIndex((x) => x.uid === uid);
   const key = (uid: number) => `p${uid}`;
   const ckey = (uid: number, r: number, c: number) => `t${uid}:${r}:${c}`;
@@ -601,10 +631,57 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     return { blocks, comments: comments.filter((c) => used.has(c.id)) };
   }
 
+  // devolve true se trouxe alterações de outra pessoa para a tela
+  async function liveTick(mergeOnly = false): Promise<boolean> {
+    if (liveBusy.current || !watch) return false;
+    liveBusy.current = true;
+    try {
+      const r = await fetchLiveDoc(id, docRef, base.current);
+      if (r.ok && !r.same && r.blocks && r.version) {
+        const theirs = r.blocks;
+        const mine = collect();
+        const m = merge3(baseBlocks.current, mine.blocks, theirs);
+        const merged = m.picks.map((p) => (p.from === "mine" ? mine.blocks[p.i] : theirs[p.i]));
+        const needSave = merged.length !== theirs.length || merged.some((b, k) => sigBlock(b) !== sigBlock(theirs[k]));
+        setItems(m.picks.map((p) => (p.from === "mine" ? items[p.i] : toItem(theirs[p.i]))));
+        const have = new Set(comments.map((c) => c.id));
+        setComments([...comments, ...(r.comments ?? []).filter((c) => !have.has(c.id))]);
+        baseBlocks.current = theirs;
+        base.current = r.version;
+        setStale(false);
+        if (needSave) setDirty(true);
+        if (m.conflicts) setMsg({ ok: false, text: "Outra pessoa alterou o mesmo trecho que você. Os dois textos foram mantidos: confira o parágrafo." });
+        return true;
+      }
+      if (!mergeOnly && dirtyRef.current && !busy) {
+        const seq = editSeq.current;
+        const res = await saveDocument(id, { ...collect(), page: margins }, base.current, docRef as never, true);
+        if (res.ok) {
+          if (res.version) base.current = res.version;
+          if (res.blocks) baseBlocks.current = res.blocks;
+          if (editSeq.current === seq) setDirty(false);
+        }
+      }
+    } catch { /* sem rede: tenta de novo no próximo ciclo */ }
+    finally { liveBusy.current = false; }
+    return false;
+  }
+  tickRef.current = liveTick;
+  dirtyRef.current = dirty;
+
   async function save() {
     setBusy(true);
     setMsg(null);
     try {
+      if (watch && !onSave) {
+        // antes de salvar, junta o que outras pessoas salvaram enquanto você escrevia
+        while (liveBusy.current) await new Promise((r) => setTimeout(r, 100));
+        if (await liveTick(true)) {
+          setMsg({ ok: false, text: "Havia alterações de outra pessoa. Elas foram juntadas ao seu texto: confira e salve de novo." });
+          setBusy(false);
+          return;
+        }
+      }
       const payload = { ...collect(), page: margins };
       const r = onSave ? await onSave(payload) : await saveDocument(id, payload, base.current, docRef as never);
       if (r.ok) {
@@ -613,6 +690,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
         setStale(false);
         if (docRef.kind === "modelo") { setMsg({ ok: true, text: r.msg }); setBusy(false); onSaved?.(); return; } // o modelo continua aberto
         if (docRef.kind === "nota") { setMsg({ ok: true, text: "Nota salva." }); setBusy(false); return; } // a nota continua aberta
+        setFlag(false);
         router.push(backHref);
         return;
       }
@@ -652,12 +730,12 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
         {docRef.kind !== "nota" && docRef.kind !== "modelo" && (confirmLeave ? (
           <>
             <span style={{ fontSize: 13 }}>Há alterações não salvas. {viewFirst ? "Descartar?" : "Sair mesmo assim?"}</span>
-            <button className="danger" onClick={() => { setDirty(false); if (viewFirst) window.location.reload(); else router.push(backHref); }}>{viewFirst ? "Descartar alterações" : "Sair sem salvar"}</button>
+            <button className="danger" onClick={() => { setDirty(false); setFlag(false); if (viewFirst) window.location.reload(); else router.push(backHref); }}>{viewFirst ? "Descartar alterações" : "Sair sem salvar"}</button>
             <button className="ghost" onClick={() => setConfirmLeave(false)}>Continuar editando</button>
           </>
         ) : (
-          <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : viewFirst ? setEditing(false) : router.push(backHref))}>
-            <ArrowLeft size={16} /> {viewFirst ? "Cancelar edição" : "Voltar"}
+          <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : viewFirst ? (setFlag(false), setEditing(false)) : router.push(backHref))}>
+            <ArrowLeft size={16} /> {viewFirst ? (watch ? "Sair da edição" : "Cancelar edição") : "Voltar"}
           </button>
         ))}
         {canEdit && (<>

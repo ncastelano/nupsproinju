@@ -70,7 +70,9 @@ async function note(id: string, text: string, doc: string, changes: HistoryEntry
 const label = (ref: DocRef) => (ref.kind === "acomp" ? `o acompanhamento nº ${ref.n}` : ref.kind === "fisc" ? "o relatório da fiscalização" : "o documento do processo");
 
 // Salva o documento editado na tela. "base" é a versão que a pessoa abriu: se outra pessoa salvou depois, avisa.
-export async function saveDocument(id: string, paras: unknown, base: string, refIn?: unknown): Promise<{ ok: boolean; msg: string; version?: string }> {
+// quiet: salvamento automático da edição ao mesmo tempo (não renova as páginas, para não recarregar o editor de quem digita).
+export type SaveOut = { ok: boolean; msg: string; version?: string; blocks?: Block[]; comments?: DocComment[] };
+export async function saveDocument(id: string, paras: unknown, base: string, refIn?: unknown, quiet = false): Promise<SaveOut> {
   const ref = refOf(refIn);
   const me = await requireMember();
   const rec = await loadRecord(id, formOf(ref));
@@ -104,11 +106,31 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
     // guarda quando a nota foi atualizada pela última vez
     await saveRecord(rec, { answers: { ...rec.answers, atualizada: { label: "Atualizada", value: new Date().toISOString() } } }, rec.meta);
   }
+  const version = (await docVersion(id, ref)) ?? "";
+  if (quiet) {
+    const back = await parseDocx(buf);
+    return { ok: true, msg: "Salvo.", version, blocks: back.blocks, comments: back.comments };
+  }
   revalidatePath(`/cadastrados/${id}`);
   revalidatePath("/processos");
   revalidatePath("/acompanhamento");
   revalidatePath("/fiscalizacoes");
-  return { ok: true, msg: "Documento salvo.", version: (await docVersion(id, ref)) ?? "" };
+  return { ok: true, msg: "Documento salvo.", version };
+}
+
+// Versão salva agora (para a edição ao mesmo tempo): só devolve o conteúdo se mudou desde "have".
+export async function fetchLiveDoc(id: string, refIn: unknown, have: string):
+  Promise<{ ok: boolean; same?: boolean; version?: string; blocks?: Block[]; comments?: DocComment[] }> {
+  const ref = refOf(refIn);
+  const me = await requireMember();
+  const rec = await loadRecord(id, formOf(ref));
+  if (!rec) return { ok: false };
+  const version = (await docVersion(id, ref)) ?? "";
+  if (version && version === have) return { ok: true, same: true, version };
+  const doc = await loadProcessDoc(rec, ref, me);
+  if (!doc) return { ok: false };
+  const data = await parseDocx(doc.buf);
+  return { ok: true, version: doc.version, blocks: data.blocks, comments: data.comments };
 }
 
 // Descarta as edições e gera o documento de novo a partir do modelo.
