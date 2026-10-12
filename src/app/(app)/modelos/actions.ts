@@ -74,7 +74,7 @@ export async function saveModelDoc(
   const st = createAdminClient().storage.from(REPORT_BUCKET);
   const path = MODELS[kind].path;
   const { data: old } = await st.download(path);
-  if (!old) return { ok: false, msg: "Nenhum arquivo-base enviado ainda. Use “Importar arquivo”." };
+  if (!old) return { ok: false, msg: "Nenhum arquivo-base enviado ainda. Use “Enviar modelo”." };
   const oldBuf = Buffer.from(await old.arrayBuffer());
   await st.upload(`anteriores/${kind}-${new Date().toISOString().replace(/[:.]/g, "-")}.docx`, oldBuf, { contentType: "application/octet-stream" });
 

@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, FileText, ListChecks, Loader2, Lock, Pencil, Upload, X } from "lucide-react";
+import { FileText, ListChecks, Loader2, Lock, Pencil, Upload, X } from "lucide-react";
 import { DocEditor } from "@/components/DocEditor";
 import { getModelDoc, replaceModel, saveModelDoc } from "@/app/(app)/modelos/actions";
 import type { DocData } from "@/lib/docxDoc";
@@ -92,18 +92,17 @@ export function ModelPanel({
           <>
             {info && !edit && <button type="button" onClick={() => setEdit(true)}><Pencil size={16} /> Editar</button>}
             {info && edit && <button type="button" className="ghost" onClick={() => setEdit(false)}>Concluir edição</button>}
-            {info && <a href={`/modelos/${kind}/baixar`}><button type="button" className="ghost"><Download size={16} /> Exportar</button></a>}
             <form ref={form} action={action}>
               <input type="hidden" name="kind" value={kind} />
               <label className="upload-btn ghost-upload">
-                {pending ? <Loader2 size={16} className="spin" /> : <Upload size={16} />} {pending ? "Enviando..." : "Importar arquivo"}
+                {pending ? <Loader2 size={16} className="spin" /> : <Upload size={16} />} {pending ? "Enviando..." : "Enviar modelo"}
                 <input type="file" name="file" accept=".docx" hidden disabled={pending} onChange={(e) => { if (e.target.files?.length) form.current?.requestSubmit(); }} />
               </label>
             </form>
           </>
         )}
       >
-        <p className="help" style={{ margin: "0 0 10px" }}>{note} {edit ? "Modo de edição: ajuste o texto e clique em Salvar. Mantenha os campos {{ASSIM}} entre chaves duplas." : "Somente leitura: use “Editar” para alterar ou “Importar arquivo” para trocar por um .docx."}</p>
+        <p className="help" style={{ margin: "0 0 10px" }}>{note} {edit ? "Modo de edição: ajuste o texto e clique em Salvar. Mantenha os campos {{ASSIM}} entre chaves duplas." : "Somente leitura: use “Editar” para alterar ou “Enviar modelo” para trocar por um .docx."}</p>
         {ok && <p className="doc-ok">{ok}</p>}
         {msg && !ok && <p className="error">{msg}</p>}
         {err && <p className="error">{err}</p>}
