@@ -24,7 +24,7 @@ export function ReportSearch({ value }: { value: string }) {
       <Search size={16} />
       <input
         type="search" value={text} onChange={(e) => setText(e.target.value)}
-        placeholder="Buscar por tipo, pessoa, data, nome ou qualquer texto dos arquivos..."
+        placeholder="Buscar processo, ou nome de pessoas, ou frase do texto dos arquivos"
         aria-label="Buscar nos relatórios"
       />
       {text && <button type="button" className="ghost icon" aria-label="Limpar busca" onClick={() => setText("")}><X size={14} /></button>}
