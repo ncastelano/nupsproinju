@@ -1,13 +1,45 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { UserPlus, X } from "lucide-react";
 
-export function NavTabs({ userId, isAdmin, slug }: { userId: string; isAdmin: boolean; slug: string }) {
+export function NavTabs({ userId, isAdmin, slug, pending = 0 }: { userId: string; isAdmin: boolean; slug: string; pending?: number }) {
   const path = usePathname();
   const nav = useRef<HTMLElement>(null);
+  const [n, setN] = useState(pending);
+  const [toast, setToast] = useState<string | null>(null);
+  const last = useRef(pending);
+
   // a aba atual fica visível na rolagem
   useEffect(() => { nav.current?.querySelector<HTMLElement>("button.on")?.scrollIntoView({ inline: "center", block: "nearest" }); }, [path]);
+
+  // número do servidor (muda ao aprovar/recusar)
+  useEffect(() => { setN(pending); last.current = pending; }, [pending]);
+
+  // administradores: confere de tempos em tempos se chegou uma nova solicitação de acesso
+  useEffect(() => {
+    if (!isAdmin) return;
+    let live = true;
+    const check = async () => {
+      try {
+        const r = await fetch("/usuarios/pendentes", { cache: "no-store" });
+        if (!r.ok || !live) return;
+        const { n: now } = (await r.json()) as { n: number };
+        if (now > last.current) {
+          const novos = now - last.current;
+          setToast(novos === 1 ? "Nova solicitação de acesso aguardando aprovação." : `${novos} novas solicitações de acesso aguardando aprovação.`);
+        }
+        last.current = now;
+        setN(now);
+      } catch { /* sem rede: tenta de novo depois */ }
+    };
+    const t = setInterval(check, 30000);
+    const onVis = () => { if (document.visibilityState === "visible") void check(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { live = false; clearInterval(t); document.removeEventListener("visibilitychange", onVis); };
+  }, [isAdmin]);
+
   const items = [
     { href: `/${slug}`, label: "Meu perfil", on: path === `/${slug}` || path.startsWith("/editar-perfil") },
     { href: "/processos", label: "Relatórios", on: path.startsWith("/processos") || (path.startsWith("/cadastrados") && !path.includes("/acompanhamento")) || path.startsWith("/documentos") },
@@ -15,8 +47,9 @@ export function NavTabs({ userId, isAdmin, slug }: { userId: string; isAdmin: bo
     { href: "/acompanhamento", label: "Acompanhamento", on: path.startsWith("/acompanhamento") || /^\/cadastrados\/[^/]+\/acompanhamento/.test(path) },
     { href: "/fiscalizacoes", label: "Fiscalizações", on: path.startsWith("/fiscalizacoes") },
     { href: "/bloco-de-notas", label: "Bloco de notas", on: path.startsWith("/bloco-de-notas") },
-    ...(isAdmin ? [{ href: "/usuarios", label: "Usuários", on: path.startsWith("/usuarios") }] : []),
-  ];
+    ...(isAdmin ? [{ href: "/usuarios", label: "Usuários", on: path.startsWith("/usuarios"), badge: n }] : []),
+  ] as { href: string; label: string; on: boolean; badge?: number }[];
+
   return (
     <header className="app-header">
       <div className="inner">
@@ -24,11 +57,22 @@ export function NavTabs({ userId, isAdmin, slug }: { userId: string; isAdmin: bo
         <nav ref={nav} className="subtabs main-nav scroll-nav" aria-label="Menu principal">
           {items.map((i) => (
             <Link key={i.href} href={i.href}>
-              <button type="button" className={i.on ? "on" : ""}>{i.label}</button>
+              <button type="button" className={i.on ? "on" : ""}>
+                {i.label}
+                {!!i.badge && i.badge > 0 && <span className="tab-badge" aria-label={`${i.badge} pedidos de acesso aguardando`}>{i.badge}</span>}
+              </button>
             </Link>
           ))}
         </nav>
       </div>
+      {toast && (
+        <div className="toast-access" role="status">
+          <UserPlus size={16} />
+          <span>{toast}</span>
+          <Link href="/usuarios" onClick={() => setToast(null)}>Ver</Link>
+          <button type="button" className="ghost icon" aria-label="Fechar aviso" onClick={() => setToast(null)}><X size={14} /></button>
+        </div>
+      )}
     </header>
   );
 }
