@@ -25,10 +25,7 @@ export function ScheduleVisit({ people, me }: { people: string[]; me: string }) 
       </div>
       <label className="field">
         <span>Unidade a fiscalizar</span>
-        <select name="unit" defaultValue="" required>
-          <option value="" disabled>Selecione...</option>
-          {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
-        </select>
+        <ChoiceField name="unit" title="Unidade a fiscalizar" options={UNIDADES} />
       </label>
       <label className="field">
         <span>Data da visita</span>
@@ -36,7 +33,7 @@ export function ScheduleVisit({ people, me }: { people: string[]; me: string }) 
       </label>
       <div className="field">
         <span style={{ color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>Profissional(is) responsável(is)</span>
-        <ChoiceField name="professionals" multiple options={people} initial={people.includes(me) ? [me] : []} placeholder="Selecione os profissionais..." />
+        <ChoiceField name="professionals" title="Profissional(is) responsável(is)" multiple options={people} initial={people.includes(me) ? [me] : []} placeholder="Selecione os profissionais..." />
       </div>
       {msg && msg !== "ok" && <p className="error">{msg}</p>}
       <div className="row">

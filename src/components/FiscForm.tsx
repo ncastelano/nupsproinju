@@ -14,17 +14,12 @@ export function QInput({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v
   if (q.type === "number") return <input type="number" min={0} name={q.key} value={v} onChange={(e) => set(q.key, e.target.value)} />;
   if (q.type === "text") return <input type="text" name={q.key} value={v} onChange={(e) => set(q.key, e.target.value)} />;
   if (q.type === "select")
-    return (
-      <select name={q.key} value={v} onChange={(e) => set(q.key, e.target.value)}>
-        <option value="" disabled>Selecione...</option>
-        {(q.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-    );
+    return <ChoiceField key={q.key} name={q.key} title={q.label} options={q.options ?? []} initial={v ? [v] : []} onChange={(sel) => set(q.key, sel[0] ?? "")} />;
   if (q.type === "radio") {
     const isOther = v.startsWith(OTHER);
     return (
       <ChoiceField
-        key={q.key} name={q.key} other={!!q.other} options={q.options ?? []}
+        key={q.key} name={q.key} title={q.label} other={!!q.other} options={q.options ?? []}
         initial={isOther ? ["Outro"] : v ? [v] : []} initialOther={isOther ? v.slice(OTHER.length) : ""}
         onChange={(sel, text) => set(q.key, sel[0] === "Outro" ? OTHER + text : sel[0] ?? "")}
       />
@@ -35,7 +30,7 @@ export function QInput({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v
     const otherItem = picked.find((p) => p.startsWith(OTHER));
     return (
       <ChoiceField
-        key={q.key} name={q.key} multiple other={!!q.other} options={q.options ?? []}
+        key={q.key} name={q.key} title={q.label} multiple other={!!q.other} options={q.options ?? []}
         initial={[...picked.filter((p) => !p.startsWith(OTHER)), ...(otherItem !== undefined ? ["Outro"] : [])]}
         initialOther={otherItem?.slice(OTHER.length) ?? ""}
         onChange={(sel, text) => set(q.key, [...sel.filter((x) => x !== "Outro"), ...(sel.includes("Outro") ? [OTHER + text] : [])].join("; "))}
@@ -50,10 +45,10 @@ export function QInput({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v
         return (
           <div key={k} className="fisc-row line">
             <span className="fisc-row-label">{r}</span>
-            <select name={k} value={vals[k] ?? ""} onChange={(e) => set(k, e.target.value)}>
-              <option value="">Selecione...</option>
-              {(q.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
+            <ChoiceField
+              name={k} title={`${q.label} — ${r}`} options={q.options ?? []}
+              initial={vals[k] ? [vals[k]] : []} onChange={(sel) => set(k, sel[0] ?? "")}
+            />
           </div>
         );
       })}

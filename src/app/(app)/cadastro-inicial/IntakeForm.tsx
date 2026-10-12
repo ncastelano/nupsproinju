@@ -17,19 +17,14 @@ export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
   if (q.type === "date")
     return <input name={name} type="date" required={q.required} defaultValue={initial} />;
   if (q.type === "select")
-    return (
-      <select name={name} required={q.required} defaultValue={initial}>
-        <option value="" disabled>Selecione...</option>
-        {q.options.map((o, i) => <option key={`${o}-${i}`} value={o}>{o}</option>)}
-      </select>
-    );
+    return <ChoiceField name={name} title={q.label} options={q.options} initial={initial ? [initial] : []} />;
   if (q.type === "checkbox") {
     const picked = initial ? initial.split("; ") : [];
     const otherItem = picked.find((p) => p.startsWith(OTHER_PREFIX));
     const hasOther = q.options.includes("Outro");
     return (
       <ChoiceField
-        name={name} multiple other={hasOther} options={q.options.filter((o) => o !== "Outro")}
+        name={name} title={q.label} multiple other={hasOther} options={q.options.filter((o) => o !== "Outro")}
         initial={[...picked.filter((p) => !p.startsWith(OTHER_PREFIX)), ...(otherItem !== undefined ? ["Outro"] : [])]}
         initialOther={otherItem?.slice(OTHER_PREFIX.length) ?? ""}
       />
@@ -39,7 +34,7 @@ export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
     const isOther = q.type === "radio_other" && initial.startsWith(OTHER_PREFIX);
     return (
       <ChoiceField
-        name={name} other={q.type === "radio_other"} singleOtherValue="__outro__" options={q.options}
+        name={name} title={q.label} other={q.type === "radio_other"} singleOtherValue="__outro__" options={q.options}
         initial={isOther ? ["Outro"] : initial ? [initial] : []}
         initialOther={isOther ? initial.slice(OTHER_PREFIX.length) : ""}
       />

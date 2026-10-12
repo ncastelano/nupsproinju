@@ -44,7 +44,7 @@ export function AcompForm({
                 </details>
               )}
               {q.key === "prof" ? (
-                <ChoiceField name="prof" multiple options={proOptions} initial={proInitial} placeholder="Selecione os profissionais..." />
+                <ChoiceField name="prof" title={q.label} multiple options={proOptions} initial={proInitial} placeholder="Selecione os profissionais..." />
               ) : (
                 <QInput q={q} vals={vals} set={set} />
               )}
