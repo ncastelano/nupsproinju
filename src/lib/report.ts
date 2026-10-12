@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import type { Ans } from "@/lib/records";
+import { acompTexts } from "@/lib/acomp";
 
 // Modelo do relatório (.docx) guardado no Supabase Storage.
 export const REPORT_BUCKET = "modelos";
@@ -176,7 +177,8 @@ export function acompValues(
   a: Ans, signer: { name: string; registry: string }, answers: Record<string, string> = {}, now = new Date(),
 ): Record<string, string> {
   const base = reportValues(a, now);
-  const mine = (k: string) => (answers[k] ?? "").trim() || TODO;
+  const t = acompTexts(answers);
+  const mine = (k: string) => (t[k] ?? "").trim() || TODO;
   return {
     PROCESSO: base.PROCESSO,
     CRIANCAS: base.NOME_ACOLHIDO,
@@ -187,7 +189,7 @@ export function acompValues(
     DATA_ACOLHIMENTO: base.DATA_ACOLHIMENTO,
     MODALIDADE: base.MODALIDADE,
     UNIDADE: base.UNIDADE,
-    PROFISSIONAL: base.PROFISSIONAIS,
+    PROFISSIONAL: t.PROFISSIONAL || base.PROFISSIONAIS,
     PROCEDIMENTOS: mine("PROCEDIMENTOS"),
     COMPARATIVO_ACOLHIMENTO: mine("COMPARATIVO_ACOLHIMENTO"),
     COMPARATIVO_EDUCACAO: mine("COMPARATIVO_EDUCACAO"),
@@ -198,11 +200,12 @@ export function acompValues(
     SITUACAO_GENITORA: mine("SITUACAO_GENITORA"),
     SITUACAO_GENITOR: mine("SITUACAO_GENITOR"),
     SITUACAO_FAMILIA_EXTENSA: mine("SITUACAO_FAMILIA_EXTENSA"),
-    INFORMACOES_FAMILIARES: mine("INFORMACOES_FAMILIARES"),
+    // pergunta opcional do formulário: sem resposta, não deixa marcador pendente
+    INFORMACOES_FAMILIARES: (t.INFORMACOES_FAMILIARES ?? "").trim() || (answers.familia_info !== undefined || answers.genitora ? "Sem informações adicionais no período." : TODO),
     ACOMPANHAMENTO_PENDENCIAS: mine("ACOMPANHAMENTO_PENDENCIAS"),
     PENDENCIAS_PROXIMO_PERIODO: mine("PENDENCIAS_PROXIMO_PERIODO"),
     ANALISE_PSICOSSOCIAL: mine("ANALISE_PSICOSSOCIAL"),
-    LOCAL_DATA: base.LOCAL_DATA,
+    LOCAL_DATA: t.LOCAL_DATA || base.LOCAL_DATA,
     ASSINATURA: [signer.name, signer.registry].filter(Boolean).join(" – "),
   };
 }

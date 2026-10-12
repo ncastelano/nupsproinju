@@ -7,7 +7,7 @@ import { saveResponses } from "@/app/(app)/fiscalizacoes/actions";
 
 type Vals = Record<string, string>;
 
-function Input({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v: string) => void }) {
+export function QInput({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v: string) => void }) {
   const v = vals[q.key] ?? "";
   if (q.type === "textarea") return <textarea name={q.key} rows={5} value={v} onChange={(e) => set(q.key, e.target.value)} />;
   if (q.type === "date") return <input type="date" name={q.key} value={v} onChange={(e) => set(q.key, e.target.value)} />;
@@ -85,7 +85,7 @@ export function FiscForm({ id, initial, redo }: { id: string; initial: Vals; red
               <div key={qn.key} className="card q">
                 <label className="q-label">{qn.label}{qn.required && <span className="req"> *</span>}</label>
                 {qn.help && <div className="help">{qn.help}</div>}
-                <Input q={qn} vals={vals} set={set} />
+                <QInput q={qn} vals={vals} set={set} />
               </div>
             ))}
           </section>

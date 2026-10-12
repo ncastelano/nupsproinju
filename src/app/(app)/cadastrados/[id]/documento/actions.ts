@@ -8,7 +8,8 @@ import { FISC_KEY } from "@/lib/fisc";
 import { NOTA_KEY } from "@/lib/notes";
 import { accessOf, loadRecord, saveRecord, type HistoryEntry } from "@/lib/records";
 import { cleanBlocks, cleanComments, isTable, parseDocx, serializeDocx, type Block, type DocComment, type Para } from "@/lib/docxDoc";
-import { ACOMP_GROUPS } from "@/lib/acomp";
+import { ACOMP_SECTIONS } from "@/lib/acomp";
+import { OTHER } from "@/lib/fisc";
 import { DOC_BUCKET, INICIAL, generateDoc, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
 
 const SAME_USER_MS = 30 * 60 * 1000;
@@ -141,9 +142,25 @@ export async function saveAcompanhamento(_: string | null, form: FormData): Prom
   if (meta.draft) return "Conclua o Cadastro inicial deste processo antes de fazer o acompanhamento.";
 
   const answers: Record<string, string> = {};
-  for (const g of ACOMP_GROUPS) for (const f of g.fields) {
-    const v = String(form.get(f.key) ?? "").replace(/\r/g, "").trim().slice(0, 8000);
-    if (v) answers[f.key] = v;
+  const signature = [me.name || me.email, me.registry].filter(Boolean).join(" - ");
+  for (const sec of ACOMP_SECTIONS) for (const q of sec.questions) {
+    let v: string;
+    if (q.key === "prof") {
+      // quem está logado sempre assina; outros profissionais podem ser marcados junto
+      const picked = form.getAll("prof").map((x) => String(x).trim()).filter(Boolean);
+      if (!picked.includes(signature)) picked.unshift(signature);
+      v = picked.join("; ");
+    } else if (q.type === "checkbox") {
+      const outro = String(form.get(`${q.key}__outro`) ?? "").trim();
+      v = form.getAll(q.key).map((x) => String(x).trim()).filter(Boolean)
+        .map((x) => (x === "Outro" ? (outro ? OTHER + outro : "") : x)).filter(Boolean).join("; ");
+    } else if (q.type === "radio" && q.other && String(form.get(q.key)) === "Outro") {
+      const outro = String(form.get(`${q.key}__outro`) ?? "").trim();
+      v = outro ? OTHER + outro : "";
+    } else v = String(form.get(q.key) ?? "").replace(/\r/g, "").trim();
+    v = v.slice(0, 8000);
+    if (q.required && !v && !draft) return `Preencha: ${q.label}`;
+    if (v) answers[q.key] = v;
   }
   meta.acompData = { ...(meta.acompData ?? {}), [String(n)]: answers };
   const at = new Date().toISOString();

@@ -776,3 +776,26 @@ a.app-brand:hover { text-decoration: none; opacity: .85; }
 .model-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .upload-btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; background: var(--brand); color: #fff; font-weight: 600; border-radius: 999px; padding: 10px 16px; }
 .upload-btn:hover { background: var(--brand-dark); }
+
+/* Modelos (só administradores): cartões e quadro de visualização */
+.model-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.model-chip { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; font-weight: 500; }
+.model-chip:hover { border-color: var(--brand); box-shadow: 0 6px 16px rgba(7,63,73,.08); }
+.model-chip .model-ico { width: 40px; height: 40px; border-radius: 12px; }
+.model-text { display: grid; gap: 2px; min-width: 0; }
+.model-text strong { font-size: 14.5px; }
+.model-text em { font-style: normal; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+dialog.model-dialog { width: min(980px, calc(100vw - 24px)); max-height: calc(100vh - 32px); border: 0; border-radius: var(--radius); padding: 0; box-shadow: 0 24px 60px rgba(7,63,73,.3); background: var(--bg); color: var(--text); overflow: hidden; }
+dialog.model-dialog[open] { display: flex; flex-direction: column; }
+dialog.model-dialog::backdrop { background: rgba(7,63,73,.5); }
+.model-dialog-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
+.model-dialog-head > div:first-child { flex: 1; }
+.model-dialog-body { overflow: auto; padding: 14px 16px 24px; }
+.q-preview { display: grid; gap: 16px; }
+.q-prev-item { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 8px; display: grid; gap: 6px; }
+.q-prev-label { font-weight: 700; }
+.q-prev-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.q-prev-cond { font-size: 12.5px; color: var(--brand-dark); background: var(--brand-soft); border-radius: 999px; padding: 2px 10px; }
+.q-prev-opts { display: flex; gap: 6px; flex-wrap: wrap; }
+.q-prev-rows { font-size: 13px; color: var(--muted); }
+dialog.model-dialog .doc-scroll { padding-bottom: 8px; }

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { CalendarClock, ClipboardCheck } from "lucide-react";
 import { requireMember } from "@/lib/auth";
-import { ModelCard } from "@/components/ModelCard";
+import { ModelPanel } from "@/components/ModelPanel";
+import { previewOf } from "@/lib/preview";
 import { MODELS, modelInfo } from "@/lib/models";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { metaOf, type RecMeta } from "@/lib/records";
-import { FISC_KEY, PROFISSIONAIS_PADRAO } from "@/lib/fisc";
+import { FISC_KEY, FISC_SECTIONS, PROFISSIONAIS_PADRAO } from "@/lib/fisc";
 import { RecordActivity } from "@/components/RecordActivity";
 import { FiscActions } from "@/components/FiscActions";
 import { ScheduleVisit } from "@/components/ScheduleVisit";
@@ -52,7 +53,10 @@ export default async function FiscalizacoesPage() {
       </div>
 
       {me.role === "admin" && (
-        <ModelCard kind="fisc" title={MODELS.fisc.title} note={MODELS.fisc.note} info={await modelInfo("fisc")} canEdit />
+        <ModelPanel
+          kind="fisc" reportTitle={MODELS.fisc.title} note={MODELS.fisc.note} info={await modelInfo("fisc")}
+          sections={previewOf(FISC_SECTIONS)} questionnaireNote={"Perguntas do formulário de Fiscalização Mensal de Unidade de Acolhimento. As respostas geram o texto do relatório."}
+        />
       )}
       <FiscForm id="" initial={{}} redo={false} />
 

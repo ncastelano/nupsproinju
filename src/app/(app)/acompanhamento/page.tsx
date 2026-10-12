@@ -1,8 +1,12 @@
 import { requireMember } from "@/lib/auth";
-import { ModelCard } from "@/components/ModelCard";
+import { ModelPanel } from "@/components/ModelPanel";
+import { previewOf } from "@/lib/preview";
+import { ACOMP_SECTIONS } from "@/lib/acomp";
 import { MODELS, modelInfo } from "@/lib/models";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { FORM_KEY } from "@/lib/forms";
+import { createClient } from "@/lib/supabase/server";
+import { loadQuestions } from "@/lib/questions";
 import { loadRecord } from "@/lib/records";
 import { previousTexts } from "@/lib/acomp";
 import { AcompForm } from "@/components/AcompForm";
@@ -27,6 +31,11 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
   const n = draftN ?? (rec ? Math.max(0, ...rec.meta.acomps.map((a) => a.n)) + 1 : 1);
   const a = rec?.answers;
 
+  // profissionais (mesma lista do Cadastro inicial) e a assinatura de quem está logado
+  const cad = await loadQuestions(await createClient(), FORM_KEY, me.id);
+  const signature = [me.name || me.email, me.registry].filter(Boolean).join(" - ");
+  const proOptions = [...new Set([...(cad.questions.find((q) => q.key === "profissional")?.options ?? []), signature].filter(Boolean))];
+
   return (
     <div className="grid" style={{ gap: 14 }}>
       <div>
@@ -37,10 +46,13 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
       </div>
 
       {me.role === "admin" && (
-        <ModelCard kind="acomp" title={MODELS.acomp.title} note={MODELS.acomp.note} info={await modelInfo("acomp")} canEdit />
+        <ModelPanel
+          kind="acomp" reportTitle={MODELS.acomp.title} note={MODELS.acomp.note} info={await modelInfo("acomp")}
+          sections={previewOf(ACOMP_SECTIONS)} questionnaireNote={"Perguntas do formulário de acompanhamento e reavaliação (Google Forms do NUPS). As respostas preenchem o arquivo-base ao lado."}
+        />
       )}
       <div className="card q">
-        <label className="q-label">Processo <span className="req">*</span></label>
+        <label className="q-label">2. Número do processo <span className="req">*</span></label>
         {options.length === 0 ? (
           <p className="error">
             Ainda não há nenhum processo. O acompanhamento é feito sobre um Cadastro inicial (o mesmo número de processo): faça o{" "}
@@ -49,7 +61,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
         ) : (
           <ProcessPicker options={options} value={rec?.id ?? ""} />
         )}
-        <span className="help">Só é possível fazer o acompanhamento de um processo que já tem Cadastro inicial.</span>
+        <span className="help">Informe o mesmo número de processo utilizado no Cadastro inicial. Só é possível fazer o acompanhamento de um processo que já tem Cadastro inicial.</span>
         {a && (
           <span className="help">
             Acompanhamento nº {n} · {a.unidade?.value ?? ""}. A identificação (nomes, nascimentos, genitores, unidade, profissionais e assinatura) vem do Cadastro inicial.
@@ -61,6 +73,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
         key={`${rec?.id ?? "novo"}-${draftN ?? ""}`} id={rec?.id ?? ""} n={draftN}
         initial={draftN !== null ? rec?.meta.acompData?.[String(draftN)] ?? {} : {}} redo={false}
         previous={rec ? previousTexts(rec.answers, rec.meta, n) : {}}
+        proOptions={proOptions} signature={signature}
       />
       {rec && draftN !== null && <div><DiscardDraft kind="acompanhamento" id={rec.id} n={draftN} /></div>}
     </div>

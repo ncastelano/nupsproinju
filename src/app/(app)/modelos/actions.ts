@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { REPORT_BUCKET, markersOf } from "@/lib/report";
+import { parseDocx, type DocData } from "@/lib/docxDoc";
 import { MODELS, knownMarkers, readInfoFile, writeInfoFile, type ModelKind } from "@/lib/models";
 
 // Troca o arquivo-base de um tipo de relatório (só o administrador). A versão anterior fica guardada.
@@ -47,4 +48,13 @@ export async function replaceModel(_: string | null, form: FormData): Promise<st
   await writeInfoFile(info);
   revalidatePath("/cadastro-inicial"); revalidatePath("/acompanhamento"); revalidatePath("/fiscalizacoes");
   return `ok:Modelo atualizado. Os próximos relatórios usam este arquivo (os já criados não mudam; use “Refazer” dentro do relatório para aplicar).${aviso}`;
+}
+
+// Documento-modelo para mostrar em leitura (somente administrador).
+export async function getModelDoc(kind: ModelKind): Promise<DocData | null> {
+  await requireAdmin();
+  if (!(kind in MODELS)) return null;
+  const { data } = await createAdminClient().storage.from(REPORT_BUCKET).download(MODELS[kind].path);
+  if (!data) return null;
+  return parseDocx(Buffer.from(await data.arrayBuffer()));
 }

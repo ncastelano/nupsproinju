@@ -139,8 +139,8 @@ const toItem = (b: Block): Item => {
   return { uid: uidSeq++, kind: "p", jc: b.jc, sp: b.sp, ind: b.ind, sz: b.sz, font: b.font, html: runsHtml(b.runs, b.font), img: b.img };
 };
 
-export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicial" }, backHref = "/processos", author = "" }: {
-  id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string;
+export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false }: {
+  id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string; bare?: boolean;
 }) {
   const [items, setItems] = useState<Item[]>(() => data.blocks.map(toItem));
   const [comments, setComments] = useState<DocComment[]>(data.comments);
@@ -618,7 +618,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
 
   return (
     <div className="doc-wrap">
-      <div className="doc-bar">
+      {!bare && <div className="doc-bar">
         {docRef.kind !== "nota" && (confirmLeave ? (
           <>
             <span style={{ fontSize: 13 }}>Há alterações não salvas. Sair mesmo assim?</span>
@@ -727,7 +727,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
             <button className="ghost icon" title="Apagar o bloco atual (parágrafo, imagem ou tabela)" onMouseDown={preventFocus} onClick={removeActive}><Trash2 size={16} /></button>
           </div>
         )}
-      </div>
+      </div>}
 
       <div className="doc-body">
         <div className="doc-scroll" ref={wrapRef}>

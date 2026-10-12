@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/auth";
-import { ModelCard } from "@/components/ModelCard";
+import { ModelPanel } from "@/components/ModelPanel";
+import { previewOfQuestions } from "@/lib/preview";
 import { MODELS, modelInfo } from "@/lib/models";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
@@ -60,7 +61,10 @@ export default async function FormularioPage({
         </p>
       </div>
       {me.role === "admin" && (
-        <ModelCard kind="inicial" title={MODELS.inicial.title} note={MODELS.inicial.note} info={await modelInfo("inicial")} canEdit />
+        <ModelPanel
+          kind="inicial" reportTitle={MODELS.inicial.title} note={MODELS.inicial.note} info={await modelInfo("inicial")}
+          sections={previewOfQuestions(questions)} questionnaireNote={"Perguntas do Cadastro inicial (são as mesmas do formulário desta página). As respostas preenchem o arquivo-base."}
+        />
       )}
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
