@@ -26,13 +26,14 @@ const slugify = (s: string) =>
   s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9-]+/g, "-");
 
 export function ProfileForm({
-  name, avatarUrl, registry, profileslug,
-}: { name: string; avatarUrl: string | null; registry: string; profileslug: string }) {
+  name, avatarUrl, registry, profileslug, gender = "",
+}: { name: string; avatarUrl: string | null; registry: string; profileslug: string; gender?: "f" | "m" | "" }) {
   const [msg, action, pending] = useActionState(updateProfile, null);
   // Campos controlados: o React limpa o formulário depois de enviar, então o valor digitado fica no estado.
   const [vName, setVName] = useState(name);
   const [vSlug, setVSlug] = useState(profileslug);
   const [vReg, setVReg] = useState(registry);
+  const [vGender, setVGender] = useState<string>(gender);
   const [pw, setPw] = useState(false);
   const [photoMsg, setPhotoMsg] = useState<string | null>(null);
   const [uploading, startUpload] = useTransition();
@@ -105,6 +106,15 @@ export function ProfileForm({
           required
         />
         {!registry && <small className="sheet-sub">Informe o seu registro para liberar o formulário.</small>}
+      </label>
+
+      <label className="field">
+        <span>Identificação nos relatórios</span>
+        <select name="gender" value={vGender} onChange={(e) => setVGender(e.target.value)}>
+          <option value="">Neutra (autor(a), editor(a))</option>
+          <option value="f">Feminina (autora, editora)</option>
+          <option value="m">Masculina (autor, editor)</option>
+        </select>
       </label>
 
       <button type="button" className="light pw-trigger" aria-expanded={pw} onClick={() => setPw((v) => !v)}>

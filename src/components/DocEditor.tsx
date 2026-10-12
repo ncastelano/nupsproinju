@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { isTable, type Block, type DocComment, type DocData, type ImgData, type Para, type Run } from "@/lib/docxDoc";
 import { resetDocument, saveDocument } from "@/app/(app)/cadastrados/[id]/documento/actions";
+import { pingEditing } from "@/app/(app)/presence-actions";
 
 type Cell = { html: string; jc?: Para["jc"]; sp: Record<string, string>; ind: Record<string, string>; sz: number; font: string };
 type PItem = { uid: number; kind: "p"; jc?: Para["jc"]; sp: Record<string, string>; ind: Record<string, string>; sz: number; font: string; html: string; img?: ImgData };
@@ -170,11 +171,32 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const [pageH, setPageH] = useState(0);
   const [gaps, setGaps] = useState<number[]>([]);
   const base = useRef(version);
+  const [others, setOthers] = useState<string[]>([]); // quem mais está editando este documento agora
+  const [stale, setStale] = useState(false);          // outra pessoa salvou uma versão mais nova
+  const watch = !bare && (docRef.kind === "inicial" || docRef.kind === "acomp" || docRef.kind === "fisc");
   const refs = useRef(new Map<string, HTMLDivElement>());
   const focusNext = useRef<{ key: string; atStart: boolean } | null>(null);
   const savedSel = useRef<Range | null>(null);
   const pendingRange = useRef<Range | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // presença: avisa quem está editando e quando o documento mudou enquanto estava aberto
+  useEffect(() => {
+    if (!watch) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const r = await pingEditing(id, docRef, canEditProp && editing);
+        if (!alive) return;
+        setOthers(r.others);
+        if (r.version && base.current && r.version !== base.current) setStale(true);
+      } catch { /* sem rede: tenta de novo no próximo ciclo */ }
+    };
+    tick();
+    const t = setInterval(tick, editing ? 20_000 : 30_000);
+    return () => { alive = false; clearInterval(t); if (canEditProp && editing) pingEditing(id, docRef, false).catch(() => {}); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watch, editing, canEditProp, id]);
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } };
@@ -588,11 +610,13 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
       if (r.ok) {
         setDirty(false);
         if (r.version) base.current = r.version;
+        setStale(false);
         if (docRef.kind === "modelo") { setMsg({ ok: true, text: r.msg }); setBusy(false); onSaved?.(); return; } // o modelo continua aberto
         if (docRef.kind === "nota") { setMsg({ ok: true, text: "Nota salva." }); setBusy(false); return; } // a nota continua aberta
         router.push(backHref);
         return;
       }
+      if (r.msg.startsWith("Outra pessoa")) setStale(true);
       setMsg({ ok: r.ok, text: r.msg });
     } catch {
       setMsg({ ok: false, text: "Não foi possível salvar. Tente de novo." });
@@ -739,6 +763,16 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   return (
     <div className="doc-wrap">
       {!viewFirst && bar}
+      {(others.length > 0 || stale) && (
+        <div className="editing-now doc-presence">
+          <Pencil size={14} />
+          <span>
+            {others.length > 0 && <>{others.join(", ")} {others.length === 1 ? "está editando" : "estão editando"} este relatório agora. </>}
+            {stale && <>Outra pessoa salvou uma versão mais nova{dirty ? "; se você salvar, será preciso atualizar antes" : ""}. </>}
+          </span>
+          {stale && !dirty && <button type="button" className="ghost" onClick={() => window.location.reload()}>Atualizar</button>}
+        </div>
+      )}
 
       <div className="doc-body">
         <div className="doc-scroll" ref={wrapRef}>

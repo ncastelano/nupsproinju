@@ -105,7 +105,7 @@ export async function shareRecord(form: FormData) {
     meta.shared.push({ id: who, name: nome, ...(scope ? { doc: scope } : {}) });
     meta.history.unshift({
       at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email,
-      scope: "formulario", changes: [], note: `chamou ${nome} para ajudar`, ...(scope ? { doc: scope } : {}),
+      scope: "formulario", changes: [], note: `adicionou ${nome} como editor(a)`, ...(scope ? { doc: scope } : {}),
     });
     meta.history = meta.history.slice(0, 200);
   }
@@ -127,7 +127,7 @@ export async function unshareRecord(form: FormData) {
   if (removed) {
     meta.history.unshift({
       at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario",
-      changes: [], note: `tirou ${removed.name} da edição`, ...(scope ? { doc: scope } : {}),
+      changes: [], note: `removeu ${removed.name} das permissões de edição`, ...(scope ? { doc: scope } : {}),
     });
     meta.history = meta.history.slice(0, 200);
   }

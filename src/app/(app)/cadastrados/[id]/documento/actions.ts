@@ -86,7 +86,7 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
 
   const current = await docVersion(id, ref);
   if (current && base && current !== base) {
-    return { ok: false, msg: "Outra pessoa salvou este documento depois que você abriu. Recarregue a página para ver a versão mais nova." };
+    return { ok: false, msg: "Outra pessoa salvou este relatório depois que você abriu. Copie o que você escreveu, atualize a página e refaça a alteração para não apagar o trabalho dela." };
   }
   const doc = await loadProcessDoc(rec, ref, me);
   if (!doc) return { ok: false, msg: "Modelo do relatório indisponível." };

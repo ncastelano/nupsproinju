@@ -15,7 +15,7 @@ export default async function EditarPerfil() {
         <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>{m.email}</p>
       </div>
       <div className="card profile-page">
-        <ProfileForm name={m.name} avatarUrl={m.avatar_url ?? null} registry={m.registry ?? ""} profileslug={slug} />
+        <ProfileForm name={m.name} avatarUrl={m.avatar_url ?? null} registry={m.registry ?? ""} profileslug={slug} gender={m.gender} />
       </div>
       <form action={logout}><button className="ghost"><LogOut size={18} /> Sair</button></form>
     </div>

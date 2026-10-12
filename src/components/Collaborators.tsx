@@ -22,23 +22,32 @@ export async function Collaborators({ rec, doc, canShare }: { rec: Rec; doc: str
       .map((m) => ({ id: m.id as string, name: (m.name as string) || (m.email as string) }));
   }
 
+  // identificação (autor/autora, editor/editora) conforme o que a pessoa escolheu no perfil
+  const ids = [rec.created_by, acompBy?.by_id, ...rec.meta.shared.map((x) => x.id)].filter(Boolean) as string[];
+  const gen = new Map<string, string>();
+  await Promise.all(Array.from(new Set(ids)).map(async (uid) => {
+    const { data } = await admin.auth.admin.getUserById(uid);
+    gen.set(uid, String((data.user?.user_metadata as Record<string, unknown> | undefined)?.gender ?? ""));
+  }));
+  const tag = (uid: string, m: string, f: string) => (gen.get(uid) === "f" ? f : gen.get(uid) === "m" ? m : `${m}(a)`);
+
   return (
     <div className="card grid" style={{ gap: 10 }}>
-      <strong><UserPlus size={16} style={{ verticalAlign: "-3px" }} /> Quem pode editar</strong>
+      <strong><UserPlus size={16} style={{ verticalAlign: "-3px" }} /> Permissões de edição</strong>
       <span style={{ color: "var(--muted)" }}>
-        Todos veem este relatório, mas só edita quem o criou ou foi chamado para ajudar. {canShare ? "Chame outra pessoa abaixo." : ""}
+        Todos podem visualizar este relatório. Apenas quem o criou e os profissionais adicionados abaixo podem editá-lo.
       </span>
       <div className="pcard-chips">
-        <span className="chip">{acompBy ? acompBy.by_name : ownerName} (autor)</span>
-        {scoped && acompBy && acompBy.by_id !== rec.created_by && <span className="chip">{ownerName} (cadastro)</span>}
-        {inherited.map((s) => <span key={s.id} className="chip">{s.name}</span>)}
+        <span className="chip">{acompBy ? acompBy.by_name : ownerName} ({tag(acompBy?.by_id ?? rec.created_by, "autor", "autora")})</span>
+        {scoped && acompBy && acompBy.by_id !== rec.created_by && <span className="chip">{ownerName} ({tag(rec.created_by, "autor", "autora")} do cadastro)</span>}
+        {inherited.map((s) => <span key={s.id} className="chip">{s.name} ({tag(s.id, "editor", "editora")})</span>)}
       </div>
       {mine.map((s) => (
         <form key={s.id} action={unshareRecord} className="qrow">
           <input type="hidden" name="record_id" value={rec.id} />
           <input type="hidden" name="member_id" value={s.id} />
           <input type="hidden" name="doc" value={doc} />
-          <strong>{s.name}</strong>
+          <strong>{s.name} <span style={{ color: "var(--muted)", fontWeight: 400 }}>({tag(s.id, "editor", "editora")})</span></strong>
           {canShare && <button className="danger" aria-label={`Remover ${s.name}`}><X size={16} /></button>}
         </form>
       ))}
@@ -47,10 +56,10 @@ export async function Collaborators({ rec, doc, canShare }: { rec: Rec; doc: str
           <input type="hidden" name="record_id" value={rec.id} />
           <input type="hidden" name="doc" value={doc} />
           <select name="member_id" defaultValue="" required>
-            <option value="" disabled>Chamar para ajudar...</option>
+            <option value="" disabled>Selecionar profissional</option>
             {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <button>Chamar</button>
+          <button>Adicionar editor</button>
         </form>
       )}
     </div>

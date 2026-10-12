@@ -9,6 +9,8 @@ export async function updateProfile(_: string | null, form: FormData) {
   const name = String(form.get("name") ?? "").trim();
   const slug = cleanSlug(String(form.get("profileslug") ?? ""));
   const registry = String(form.get("registry") ?? "").trim();
+  const g = String(form.get("gender") ?? "");
+  const gender = g === "f" || g === "m" ? g : "";
   const password = String(form.get("password") ?? "");
   const confirm = String(form.get("confirm_password") ?? "");
 
@@ -27,7 +29,7 @@ export async function updateProfile(_: string | null, form: FormData) {
   const admin = createAdminClient();
   const { data: cur } = await admin.auth.admin.getUserById(me.id);
   const { error: e1 } = await admin.auth.admin.updateUserById(me.id, {
-    user_metadata: { ...(cur.user?.user_metadata ?? {}), registry, profileslug: slug },
+    user_metadata: { ...(cur.user?.user_metadata ?? {}), registry, profileslug: slug, gender },
     ...(password ? { password } : {}),
   });
   if (e1) return `Não foi possível salvar o perfil (${e1.message}).`;

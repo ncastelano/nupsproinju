@@ -12,6 +12,7 @@ export type Member = {
   registry: string;
   avatar_url: string | null;
   profileslug: string;
+  gender: "f" | "m" | ""; // como a pessoa prefere ser identificada nos relatórios (autora/autor)
 };
 
 export const getMember = cache(async (): Promise<Member | null> => {
@@ -28,6 +29,7 @@ export const getMember = cache(async (): Promise<Member | null> => {
     registry: meta.registry ?? (data as Member).registry ?? "",
     avatar_url: meta.avatar_url ?? (data as Member).avatar_url ?? null,
     profileslug: meta.profileslug ?? "",
+    gender: meta.gender === "f" || meta.gender === "m" ? meta.gender : "",
   };
 });
 
