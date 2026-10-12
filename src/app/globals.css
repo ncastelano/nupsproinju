@@ -747,8 +747,21 @@ a.app-brand:hover { text-decoration: none; opacity: .85; }
 .doc-page.note-mode > .doc-para:only-of-type:empty::before { content: "Escreva aqui..."; color: var(--muted); }
 
 /* Áudios do relatório */
-.act-title { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--brand); }
-.audio-rec { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--bg); border-radius: var(--radius-sm); padding: 12px; }
+.audio-panel { display: grid; gap: 12px; }
+.audio-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.audio-top h4 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--brand-dark); }
+.audio-count { background: var(--brand-soft); color: var(--brand-dark); border-radius: 999px; font-size: 12.5px; padding: 1px 9px; font-weight: 700; }
+.audio-empty { margin: 0; color: var(--muted); font-size: 14px; }
+.audio-box { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: var(--bg); border-radius: var(--radius-sm); padding: 12px 14px; }
+.audio-box.col { display: grid; gap: 10px; }
+.audio-box audio, .audio-item audio { width: 100%; height: 40px; }
+.audio-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.audio-actions button { padding: 9px 14px; font-size: 14px; }
+.audio-progress { font-size: 13.5px; color: var(--brand-dark); background: var(--brand-soft); border-radius: 999px; padding: 6px 12px; width: fit-content; }
+.audio-list { display: grid; gap: 10px; }
+.audio-item { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; display: grid; gap: 10px; background: var(--card); }
+.audio-head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.audio-head span { color: var(--muted); font-size: 13px; }
 .rec-dot { width: 12px; height: 12px; border-radius: 50%; background: #d0342c; animation: recpulse 1s ease-in-out infinite; }
 @keyframes recpulse { 50% { opacity: .25; } }
 .audio-item { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; display: grid; gap: 8px; }
