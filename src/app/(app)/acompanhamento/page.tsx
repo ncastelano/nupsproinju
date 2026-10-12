@@ -32,7 +32,7 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
       <div>
         <h1 style={{ margin: "8px 0 0" }}>Relatório de acompanhamento e reavaliação</h1>
         <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>
-          Preencha o formulário. Ao salvar, o relatório é gerado no padrão do NUPS e fica em Relatórios, para você editar.
+          Preencha e salve o formulário para gerar o relatório conforme o modelo do NUPS. O documento ficará disponível na seção Relatórios para revisão e edição.
         </p>
       </div>
 
