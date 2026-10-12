@@ -20,7 +20,7 @@ export default async function AcessoPage() {
           <p style={{ color: "var(--muted)", margin: 0 }}>
             {rejected
               ? "O administrador não liberou o acesso para este cadastro. Em caso de dúvida, fale com o núcleo."
-              : "Seu pedido foi enviado ao administrador. Assim que for aceito, você entra direto na página principal."}
+              : "Sua solicitação de acesso foi enviada ao administrador. Após a aprovação, você será direcionado automaticamente à página principal."}
           </p>
           <form action={logout}><button className="ghost">Sair</button></form>
         </div>
