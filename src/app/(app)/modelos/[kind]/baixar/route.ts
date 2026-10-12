@@ -6,7 +6,7 @@ import { MODELS, modelInfo, type ModelKind } from "@/lib/models";
 // Baixa o arquivo-base (.docx) em uso de um tipo de relatório.
 export async function GET(_: Request, { params }: { params: Promise<{ kind: string }> }) {
   const me = await getMember();
-  if (!me || me.status !== "approved") return new Response("Não autorizado", { status: 401 });
+  if (!me || me.status !== "approved" || me.role !== "admin") return new Response("Não autorizado", { status: 401 }); // só administradores
   const kind = (await params).kind as ModelKind;
   if (!(kind in MODELS)) return new Response("Não encontrado", { status: 404 });
   const { data } = await createAdminClient().storage.from(REPORT_BUCKET).download(MODELS[kind].path);

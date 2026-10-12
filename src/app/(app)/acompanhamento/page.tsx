@@ -36,7 +36,9 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
         </p>
       </div>
 
-      <ModelCard kind="acomp" title={MODELS.acomp.title} note={MODELS.acomp.note} info={await modelInfo("acomp")} canEdit={me.role === "admin"} />
+      {me.role === "admin" && (
+        <ModelCard kind="acomp" title={MODELS.acomp.title} note={MODELS.acomp.note} info={await modelInfo("acomp")} canEdit />
+      )}
       <div className="card q">
         <label className="q-label">Processo <span className="req">*</span></label>
         {options.length === 0 ? (

@@ -51,7 +51,9 @@ export default async function FiscalizacoesPage() {
         </p>
       </div>
 
-      <ModelCard kind="fisc" title={MODELS.fisc.title} note={MODELS.fisc.note} info={await modelInfo("fisc")} canEdit={me.role === "admin"} />
+      {me.role === "admin" && (
+        <ModelCard kind="fisc" title={MODELS.fisc.title} note={MODELS.fisc.note} info={await modelInfo("fisc")} canEdit />
+      )}
       <FiscForm id="" initial={{}} redo={false} />
 
       <hr className="soft" />

@@ -59,7 +59,9 @@ export default async function FormularioPage({
           Campos com <span className="req">*</span> são obrigatórios.
         </p>
       </div>
-      <ModelCard kind="inicial" title={MODELS.inicial.title} note={MODELS.inicial.note} info={await modelInfo("inicial")} canEdit={me.role === "admin"} />
+      {me.role === "admin" && (
+        <ModelCard kind="inicial" title={MODELS.inicial.title} note={MODELS.inicial.note} info={await modelInfo("inicial")} canEdit />
+      )}
       {acomp && acolhidos?.length === 0 ? (
         <div className="card empty">
           <h2>Nenhum acolhido registrado</h2>
