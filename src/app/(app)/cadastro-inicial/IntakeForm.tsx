@@ -150,7 +150,7 @@ export function IntakeForm({
               <label className="q-label">
                 {q.label}{q.required && <span className="req"> *</span>}
               </label>
-              {q.help && <div className="help">{q.key === "nascimentos" ? "Em caso de grupo de irmãos, use “Adicionar outra data” e informe uma data para cada um, na mesma ordem em que os nomes foram informados acima." : q.help}</div>}
+              {q.help && <div className="help">{q.key === "nascimentos" ? "Para grupos de irmãos, adicione a data de nascimento de cada um, seguindo a mesma ordem dos nomes informados acima." : q.help}</div>}
               {PROFESSIONAL_KEYS.includes(q.key) && q.type !== "checkbox" ? (
                 <>
                   <div className="linked">{professional}</div>

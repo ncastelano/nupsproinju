@@ -25,7 +25,7 @@ export function DateList({ name, initial = "" }: { name: string; initial?: strin
         </div>
       ))}
       <div>
-        <button type="button" className="ghost" onClick={() => setDates((cur) => [...cur, ""])}><Plus size={16} /> Adicionar outra data (outra criança)</button>
+        <button type="button" className="ghost" onClick={() => setDates((cur) => [...cur, ""])}><Plus size={16} /> Adicionar data de nascimento</button>
       </div>
     </div>
   );
