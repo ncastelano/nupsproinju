@@ -2,7 +2,11 @@ import type { FSection } from "@/lib/fisc";
 import type { Question } from "@/lib/forms";
 
 // Resumo de um questionário para mostrar em um quadro (sem edição).
-export type PreviewItem = { label: string; help?: string; kind: string; options?: string[]; required?: boolean; cond?: string; rows?: string[] };
+export type PreviewItem = {
+  label: string; help?: string; kind: string; options?: string[]; required?: boolean; cond?: string; rows?: string[];
+  type: string;      // text | textarea | number | date | select | radio | checkbox | matrix
+  other?: boolean;   // aceita "Outro" com texto
+};
 export type PreviewSection = { title: string; items: PreviewItem[] };
 
 const KIND: Record<string, string> = {
@@ -15,7 +19,7 @@ export function previewOf(sections: FSection[]): PreviewSection[] {
   return sections.map((s) => ({
     title: s.title,
     items: s.questions.map((q) => ({
-      label: q.label, help: q.help, required: q.required,
+      label: q.label, help: q.help, required: q.required, type: q.type, other: q.other,
       kind: (q.other && (q.type === "radio" || q.type === "checkbox") ? (q.type === "radio" ? "Escolha uma (ou Outro)" : "Marcar várias (ou Outro)") : KIND[q.type]) ?? q.type,
       options: q.options?.length ? q.options : undefined,
       rows: q.rows,
@@ -30,9 +34,11 @@ export function previewOfQuestions(qs: Question[]): PreviewSection[] {
     const title = q.section || "Perguntas";
     let sec = out.find((s) => s.title === title);
     if (!sec) { sec = { title, items: [] }; out.push(sec); }
+    const hasOther = q.options?.includes("Outro");
     sec.items.push({
       label: q.label, help: q.help || undefined, required: q.required, kind: KIND[q.type] ?? q.type,
-      options: q.options?.length ? q.options : undefined,
+      type: q.type === "radio_other" ? "radio" : q.type, other: q.type === "radio_other" || !!hasOther,
+      options: q.options?.length ? q.options.filter((o) => o !== "Outro") : undefined,
     });
   }
   return out;

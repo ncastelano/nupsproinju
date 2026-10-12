@@ -63,6 +63,7 @@ export default async function FormularioPage({
       {me.role === "admin" && (
         <ModelPanel
           kind="inicial" reportTitle={MODELS.inicial.title} note={MODELS.inicial.note} info={await modelInfo("inicial")}
+          formTitle="Cadastro inicial" formDescription="Preenchido uma única vez por criança ou adolescente: é o marco inicial dos acompanhamentos e reavaliações."
           sections={previewOfQuestions(questions)} questionnaireNote={"Perguntas do Cadastro inicial (são as mesmas do formulário desta página). As respostas preenchem o arquivo-base."}
         />
       )}

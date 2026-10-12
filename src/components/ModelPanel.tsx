@@ -1,12 +1,12 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, ListChecks, Loader2, Lock, Pencil, Upload, X } from "lucide-react";
+import { CalendarDays, FileText, ListChecks, Loader2, Lock, Pencil, Upload, X } from "lucide-react";
 import { DocEditor } from "@/components/DocEditor";
 import { getModelDoc, replaceModel, saveModelDoc } from "@/app/(app)/modelos/actions";
 import type { DocData } from "@/lib/docxDoc";
 import type { ModelInfo, ModelKind } from "@/lib/models";
-import type { PreviewSection } from "@/lib/preview";
+import type { PreviewItem, PreviewSection } from "@/lib/preview";
 
 const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
@@ -40,10 +40,10 @@ function Dialog({ open, onClose, title, sub, actions, children }: {
 
 // Modelos de cada aba (só administradores): o arquivo-base do relatório e o questionário. Clique para ver.
 export function ModelPanel({
-  kind, reportTitle, note, info, sections, questionnaireNote,
+  kind, reportTitle, note, info, sections, questionnaireNote, formTitle, formDescription,
 }: {
   kind: ModelKind; reportTitle: string; note: string; info: ModelInfo | null;
-  sections: PreviewSection[]; questionnaireNote: string;
+  sections: PreviewSection[]; questionnaireNote: string; formTitle: string; formDescription?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<"doc" | "q" | null>(null);
@@ -117,26 +117,59 @@ export function ModelPanel({
 
       <Dialog open={open === "q"} onClose={() => setOpen(null)} title="Modelo do questionário" sub={`${total} perguntas em ${sections.length} seções`}>
         <p className="help" style={{ margin: "0 0 10px" }}>{questionnaireNote}</p>
-        <div className="q-preview">
-          {sections.map((s, si) => (
-            <section key={si}>
-              <h3 className="section">{s.title.toUpperCase()}</h3>
-              {s.items.map((it, i) => (
-                <div key={i} className="q-prev-item">
-                  <div className="q-prev-label">{it.label}{it.required && <span className="req"> *</span>}</div>
-                  <div className="q-prev-meta"><span className="chip">{it.kind}</span>{it.cond && <span className="q-prev-cond">{it.cond}</span>}</div>
-                  {it.help && <div className="help">{it.help}</div>}
-                  {it.options && (
-                    <div className="q-prev-opts">{it.options.map((o) => <span key={o} className="chip">{o}</span>)}</div>
-                  )}
-                  {it.rows && <div className="q-prev-rows">Itens: {it.rows.join(" · ")}</div>}
-                </div>
-              ))}
-            </section>
+        <div className="gf">
+          <div className="gf-card gf-title">
+            <h2>{formTitle}</h2>
+            {formDescription && <p>{formDescription}</p>}
+            <small><span className="req">*</span> Indica uma pergunta obrigatória</small>
+          </div>
+          {sections.map((sec, si) => (
+            <div key={si} className="gf-section">
+              {sections.length > 1 && <div className="gf-tab">Seção {si + 1} de {sections.length}</div>}
+              <div className="gf-card gf-sec-head"><h3>{sec.title}</h3></div>
+              {sec.items.map((it, i) => <GfQuestion key={i} it={it} />)}
+            </div>
           ))}
         </div>
       </Dialog>
     </div>
     </section>
+  );
+}
+
+// Uma pergunta, no jeito do Google Forms (cartão branco, número e texto, campo de exemplo).
+function GfQuestion({ it }: { it: PreviewItem }) {
+  const opts = it.options ?? [];
+  return (
+    <div className="gf-card gf-q">
+      <div className="gf-label">{it.label}{it.required && <span className="req"> *</span>}</div>
+      {it.help && <div className="gf-help">{it.help}</div>}
+      {it.cond && <div className="gf-cond">{it.cond}</div>}
+      {it.type === "text" && <div className="gf-line short">Texto de resposta curta</div>}
+      {it.type === "number" && <div className="gf-line short">Número</div>}
+      {it.type === "textarea" && <div className="gf-line">Texto de resposta longa</div>}
+      {it.type === "date" && <div className="gf-date">dd/mm/aaaa <CalendarDays size={16} /></div>}
+      {it.type === "select" && (
+        <ol className="gf-select">{opts.map((o) => <li key={o}>{o}</li>)}</ol>
+      )}
+      {(it.type === "radio" || it.type === "checkbox") && (
+        <div className="gf-opts">
+          {opts.map((o) => <div key={o} className="gf-opt"><span className={it.type === "radio" ? "gf-circle" : "gf-square"} />{o}</div>)}
+          {it.other && <div className="gf-opt"><span className={it.type === "radio" ? "gf-circle" : "gf-square"} />Outro: <span className="gf-underline" /></div>}
+        </div>
+      )}
+      {it.type === "matrix" && it.rows && (
+        <div className="gf-grid-wrap">
+          <table className="gf-grid">
+            <thead><tr><th />{opts.map((o) => <th key={o}>{o}</th>)}</tr></thead>
+            <tbody>
+              {it.rows.map((r) => (
+                <tr key={r}><th scope="row">{r}</th>{opts.map((o) => <td key={o}><span className="gf-circle" /></td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }

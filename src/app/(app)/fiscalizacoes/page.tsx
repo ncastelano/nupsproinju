@@ -55,6 +55,7 @@ export default async function FiscalizacoesPage() {
       {me.role === "admin" && (
         <ModelPanel
           kind="fisc" reportTitle={MODELS.fisc.title} note={MODELS.fisc.note} info={await modelInfo("fisc")}
+          formTitle="Fiscalização Mensal de Unidade de Acolhimento" formDescription="Registro da visita mensal de fiscalização às unidades de acolhimento: recursos humanos, estrutura, documentação, atendimento, saúde, educação, convivência familiar, escuta, ocorrências e pendências."
           sections={previewOf(FISC_SECTIONS)} questionnaireNote={"Perguntas do formulário de Fiscalização Mensal de Unidade de Acolhimento. As respostas geram o texto do relatório."}
         />
       )}

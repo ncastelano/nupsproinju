@@ -48,7 +48,8 @@ export default async function AcompanhamentoPage({ searchParams }: { searchParam
       {me.role === "admin" && (
         <ModelPanel
           kind="acomp" reportTitle={MODELS.acomp.title} note={MODELS.acomp.note} info={await modelInfo("acomp")}
-          sections={previewOf(ACOMP_SECTIONS)} questionnaireNote={"Perguntas do formulário de acompanhamento e reavaliação (Google Forms do NUPS). As respostas preenchem o arquivo-base ao lado."}
+          formTitle="ACOMPANHAMENTO E REAVALIAÇÃO DA SITUAÇÃO DA CRIANÇA/ADOLESCENTE ACOLHIDO" formDescription="Instrumento destinado ao registro periódico do acompanhamento e da reavaliação da situação da criança, adolescente ou grupo de irmãos em medida de acolhimento, com ênfase nas alterações ocorridas desde a avaliação anterior, nas intervenções realizadas e nas perspectivas atuais de encaminhamento."
+          sections={previewOf(ACOMP_SECTIONS.map((sec) => ({ ...sec, questions: sec.questions.map((q) => (q.key === "prof" ? { ...q, options: proOptions } : q)) })))} questionnaireNote={"Perguntas do formulário de acompanhamento e reavaliação (Google Forms do NUPS). As respostas preenchem o arquivo-base ao lado."}
         />
       )}
       <div className="card q">
