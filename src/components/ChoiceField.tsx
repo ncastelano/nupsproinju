@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 
 const OUTRO = "Outro";
@@ -37,10 +37,13 @@ export function ChoiceField({
     return () => { window.removeEventListener("keydown", onKey); html.style.overflow = prevHtml; body.style.overflow = prevBody; };
   }, [open]);
 
-  const commit = (sel: string[], text: string) => { setSelected(sel); setOtherText(text); onChange?.(sel, text); };
+  // sempre a escolha mais recente (cliques rápidos não se perdem)
+  const cur = useRef({ sel: initial, text: initialOther });
+  const commit = (sel: string[], text: string) => { cur.current = { sel, text }; setSelected(sel); setOtherText(text); onChange?.(sel, text); };
   const pick = (o: string) => {
-    if (multiple) commit(selected.includes(o) ? selected.filter((x) => x !== o) : [...selected, o], otherText);
-    else { commit([o], otherText); if (o !== OUTRO) setOpen(false); }
+    const { sel, text } = cur.current;
+    if (multiple) commit(sel.includes(o) ? sel.filter((x) => x !== o) : [...sel, o], text);
+    else { commit([o], text); if (o !== OUTRO) setOpen(false); }
   };
 
   const all = useMemo(() => [...options, ...(other ? [OUTRO] : [])], [options, other]);
@@ -98,7 +101,7 @@ export function ChoiceField({
               {shown.length === 0 && <div className="choice-none">Nenhuma opção encontrada.</div>}
             </div>
             {hasOther && (
-              <input className="choice-other" placeholder="Qual?" value={otherText} autoFocus onChange={(e) => commit(selected, e.target.value)} />
+              <input className="choice-other" placeholder="Qual?" value={otherText} autoFocus onChange={(e) => commit(cur.current.sel, e.target.value)} />
             )}
             {(multiple || hasOther) && <button type="button" className="choice-done" onClick={close}>Pronto</button>}
           </div>
