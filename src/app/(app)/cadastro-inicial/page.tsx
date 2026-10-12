@@ -6,7 +6,7 @@ import { MODELS, modelInfo } from "@/lib/models";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, type Question } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
-import { loadRecord } from "@/lib/records";
+import { accessOf, loadRecord } from "@/lib/records";
 import { DiscardDraft } from "@/components/DiscardDraft";
 import { IntakeForm, type Acolhido } from "./IntakeForm";
 
@@ -43,7 +43,7 @@ export default async function FormularioPage({
   let initialAnswers: Record<string, string> | undefined;
   if (!acomp && sp.rascunho) {
     const rec = await loadRecord(sp.rascunho);
-    if (rec && rec.meta.draft) {
+    if (rec && rec.meta.draft && accessOf(rec, me).canEdit) {
       draftId = rec.id;
       initialAnswers = Object.fromEntries(Object.entries(rec.answers).map(([k, a]) => [k, a.value]));
     }

@@ -4,7 +4,7 @@ import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { FORM_ACOMP, FORM_KEY, OTHER_PREFIX, PROFESSIONAL_KEYS } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
-import { loadRecord, saveRecord, type Ans } from "@/lib/records";
+import { accessOf, loadRecord, saveRecord, type Ans } from "@/lib/records";
 
 // Cadastro inicial cria a ficha; Acompanhamento preenche/atualiza a MESMA ficha (coluna followup).
 export async function saveIntake(_: string | null, form: FormData) {
@@ -84,6 +84,7 @@ export async function saveIntake(_: string | null, form: FormData) {
     // continua um rascunho já salvo (ou o finaliza)
     const rec = await loadRecord(draftId);
     if (!rec) return "Rascunho não encontrado.";
+    if (!accessOf(rec, me).canEdit) return "Só quem criou o cadastro, ou foi chamado para ajudar, pode editá-lo.";
     const meta = rec.meta;
     meta.draft = draft;
     if (!draft) {

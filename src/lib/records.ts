@@ -24,7 +24,7 @@ export type AudioEntry = {
   transcript: string;
 };
 export type RecMeta = {
-  shared: { id: string; name: string }[];
+  shared: { id: string; name: string; doc?: string }[]; // quem foi chamado para ajudar (doc: só um acompanhamento; sem doc: o processo todo)
   followups: FollowupEntry[]; // todos os acompanhamentos (o mais recente também fica em "followup")
   history: HistoryEntry[];
   editing: Record<string, { name: string; scope: Scope; since: string }>;
@@ -68,11 +68,16 @@ export async function loadRecord(id: string, formKey: string | null = FORM_KEY):
   };
 }
 
-// Todas as pessoas com conta aprovada veem e editam os processos; apagar fica com quem criou e os administradores.
-export function accessOf(rec: Rec, me: { id: string; role: string }) {
-  const owner = rec.created_by === me.id;
+// Todas as pessoas com conta aprovada veem tudo. Editar é só de quem criou o relatório ou foi chamado para ajudar;
+// o administrador só vê, mas pode chamar pessoas (e apagar). doc: "inicial", "acomp:N" ou "fisc".
+export function accessOf(rec: Rec, me: { id: string; role: string }, doc = "inicial") {
+  const n = doc.match(/^acomp:(\d+)$/);
+  const author = n ? rec.meta.acomps.find((a) => a.n === Number(n[1]))?.by_id : undefined;
+  const owner = rec.created_by === me.id || author === me.id;
   const admin = me.role === "admin";
-  return { owner, admin, editor: true, canView: true, canEdit: true, canShare: false };
+  const helper = rec.meta.shared.some((s) => s.id === me.id && (!s.doc || s.doc === doc));
+  const editor = owner || helper;
+  return { owner, admin, helper, editor, canView: true, canEdit: editor, canShare: owner || admin };
 }
 
 export async function saveRecord(

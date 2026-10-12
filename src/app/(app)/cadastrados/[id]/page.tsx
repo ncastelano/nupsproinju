@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Download, FileText, History, Pencil, Trash2, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Download, FileText, History, Pencil, Trash2 } from "lucide-react";
 import { requireMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -8,9 +8,10 @@ import { FORM_ACOMP, FORM_KEY } from "@/lib/forms";
 import { loadQuestions } from "@/lib/questions";
 import { accessOf, loadRecord, type Ans } from "@/lib/records";
 import { RecordView, formatDate } from "@/components/RecordView";
+import { Collaborators } from "@/components/Collaborators";
 import { ShareMenu } from "@/components/ShareMenu";
 import { RecordSection } from "@/components/RecordSection";
-import { deleteRecord, shareRecord, unshareRecord } from "../records-actions";
+import { deleteRecord } from "../records-actions";
 
 function fmt(a: Ans | null): Ans | null {
   if (!a) return null;
@@ -43,15 +44,6 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
   const { data: owner } = await admin.from("members").select("name, email").eq("id", rec.created_by).maybeSingle();
   const ownerName = (owner?.name as string) || (owner?.email as string) || "—";
 
-  let people: { id: string; name: string }[] = [];
-  if (acc.canShare) {
-    const { data } = await admin.from("members").select("id, name, email").eq("status", "approved").order("name");
-    const taken = new Set([rec.created_by, ...rec.meta.shared.map((s) => s.id)]);
-    people = (data ?? [])
-      .filter((m) => !taken.has(m.id as string))
-      .map((m) => ({ id: m.id as string, name: (m.name as string) || (m.email as string) }));
-  }
-
   const nome = rec.answers.nomes?.value ?? "(sem nome)";
   const editors = Object.entries(rec.meta.editing).filter(([uid]) => uid !== me.id);
 
@@ -64,7 +56,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
         <p>Processo {rec.answers.processo?.value ?? "—"}{rec.answers.unidade?.value ? ` · ${rec.answers.unidade.value}` : ""}</p>
         <div className="hero-meta">
           <span>Preenchido por {ownerName}</span>
-          {rec.meta.shared.length > 0 && <span>· compartilhado com {rec.meta.shared.map((s) => s.name).join(", ")}</span>}
+          {rec.meta.shared.length > 0 && <span>· com ajuda de {Array.from(new Set(rec.meta.shared.map((s) => s.name))).join(", ")}</span>}
         </div>
         {(editors.length > 0 || rec.meta.editing[me.id]) && (
           <div className="editing-now">
@@ -95,32 +87,7 @@ export default async function CadastradoPage({ params }: { params: Promise<{ id:
         )}
       </div>
 
-      {acc.canShare && (
-        <div className="card grid" style={{ gap: 10 }}>
-          <strong><UserPlus size={16} style={{ verticalAlign: "-3px" }} /> Quem pode editar</strong>
-          <span style={{ color: "var(--muted)" }}>
-            Escolha uma pessoa para ela abrir este link e editar o formulário e o acompanhamento. Todas as alterações ficam registradas com o nome de quem alterou.
-          </span>
-          {rec.meta.shared.map((s) => (
-            <form key={s.id} action={unshareRecord} className="qrow">
-              <input type="hidden" name="record_id" value={id} />
-              <input type="hidden" name="member_id" value={s.id} />
-              <strong>{s.name}</strong>
-              <button className="danger" aria-label={`Remover ${s.name}`}><X size={16} /></button>
-            </form>
-          ))}
-          {people.length > 0 && (
-            <form action={shareRecord} className="row">
-              <input type="hidden" name="record_id" value={id} />
-              <select name="member_id" defaultValue="" required>
-                <option value="" disabled>Escolher pessoa...</option>
-                {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-              <button>Dar acesso para editar</button>
-            </form>
-          )}
-        </div>
-      )}
+      <Collaborators rec={rec} doc="inicial" canShare={acc.canShare} />
 
       <RecordSection
         recordId={id} scope="formulario" title="Cadastro inicial" canEdit={acc.canEdit}

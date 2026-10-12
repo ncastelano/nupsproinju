@@ -16,12 +16,19 @@ const refFrom = (doc: string): DocRef => {
   return m ? { kind: "acomp", n: Number(m[1]) } : INICIAL;
 };
 
-async function open(id: string) {
+// doc: o documento a que o áudio se refere (inicial, acomp:N, fisc, nota); só edita quem criou ou foi chamado.
+async function open(id: string, doc = "inicial") {
   const me = await requireMember();
   const rec = await loadRecord(id, null);
   if (!rec) throw new Error("Relatório não encontrado.");
-  if (rec.form_key === "nota" ? rec.created_by !== me.id : !accessOf(rec, me).canEdit) throw new Error("Sem permissão.");
+  if (rec.form_key === "nota" ? rec.created_by !== me.id : !accessOf(rec, me, doc).canEdit) throw new Error("Sem permissão.");
   return { me, rec };
+}
+// nos áudios já gravados, o documento vem do próprio áudio
+async function openAudio(id: string, audioId: string) {
+  const rec0 = await loadRecord(id, null);
+  const doc = rec0?.meta.audios?.find((x) => x.id === audioId)?.doc ?? "inicial";
+  return open(id, doc);
 }
 
 // Guarda um áudio gravado (com a transcrição, se houver) neste relatório.
@@ -35,7 +42,7 @@ export async function saveAudio(form: FormData): Promise<string> {
     if (!(file instanceof File) || file.size === 0) return "Nenhum áudio gravado.";
     if (file.size > MAX_BYTES) return "O áudio é muito grande (limite de 12 MB).";
     if (!file.type.startsWith("audio/")) return "Arquivo de áudio inválido.";
-    const { me, rec } = await open(id);
+    const { me, rec } = await open(id, doc);
 
     const aid = crypto.randomUUID();
     const ext = file.type.includes("mp4") ? "m4a" : file.type.includes("ogg") ? "ogg" : "webm";
@@ -65,7 +72,7 @@ export async function saveAudio(form: FormData): Promise<string> {
 
 export async function saveTranscript(id: string, audioId: string, text: string): Promise<string> {
   try {
-    const { rec } = await open(id);
+    const { rec } = await openAudio(id, audioId);
     const a = rec.meta.audios?.find((x) => x.id === audioId);
     if (!a) return "Áudio não encontrado.";
     a.transcript = text.slice(0, 20000);
@@ -76,7 +83,7 @@ export async function saveTranscript(id: string, audioId: string, text: string):
 
 export async function deleteAudio(id: string, audioId: string): Promise<string> {
   try {
-    const { me, rec, } = await open(id);
+    const { me, rec } = await openAudio(id, audioId);
     const a = rec.meta.audios?.find((x) => x.id === audioId);
     if (!a) return "Áudio não encontrado.";
     if (a.by_id !== me.id && !accessOf(rec, me).owner && me.role !== "admin") return "Só quem gravou (ou o administrador) pode apagar.";
@@ -91,7 +98,7 @@ export async function deleteAudio(id: string, audioId: string): Promise<string> 
 // Acrescenta a transcrição ao fim do documento (como parágrafos do texto).
 export async function insertTranscript(id: string, audioId: string): Promise<string> {
   try {
-    const { me, rec } = await open(id);
+    const { me, rec } = await openAudio(id, audioId);
     const a = rec.meta.audios?.find((x) => x.id === audioId);
     if (!a || !a.transcript.trim()) return "Este áudio ainda não tem transcrição.";
     const ref = refFrom(a.doc);

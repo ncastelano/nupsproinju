@@ -9,6 +9,7 @@ import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
 import { RecordActivity } from "@/components/RecordActivity";
+import { Collaborators } from "@/components/Collaborators";
 import { AudioPanel } from "@/components/AudioPanel";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -46,6 +47,7 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
           <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <Collaborators rec={rec} doc="inicial" canShare={acc.canShare} />
       <div className="card">
         <AudioPanel recordId={id} doc={"inicial"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "inicial")} canEdit={acc.canEdit} me={me.id} />
       </div>

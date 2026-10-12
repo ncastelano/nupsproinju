@@ -9,13 +9,17 @@ import { removeProcessDocs } from "@/lib/procDoc";
 import { accessOf, loadRecord, saveRecord, type Ans, type HistoryEntry, type Scope } from "@/lib/records";
 
 const scopeOf = (f: FormData): Scope => (f.get("scope") === "acompanhamento" ? "acompanhamento" : "formulario");
-const done = (id: string) => { revalidatePath(`/cadastrados/${id}`); revalidatePath("/usuarios", "layout"); };
+const done = (id: string) => {
+  revalidatePath(`/cadastrados/${id}`, "layout");
+  revalidatePath(`/fiscalizacoes/${id}`, "layout");
+  revalidatePath("/usuarios", "layout");
+};
 
-async function open(id: string) {
+async function open(id: string, doc = "inicial", anyKind = false) {
   const me = await requireMember();
-  const rec = await loadRecord(id);
+  const rec = await loadRecord(id, anyKind ? null : FORM_KEY);
   if (!rec) throw new Error("Formulário não encontrado.");
-  return { me, rec, acc: accessOf(rec, me) };
+  return { me, rec, acc: accessOf(rec, me, doc) };
 }
 
 // "Check-out": quem começa a editar aparece como editando, sem sair da página.
@@ -89,17 +93,19 @@ export async function saveRecordEdit(_: string | null, form: FormData) {
 export async function shareRecord(form: FormData) {
   const id = String(form.get("record_id"));
   const who = String(form.get("member_id") ?? "");
-  const { me, rec, acc } = await open(id);
-  if (!acc.canShare || !who || who === rec.created_by) return;
+  const doc = String(form.get("doc") ?? "inicial");
+  const { me, rec, acc } = await open(id, doc, true);
+  if (rec.form_key === "nota" || !acc.canShare || !who || who === rec.created_by) return;
+  const scope = /^acomp:\d+$/.test(doc) ? doc : undefined; // chamar para um acompanhamento só vale para ele
   const { data: m } = await createAdminClient().from("members").select("id, name, email, status").eq("id", who).maybeSingle();
   if (!m || m.status !== "approved") return;
   const meta = rec.meta;
-  if (!meta.shared.some((s) => s.id === who)) {
+  if (!meta.shared.some((s) => s.id === who && s.doc === scope)) {
     const nome = (m.name as string) || (m.email as string);
-    meta.shared.push({ id: who, name: nome });
+    meta.shared.push({ id: who, name: nome, ...(scope ? { doc: scope } : {}) });
     meta.history.unshift({
       at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email,
-      scope: "formulario", changes: [], note: `deu acesso para ${nome}`,
+      scope: "formulario", changes: [], note: `chamou ${nome} para ajudar`, ...(scope ? { doc: scope } : {}),
     });
     meta.history = meta.history.slice(0, 200);
   }
@@ -110,16 +116,18 @@ export async function shareRecord(form: FormData) {
 export async function unshareRecord(form: FormData) {
   const id = String(form.get("record_id"));
   const who = String(form.get("member_id"));
-  const { me, rec, acc } = await open(id);
+  const doc = String(form.get("doc") ?? "inicial");
+  const { me, rec, acc } = await open(id, doc, true);
   if (!acc.canShare) return;
+  const scope = /^acomp:\d+$/.test(doc) ? doc : undefined;
   const meta = rec.meta;
-  const removed = meta.shared.find((s) => s.id === who);
-  meta.shared = meta.shared.filter((s) => s.id !== who);
-  delete meta.editing[who];
+  const removed = meta.shared.find((s) => s.id === who && s.doc === scope);
+  meta.shared = meta.shared.filter((s) => !(s.id === who && s.doc === scope));
+  if (!meta.shared.some((s) => s.id === who)) delete meta.editing[who];
   if (removed) {
     meta.history.unshift({
       at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario",
-      changes: [], note: `tirou o acesso de ${removed.name}`,
+      changes: [], note: `tirou ${removed.name} da edição`, ...(scope ? { doc: scope } : {}),
     });
     meta.history = meta.history.slice(0, 200);
   }

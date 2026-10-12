@@ -664,7 +664,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
           )}
           {dirty && !msg && <span style={{ color: "var(--muted)", fontSize: 13 }}>Alterações não salvas</span>}
         </>)}
-        {!canEditProp && !viewFirst && <span style={{ color: "var(--muted)", fontSize: 13 }}>Você pode ver este documento, mas não editar.</span>}
+        {!canEditProp && !viewFirst && <span style={{ color: "var(--muted)", fontSize: 13 }}>Só quem criou este relatório, ou foi chamado para ajudar, pode editar.</span>}
 
         {canEdit && (
           <div className="doc-tools">
@@ -873,7 +873,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
           {canEditProp ? (
             <button type="button" onClick={() => setEditing(true)}><Pencil size={16} /> Editar</button>
           ) : (
-            <span style={{ color: "var(--muted)", fontSize: 14 }}>Você pode ver este documento, mas não editar.</span>
+            <span style={{ color: "var(--muted)", fontSize: 14 }}>Só quem criou este relatório, ou foi chamado para ajudar, pode editar.</span>
           )}
           <button type="button" className="ghost" onClick={() => router.push(backHref)}><ArrowLeft size={16} /> Voltar</button>
         </div>

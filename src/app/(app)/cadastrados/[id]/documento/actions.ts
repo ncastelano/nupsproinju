@@ -75,7 +75,7 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
   const me = await requireMember();
   const rec = await loadRecord(id, formOf(ref));
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
-  if (!accessOf(rec, me).canEdit || notaDenied(ref, rec, me)) return { ok: false, msg: "Você não tem permissão para editar." };
+  if (!accessOf(rec, me, refKey(ref)).canEdit || notaDenied(ref, rec, me)) return { ok: false, msg: "Você não tem permissão para editar." };
   // aceita o formato novo {blocks, comments, page} ou só a lista de parágrafos
   const payload = (paras && typeof paras === "object" && !Array.isArray(paras) ? paras : { blocks: paras }) as { blocks?: unknown; comments?: unknown; page?: Record<string, unknown> };
   const clean = cleanBlocks(payload.blocks);
@@ -117,7 +117,7 @@ export async function resetDocument(id: string, refIn?: unknown): Promise<{ ok: 
   const me = await requireMember();
   const rec = await loadRecord(id, formOf(ref));
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
-  if (!accessOf(rec, me).canEdit || notaDenied(ref, rec, me)) return { ok: false, msg: "Você não tem permissão para editar." };
+  if (!accessOf(rec, me, refKey(ref)).canEdit || notaDenied(ref, rec, me)) return { ok: false, msg: "Você não tem permissão para editar." };
   await createAdminClient().storage.from(DOC_BUCKET).remove([docPath(id, ref)]);
   if (ref.kind !== "nota") await note(id, `refez ${label(ref)} do início`, refKey(ref));
   revalidatePath(`/cadastrados/${id}`);
@@ -131,7 +131,6 @@ export async function saveAcompanhamento(_: string | null, form: FormData): Prom
   const me = await requireMember();
   const rec = await loadRecord(id);
   if (!rec) return "Processo não encontrado.";
-  if (!accessOf(rec, me).canEdit) return "Você não tem permissão para editar.";
 
   const meta = rec.meta;
   const draft = form.get("intent") === "draft";
@@ -139,6 +138,8 @@ export async function saveAcompanhamento(_: string | null, form: FormData): Prom
   const n = isNew ? Math.max(0, ...meta.acomps.map((a) => a.n)) + 1 : Number(nRaw);
   const existing = meta.acomps.find((a) => a.n === n);
   if (!isNew && !existing) return "Acompanhamento não encontrado.";
+  // novo acompanhamento: qualquer pessoa aprovada pode abrir; existente: só quem criou ou foi chamado
+  if (!isNew && !accessOf(rec, me, `acomp:${n}`).canEdit) return "Você não tem permissão para editar este acompanhamento.";
   if (meta.draft) return "Conclua o Cadastro inicial deste processo antes de fazer o acompanhamento.";
 
   const answers: Record<string, string> = {};
@@ -201,7 +202,7 @@ export async function deleteAcompanhamento(id: string, n: number): Promise<strin
   const me = await requireMember();
   const rec = await loadRecord(id);
   if (!rec) return "Processo não encontrado.";
-  const acc = accessOf(rec, me);
+  const acc = accessOf(rec, me, `acomp:${n}`);
   if (!acc.owner && !acc.admin) return "Você não tem permissão para apagar.";
   const meta = rec.meta;
   meta.acomps = meta.acomps.filter((a) => a.n !== n);

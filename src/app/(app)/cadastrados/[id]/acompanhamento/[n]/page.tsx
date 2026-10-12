@@ -9,6 +9,7 @@ import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
 import { RecordActivity } from "@/components/RecordActivity";
+import { Collaborators } from "@/components/Collaborators";
 import { AudioPanel } from "@/components/AudioPanel";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -19,7 +20,7 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
   const n = Number(nRaw);
   const rec = await loadRecord(id);
   if (!rec || !Number.isInteger(n)) notFound();
-  const acc = accessOf(rec, me);
+  const acc = accessOf(rec, me, `acomp:${n}`);
   const entry = rec.meta.acomps.find((a) => a.n === n);
   if (!acc.canView || !entry) notFound();
   if (entry.draft) redirect(`/acompanhamento?processo=${id}&n=${n}`);
@@ -49,6 +50,7 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
           <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <Collaborators rec={rec} doc={`acomp:${n}`} canShare={acc.canShare} />
       <div className="card">
         <AudioPanel recordId={id} doc={`acomp:${n}`} audios={(rec.meta.audios ?? []).filter((a) => a.doc === `acomp:${n}`)} canEdit={acc.canEdit} me={me.id} />
       </div>

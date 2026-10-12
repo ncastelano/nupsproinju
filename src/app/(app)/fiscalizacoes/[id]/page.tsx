@@ -7,6 +7,7 @@ import { parseDocx } from "@/lib/docxDoc";
 import { loadProcessDoc } from "@/lib/procDoc";
 import { DocEditor } from "@/components/DocEditor";
 import { RecordActivity } from "@/components/RecordActivity";
+import { Collaborators } from "@/components/Collaborators";
 import { AudioPanel } from "@/components/AudioPanel";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -46,6 +47,7 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
           <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
         </div>
       </div>
+      <Collaborators rec={rec} doc="fisc" canShare={acc.canShare} />
       <div className="card">
         <AudioPanel recordId={id} doc={"fisc"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "fisc")} canEdit={acc.canEdit} me={me.id} />
       </div>
