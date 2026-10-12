@@ -149,7 +149,7 @@ export function acompTexts(a: Record<string, string>): Record<string, string> {
 // Para comparar: o que a avaliação anterior disse (último acompanhamento anterior, ou o Cadastro inicial).
 export function previousTexts(answers: Ans, meta: RecMeta, n: number): Record<string, string> {
   const base = reportValues(answers);
-  const earlier = Object.keys(meta.acompData ?? {}).map(Number).filter((k) => k < n).sort((a, b) => b - a)[0];
+  const earlier = meta.acomps.filter((a) => !a.draft && a.n < n && meta.acompData?.[String(a.n)]).map((a) => a.n).sort((a, b) => b - a)[0];
   const prev = earlier !== undefined ? meta.acompData![String(earlier)] : null;
   const pick = (a?: string, b?: string) => {
     const v = (a || b || "").trim();
@@ -170,3 +170,35 @@ export function previousTexts(answers: Ans, meta: RecMeta, n: number): Record<st
   };
   return Object.fromEntries(Object.entries(out).filter(([, v]) => v));
 }
+
+// Situação anterior de cada eixo para o relatório: o relatório n compara o acompanhamento imediatamente anterior
+// (n-1, o último concluído antes dele) com o atual; no primeiro, a anterior é o Cadastro inicial.
+export const AXES = [
+  { m: "ACOLHIMENTO", k: "acolh", cad: "ACOLHIMENTO_ADAPTACAO" },
+  { m: "EDUCACAO", k: "edu", cad: "EDUCACAO" },
+  { m: "SAUDE", k: "saude", cad: "SAUDE" },
+  { m: "EMOCIONAL", k: "emo", cad: "ASPECTOS_EMOCIONAIS" },
+  { m: "CONVIVENCIA_FAMILIAR", k: "fam", cad: "CONVIVENCIA_FAMILIAR" },
+  { m: "CONVIVENCIA_COMUNITARIA", k: "comun", cad: "CONVIVENCIA_COMUNITARIA" },
+] as const;
+
+export function previousSituation(answers: Ans, meta: RecMeta, n: number): Record<string, string> {
+  const prevN = meta.acomps.filter((a) => !a.draft && a.n < n && meta.acompData?.[String(a.n)]).map((a) => a.n).sort((a, b) => b - a)[0];
+  const out: Record<string, string> = {};
+  if (prevN !== undefined) {
+    const prev = meta.acompData![String(prevN)];
+    for (const ax of AXES) out[ax.k] = (prev[`${ax.k}_info`] ?? "").trim();
+  } else {
+    const base = reportValues(answers);
+    for (const ax of AXES) { const v = (base[ax.cad] ?? "").trim(); out[ax.k] = v === "—" ? "" : v; }
+  }
+  return out;
+}
+
+const CHANGE: Record<string, string> = {
+  "Houve alteração/evolução relevante": "Em comparação com a avaliação anterior, houve alteração/evolução relevante neste aspecto.",
+  "Permanece sem alterações relevantes": "Em comparação com a avaliação anterior, a situação permanece sem alterações relevantes.",
+  "Não foi possível avaliar no período": "Não foi possível avaliar este aspecto no período.",
+  "Não se aplica": "Este aspecto não se aplica no período.",
+};
+export const changeSentence = (status: string) => CHANGE[status.trim()] ?? "Sem informação sobre a comparação com a avaliação anterior.";

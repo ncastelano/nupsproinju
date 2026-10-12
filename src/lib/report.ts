@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import type { Ans } from "@/lib/records";
-import { acompTexts } from "@/lib/acomp";
+import { AXES, acompTexts, changeSentence } from "@/lib/acomp";
 
 // Modelo do relatório (.docx) guardado no Supabase Storage.
 export const REPORT_BUCKET = "modelos";
@@ -117,6 +117,8 @@ export async function markersOf(buf: Buffer): Promise<string[]> {
 // Campos que entram no meio de uma frase do modelo (começam com letra minúscula).
 const LOWER_INLINE = new Set([
   "ACOLHIMENTO_ADAPTACAO", "EDUCACAO", "SAUDE", "ASPECTOS_EMOCIONAIS", "CONVIVENCIA_FAMILIAR", "CONVIVENCIA_COMUNITARIA", "PERSPECTIVA",
+  "PERSPECTIVAS_ENCAMINHAMENTO",
+  ...["ACOLHIMENTO", "EDUCACAO", "SAUDE", "EMOCIONAL", "CONVIVENCIA_FAMILIAR", "CONVIVENCIA_COMUNITARIA"].flatMap((x) => [`SITUACAO_ANTERIOR_${x}`, `SITUACAO_ATUAL_${x}`]),
 ]);
 
 // Preenche o .docx: troca cada {{MARCADOR}} pelo texto correspondente.
@@ -194,6 +196,7 @@ export const FISC_BASE_PATH = "relatorio-fiscalizacao.docx";
 // Identificação vem do Cadastro inicial; os demais campos vêm do questionário do acompanhamento.
 export function acompValues(
   a: Ans, signer: { name: string; registry: string }, answers: Record<string, string> = {}, now = new Date(),
+  prev: Record<string, string> = {}, // situação anterior de cada eixo (acompanhamento anterior ou Cadastro inicial)
 ): Record<string, string> {
   const base = reportValues(a, now);
   const t = acompTexts(answers);
@@ -210,6 +213,15 @@ export function acompValues(
     UNIDADE: base.UNIDADE,
     PROFISSIONAL: t.PROFISSIONAL || base.PROFISSIONAIS,
     PROCEDIMENTOS: mine("PROCEDIMENTOS"),
+    // situação anterior (formulário imediatamente anterior) x atual (formulário enviado) x o que mudou
+    ...Object.fromEntries(AXES.flatMap((ax) => [
+      [`SITUACAO_ANTERIOR_${ax.m}`, (prev[ax.k] ?? "").trim() || "não foram registradas informações específicas"],
+      [`SITUACAO_ATUAL_${ax.m}`, (answers[`${ax.k}_info`] ?? "").trim() || "não foram registradas informações específicas no período"],
+      [`ALTERACOES_${ax.m}`, changeSentence(answers[ax.k] ?? "")],
+    ])),
+    PERSPECTIVAS_ENCAMINHAMENTO: (answers.perspectiva ?? "").trim()
+      ? [answers.perspectiva.trim(), (answers.perspectiva_info ?? "").trim().replace(/[.\s]+$/, "")].filter(Boolean).join(" – ")
+      : TODO,
     COMPARATIVO_ACOLHIMENTO: mine("COMPARATIVO_ACOLHIMENTO"),
     COMPARATIVO_EDUCACAO: mine("COMPARATIVO_EDUCACAO"),
     COMPARATIVO_SAUDE: mine("COMPARATIVO_SAUDE"),
