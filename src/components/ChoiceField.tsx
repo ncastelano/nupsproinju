@@ -46,7 +46,10 @@ export function ChoiceField({
   const all = useMemo(() => [...options, ...(other ? [OUTRO] : [])], [options, other]);
   const shown = filter ? all.filter((o) => o.toLowerCase().includes(filter.toLowerCase())) : all;
   const hasOther = selected.includes(OUTRO);
-  const summary = selected.map((s) => (s === OUTRO ? `Outro${otherText ? `: ${otherText}` : ""}` : s));
+  const label = (s: string) => (s === OUTRO ? `Outro${otherText ? `: ${otherText}` : ""}` : s);
+  const summary = selected.map(label);
+  // a caixa tem sempre o mesmo tamanho: uma linha (com "…" se for longo); as várias escolhas aparecem como etiquetas embaixo
+  const boxText = !summary.length ? placeholder : multiple && summary.length > 1 ? `${summary.length} selecionados` : summary[0];
   const close = () => { setOpen(false); setFilter(""); };
 
   return (
@@ -57,10 +60,19 @@ export function ChoiceField({
       {hasOther && <input type="hidden" name={`${name}__outro`} value={otherText} />}
 
       <button type="button" className={`choice-box${open ? " open" : ""}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-        <span className={`choice-values${summary.length ? "" : " placeholder"}`}>{summary.length ? summary.join("; ") : placeholder}</span>
-        {multiple && summary.length > 1 && <span className="choice-count">{summary.length}</span>}
+        <span className={`choice-values${summary.length ? "" : " placeholder"}`} title={summary.join("; ")}>{boxText}</span>
         <ChevronDown size={18} />
       </button>
+      {multiple && selected.length > 0 && (
+        <div className="choice-tags">
+          {selected.map((s) => (
+            <span key={s} className="choice-tag">
+              {label(s)}
+              <button type="button" aria-label={`Remover ${label(s)}`} onClick={() => commit(selected.filter((x) => x !== s), otherText)}><X size={12} /></button>
+            </span>
+          ))}
+        </div>
+      )}
 
       {open && (
         <div className="choice-overlay" onMouseDown={close}>

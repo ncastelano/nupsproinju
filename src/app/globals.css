@@ -820,3 +820,11 @@ dialog.model-dialog .doc-scroll { padding-bottom: 8px; }
 /* o que foi escolhido aparece inteiro (quebra em mais linhas em vez de cortar) */
 .choice-values { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; line-height: 1.35; }
 .choice-box { align-items: center; min-height: 51px; }
+
+/* altura fixa em todos os campos de escolha */
+.choice-box { height: 51px; min-height: 51px; }
+.choice-values { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; line-height: 1.4; }
+.choice-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.choice-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--brand-soft); color: var(--brand-dark); border-radius: 999px; padding: 5px 6px 5px 12px; font-size: 13.5px; font-weight: 600; max-width: 100%; overflow-wrap: anywhere; }
+.choice-tag button { background: rgba(7,63,73,.12); color: var(--brand-dark); padding: 3px; border-radius: 50%; display: grid; place-items: center; }
+.choice-tag button:hover { background: rgba(7,63,73,.25); box-shadow: none; }
