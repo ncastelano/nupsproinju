@@ -3,6 +3,7 @@ import { Fragment, useActionState, useState, type ReactNode } from "react";
 import { CheckCircle2, Check } from "lucide-react";
 import { RecordView, formatDate } from "@/components/RecordView";
 import { ChoiceField } from "@/components/ChoiceField";
+import { DateList } from "@/components/DateList";
 import { OTHER_PREFIX, PROFESSIONAL_KEYS, type Question } from "@/lib/forms";
 import { saveIntake } from "./actions";
 
@@ -16,6 +17,8 @@ export function Field({ q, initial = "" }: { q: Question; initial?: string }) {
     return <textarea name={name} required={q.required} rows={5} defaultValue={initial} />;
   if (q.type === "date")
     return <input name={name} type="date" required={q.required} defaultValue={initial} />;
+  // data de nascimento: uma data por criança/adolescente, no mesmo formato de campo de data
+  if (q.key === "nascimentos") return <DateList name={name} initial={initial} />;
   if (q.type === "select")
     return <ChoiceField name={name} title={q.label} options={q.options} initial={initial ? [initial] : []} />;
   if (q.type === "checkbox") {
@@ -147,7 +150,7 @@ export function IntakeForm({
               <label className="q-label">
                 {q.label}{q.required && <span className="req"> *</span>}
               </label>
-              {q.help && <div className="help">{q.help}</div>}
+              {q.help && <div className="help">{q.key === "nascimentos" ? "Em caso de grupo de irmãos, use “Adicionar outra data” e informe uma data para cada um, na mesma ordem em que os nomes foram informados acima." : q.help}</div>}
               {PROFESSIONAL_KEYS.includes(q.key) && q.type !== "checkbox" ? (
                 <>
                   <div className="linked">{professional}</div>
