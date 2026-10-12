@@ -833,3 +833,18 @@ dialog.model-dialog .doc-scroll { padding-bottom: 8px; }
 .choice-chips { flex: 1; min-width: 0; display: flex; gap: 6px; align-items: center; overflow-x: auto; white-space: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .choice-chips::-webkit-scrollbar { display: none; }
 .choice-chips .choice-tag { flex: none; padding: 4px 12px; font-size: 13.5px; }
+
+/* Quadros dos modelos: cabeçalho em grade (título, fechar e ações sem espremer o texto) */
+.model-dialog-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: start; }
+.model-dialog-head > div:first-child { grid-column: 1; min-width: 0; flex: none; }
+.model-dialog-head > button { grid-column: 2; grid-row: 1; }
+.model-dialog-head .model-actions { grid-column: 1 / -1; grid-row: 2; display: flex; flex-wrap: wrap; gap: 8px; }
+.model-dialog-head strong, .model-dialog-head .model-file { overflow-wrap: break-word; word-break: normal; display: block; }
+.model-dialog-body { min-width: 0; }
+dialog.model-dialog { width: min(980px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); }
+@media (max-width: 640px) {
+  .model-dialog-body { padding: 10px 10px 20px; }
+  dialog.model-dialog .doc-scroll { padding: 0; }
+  .model-row { grid-template-columns: minmax(0, 1fr); }
+  .model-chip { width: 100%; }
+}
