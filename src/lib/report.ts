@@ -6,6 +6,7 @@ import { acompTexts } from "@/lib/acomp";
 export const REPORT_BUCKET = "modelos";
 export const REPORT_PATH = "relatorio-inicial-de-acompanhamento.docx";
 
+export const TODO = "[preencher]";
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const iso = (v: string) => { const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? `${m[3]}/${m[2]}/${m[1]}` : v; };
 const lower = (s: string) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
@@ -67,8 +68,11 @@ export function reportValues(a: Ans, now = new Date()): Record<string, string> {
     ASPECTOS_EMOCIONAIS: withInfo(v("emocional"), v("emocional_info")),
     CONVIVENCIA_FAMILIAR: withInfo(v("convivencia_familiar"), v("convivencia_familiar_info")),
     CONVIVENCIA_COMUNITARIA: withInfo(
-      v("convivencia_comunitaria") && `Possui vínculos significativos externos ao serviço de acolhimento: ${v("convivencia_comunitaria")}`,
+      v("convivencia_comunitaria") === "Sim" ? "Possui vínculos significativos externos ao serviço de acolhimento"
+        : v("convivencia_comunitaria") === "Não" ? "Não possui vínculos significativos externos ao serviço de acolhimento"
+        : v("convivencia_comunitaria") && `Vínculos significativos externos ao serviço de acolhimento: ${v("convivencia_comunitaria")}`,
       v("convivencia_comunitaria_info"),
+    ),
     ),
     SITUACAO_GENITORA: withInfo(lower(v("situacao_genitora")), v("situacao_genitora_info")),
     SITUACAO_GENITOR: withInfo(lower(v("situacao_genitor")), v("situacao_genitor_info")),
@@ -78,6 +82,7 @@ export function reportValues(a: Ans, now = new Date()): Record<string, string> {
       v("fatores_protecao") && `Principais fatores de proteção/recursos identificados: ${v("fatores_protecao")}`,
     ].filter(Boolean).join("\n\n"),
     PERSPECTIVA: v("perspectiva"),
+    PARECER_TECNICO: TODO, // escrito pela equipe técnica no próprio relatório
     QUESTOES_PROXIMO_ACOMPANHAMENTO: v("questoes_pendentes"),
     LOCAL_DATA: `Porto Velho/RO, ${now.getDate()} de ${MESES[now.getMonth()]} de ${now.getFullYear()}.`,
   };
@@ -110,6 +115,11 @@ export async function markersOf(buf: Buffer): Promise<string[]> {
   return [...new Set((text.match(/\{\{[A-Z_]+\}\}/g) ?? []).map((m) => m.slice(2, -2)))];
 }
 
+// Campos que entram no meio de uma frase do modelo (começam com letra minúscula).
+const LOWER_INLINE = new Set([
+  "ACOLHIMENTO_ADAPTACAO", "EDUCACAO", "SAUDE", "ASPECTOS_EMOCIONAIS", "CONVIVENCIA_FAMILIAR", "CONVIVENCIA_COMUNITARIA", "PERSPECTIVA",
+]);
+
 // Preenche o .docx: troca cada {{MARCADOR}} pelo texto correspondente.
 export async function fillDocx(
   template: Buffer, values: Record<string, string>,
@@ -121,9 +131,19 @@ export async function fillDocx(
   let xml = normalizeMarkers(await file.async("string"));
   if (edit) xml = edit(xml);
   xml = xml.replace(/<w:t>/g, '<w:t xml:space="preserve">');
+  const encode = (t: string) => esc(t).replace(/\r?\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
+  const lowerFirst = (t: string) => (/^[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{2}/.test(t) || !t ? t : t.charAt(0).toLowerCase() + t.slice(1));
   for (const [ph, raw] of Object.entries(values)) {
-    const text = esc(raw.trim() || "—").replace(/\r?\n/g, '</w:t><w:br/><w:t xml:space="preserve">');
-    xml = xml.split(`{{${ph}}}`).join(text);
+    const base = raw.trim() || "—";
+    // o modelo pode continuar a frase ("... verifica-se que {{CAMPO}}."): sem ponto repetido e com a inicial em minúscula
+    const re = new RegExp(`(<w:t[^>]*>)([^<]*?)\\{\\{${ph}\\}\\}([.,;]?)`, "g");
+    xml = xml.replace(re, (_m, open: string, pre: string, after: string) => {
+      let v = base;
+      if (after) v = v.replace(/[.\s]+$/, "") || v;
+      if (LOWER_INLINE.has(ph) && pre.trim().length > 0 && v !== "—") v = lowerFirst(v);
+      return `${open}${pre}${encode(v)}${after}`;
+    });
+    xml = xml.split(`{{${ph}}}`).join(encode(base));
   }
   xml = xml.replace(/\{\{Q:[A-Za-z0-9_]+\}\}/g, "—"); // pergunta sem resposta
   zip.file("word/document.xml", xml);
@@ -162,6 +182,7 @@ export const PLACEHOLDER_SOURCE: Record<string, string> = {
   SITUACAO_FAMILIA_EXTENSA: "21. Situação da família extensa + 21.2",
   ANALISE_TECNICA: "22. Fatores de risco + 23. Fatores de proteção",
   PERSPECTIVA: "24. Perspectiva de encaminhamento",
+  PARECER_TECNICO: "Escrito pela equipe técnica no próprio relatório (aparece como [preencher])",
   QUESTOES_PROXIMO_ACOMPANHAMENTO: "25. Questões pendentes e/ou aspectos a acompanhar",
   LOCAL_DATA: "Gerado automaticamente (cidade e data de hoje)",
 };
@@ -170,7 +191,6 @@ export const PLACEHOLDER_SOURCE: Record<string, string> = {
 export const ACOMP_PATH = "relatorio-acompanhamento-reavaliacao.docx";
 // Base do relatório de fiscalização: cabeçalho, página e estilos (o texto vem do questionário)
 export const FISC_BASE_PATH = "relatorio-fiscalizacao.docx";
-export const TODO = "[preencher]";
 
 // Identificação vem do Cadastro inicial; os demais campos vêm do questionário do acompanhamento.
 export function acompValues(
