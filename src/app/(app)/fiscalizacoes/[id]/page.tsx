@@ -41,18 +41,17 @@ export default async function FiscalizacaoDocPage({ params }: { params: Promise<
           <span style={{ color: "var(--muted)" }}>Visita em {v?.date?.split("-").reverse().join("/")}</span>
         </div>
       </div>
-      <DocEditor viewFirst key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/fiscalizacoes"  editExtra={<>
+      <DocEditor viewFirst actions={<div className="doc-info">
+        <div className="pcard-actions">
+          <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
+        </div>
+      </div>} key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/fiscalizacoes"  editExtra={<>
             <Collaborators rec={rec} doc="fisc" canShare={acc.canShare} />
             <div className="card">
               <AudioPanel recordId={id} doc={"fisc"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "fisc")} canEdit={acc.canEdit} me={me.id} />
             </div>
           </>}
       />
-      <div className="doc-info">
-        <div className="pcard-actions">
-          <FiscActions id={id} done nome={`${v?.unit ?? ""} – ${v?.date?.split("-").reverse().join("/") ?? ""}`} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
-        </div>
-      </div>
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
             {(v?.professionals ?? []).map((p) => <span key={p} className="chip">{p}</span>)}

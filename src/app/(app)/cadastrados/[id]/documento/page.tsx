@@ -40,19 +40,18 @@ export default async function DocumentoPage({ params }: { params: Promise<{ id: 
           <span style={{ color: "var(--muted)" }}>Processo {rec.answers.processo?.value ?? "—"}</span>
         </div>
       </div>
-      <DocEditor viewFirst key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email}  editExtra={<>
+      <DocEditor viewFirst actions={<div className="doc-info">
+        <div className="pcard-actions">
+          <Link href={`/cadastrados/${id}`}><button className="ghost"><ClipboardList size={16} /> Ficha e acompanhamentos</button></Link>
+          <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
+        </div>
+      </div>} key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email}  editExtra={<>
             <Collaborators rec={rec} doc="inicial" canShare={acc.canShare} />
             <div className="card">
               <AudioPanel recordId={id} doc={"inicial"} audios={(rec.meta.audios ?? []).filter((a) => a.doc === "inicial")} canEdit={acc.canEdit} me={me.id} />
             </div>
           </>}
       />
-      <div className="doc-info">
-        <div className="pcard-actions">
-          <Link href={`/cadastrados/${id}`}><button className="ghost"><ClipboardList size={16} /> Ficha e acompanhamentos</button></Link>
-          <RecordActions recordId={id} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
-        </div>
-      </div>
       <div className="card grid" style={{ gap: 14 }}>
           <div className="pcard-chips">
             {rec.answers.data_acolhimento?.value && <span className="chip">Acolhido em {formatDate(rec.answers.data_acolhimento.value)}</span>}

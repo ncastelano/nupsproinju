@@ -43,19 +43,18 @@ export default async function AcompanhamentoDocPage({ params }: { params: Promis
           <span style={{ color: "var(--muted)" }}>{rec.answers.nomes?.value ?? "Processo"} · Processo {rec.answers.processo?.value ?? "—"}</span>
         </div>
       </div>
-      <DocEditor viewFirst key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/acompanhamento"  editExtra={<>
+      <DocEditor viewFirst actions={<div className="doc-info">
+        <div className="pcard-actions">
+          <Link href={`/cadastrados/${id}/documento`}><button className="ghost"><ClipboardList size={16} /> Cadastro inicial</button></Link>
+          <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
+        </div>
+      </div>} key={doc.version} id={id} data={data} version={doc.version} canEdit={acc.canEdit} author={me.name || me.email} docRef={ref} backHref="/acompanhamento"  editExtra={<>
             <Collaborators rec={rec} doc={`acomp:${n}`} canShare={acc.canShare} />
             <div className="card">
               <AudioPanel recordId={id} doc={`acomp:${n}`} audios={(rec.meta.audios ?? []).filter((a) => a.doc === `acomp:${n}`)} canEdit={acc.canEdit} me={me.id} />
             </div>
           </>}
       />
-      <div className="doc-info">
-        <div className="pcard-actions">
-          <Link href={`/cadastrados/${id}/documento`}><button className="ghost"><ClipboardList size={16} /> Cadastro inicial</button></Link>
-          <AcompActions id={id} n={n} nome={rec.answers.nomes?.value ?? "(sem nome)"} canDelete={acc.owner || acc.admin} hideOpen after="/processos" />
-        </div>
-      </div>
       <h2 className="section" style={{ margin: 0 }}>CADASTRO INICIAL</h2>
       <div className="user-grid four">
         <MiniCard

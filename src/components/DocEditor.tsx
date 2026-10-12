@@ -142,8 +142,9 @@ const toItem = (b: Block): Item => {
   return { uid: uidSeq++, kind: "p", jc: b.jc, sp: b.sp, ind: b.ind, sz: b.sz, font: b.font, html: runsHtml(b.runs, b.font), img: b.img };
 };
 
-export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, viewFirst = false, editExtra, onSave, onSaved }: {
+export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, viewFirst = false, editExtra, actions, onSave, onSaved }: {
   id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string; bare?: boolean;
+  actions?: React.ReactNode; // botões do relatório (ficha, compartilhar, baixar, deletar): embaixo ao ler, em cima ao editar
   editExtra?: React.ReactNode; // blocos que só aparecem dentro da edição (permissões, áudios); sem permissão de editar, aparecem direto
   viewFirst?: boolean; // abre só para ler; "Editar" (embaixo do documento) liga a edição e a barra de ferramentas
   onSave?: (payload: { blocks: Block[]; comments: DocComment[]; page: { top: number; bottom: number; left: number; right: number } }) => Promise<SaveResult>;
@@ -198,7 +199,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
         setOthers(r.others);
         if (r.version && base.current && r.version !== base.current && !(canEditProp && editing)) {
           // só olhando: atualiza sozinho quando alguém salva uma versão nova
-          if (!dirtyRef.current) router.refresh(); else setStale(true);
+          if (!dirtyRef.current) void tickRef.current(true); else setStale(true);
         }
       } catch { /* sem rede: tenta de novo no próximo ciclo */ }
     };
@@ -727,7 +728,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   );
 
   const bar = !bare && (!viewFirst || editing) ? (
-    <div className={`doc-bar${viewFirst ? " bottom" : ""}`}>
+    <div className="doc-bar">
         {docRef.kind !== "nota" && docRef.kind !== "modelo" && (confirmLeave ? (
           <>
             <span style={{ fontSize: 13 }}>Há alterações não salvas. {viewFirst ? "Descartar?" : "Sair mesmo assim?"}</span>
@@ -844,13 +845,17 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
       {!viewFirst && bar}
       {(others.length > 0 || stale) && (
         <div className="editing-now doc-presence">
-          <Pencil size={14} />
-          <span>
-            {others.length > 0 && <>{others.join(", ")} {others.length === 1 ? "está editando" : "estão editando"} este relatório agora. </>}
-            {stale && <>Outra pessoa salvou uma versão mais nova{dirty ? "; se você salvar, será preciso atualizar antes" : ""}. </>}
-          </span>
+          {others.map((n) => <span key={n} className="presence-who"><Pencil size={14} /> <strong>{n}</strong>: editando<span className="dots">...</span></span>)}
+          {stale && <span>Outra pessoa salvou uma versão mais nova{dirty ? "; se você salvar, será preciso atualizar antes" : ""}.</span>}
           {stale && !dirty && <button type="button" className="ghost" onClick={() => window.location.reload()}>Atualizar</button>}
         </div>
+      )}
+      {viewFirst && editing && (
+        <>
+          {bar}
+          {editExtra && <div className="grid" style={{ gap: 14 }}>{editExtra}</div>}
+          {actions}
+        </>
       )}
 
       <div className="doc-body">
@@ -991,8 +996,8 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
           <button type="button" className="ghost" onClick={() => router.push(backHref)}><ArrowLeft size={16} /> Voltar</button>
         </div>
       )}
-      {viewFirst && bar}
-      {editExtra && (editing || !canEditProp) && <div className="grid" style={{ gap: 14 }}>{editExtra}</div>}
+      {viewFirst && !editing && !bare && actions}
+      {viewFirst && !editing && !canEditProp && editExtra && <div className="grid" style={{ gap: 14 }}>{editExtra}</div>}
     </div>
   );
 }
