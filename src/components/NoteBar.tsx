@@ -1,9 +1,9 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Globe, Plus, Trash2, Users } from "lucide-react";
+import { Check, Globe, Trash2, Users } from "lucide-react";
 import { DownloadMenu } from "@/components/DownloadMenu";
-import { createNote, deleteNote, renameNote, setNoteVisibility } from "@/app/(app)/bloco-de-notas/actions";
+import { deleteNote, renameNote, setNoteVisibility } from "@/app/(app)/bloco-de-notas/actions";
 
 // Barra do Bloco de notas: trocar de nota, nova nota, renomear, baixar e apagar.
 export function NoteBar({ notes, current, title, visibility }: { notes: { id: string; title: string }[]; current: string; title: string; visibility: "publico" | "servico" }) {
@@ -23,9 +23,6 @@ export function NoteBar({ notes, current, title, visibility }: { notes: { id: st
   return (
     <div className="card grid" style={{ gap: 10 }}>
       <div className="row" style={{ flexWrap: "wrap" }}>
-        <button className="ghost" disabled={pending} onClick={() => start(async () => { router.push(`/bloco-de-notas?n=${await createNote()}`); })}>
-          <Plus size={16} /> Nova nota
-        </button>
         <DownloadMenu href={`/bloco-de-notas/${current}/baixar`} />
         {!ask ? (
           <button className="danger" onClick={() => setAsk(true)}><Trash2 size={16} /> Apagar nota</button>
@@ -43,7 +40,7 @@ export function NoteBar({ notes, current, title, visibility }: { notes: { id: st
       <div className="row">
         <input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => name.trim() !== title && rename()} placeholder="Título da nota" style={{ flex: 1, minWidth: 180 }} />
         <div className="seg" role="group" aria-label="Quem pode ver esta nota">
-          {([["servico", "Serviço", Users], ["publico", "Público", Globe]] as const).map(([k, label, Icon]) => (
+          {([["servico", "Rascunho", Users], ["publico", "Público", Globe]] as const).map(([k, label, Icon]) => (
             <button
               key={k} type="button" className={vis === k ? "on" : ""} disabled={pending}
               onClick={() => {
@@ -58,7 +55,7 @@ export function NoteBar({ notes, current, title, visibility }: { notes: { id: st
       <span className="help" style={{ margin: 0 }}>
         {vis === "publico"
           ? "Público: qualquer pessoa com o link vê esta nota, e ela aparece no seu perfil público."
-          : "Serviço: só quem tem conta no sistema vê esta nota."}
+          : "Rascunho: só quem tem conta no sistema vê esta nota."}
       </span>
       {err && <p className="error">{err}</p>}
     </div>

@@ -33,7 +33,7 @@ export default async function NotaPage({ params }: { params: Promise<{ id: strin
       <div className="row" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
         <div>
           <h1 style={{ margin: 0 }}>{rec.answers.titulo?.value || "Nota"}</h1>
-          <span style={{ color: "var(--muted)" }}>Nota de {(owner?.name as string) || "—"} · {vis === "publico" ? "Pública" : "Serviço"}</span>
+          <span style={{ color: "var(--muted)" }}>Nota de {(owner?.name as string) || "—"} · {vis === "publico" ? "Pública" : "Rascunho"}</span>
         </div>
         <DownloadMenu href={`/bloco-de-notas/${id}/baixar`} />
       </div>

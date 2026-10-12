@@ -181,7 +181,7 @@ export default async function ProfilePage({
           <MiniCard
             key={n.id} href={mine ? `/bloco-de-notas?n=${n.id}` : `/nota/${n.id}`}
             title={n.title} line={`Atualizada em ${brDate(n.at)}`}
-            tag={mine ? (n.vis === "publico" ? "Público" : "Serviço") : undefined}
+            tag={n.vis === "publico" ? (mine ? "Público" : undefined) : "Rascunho"}
           />
         )), mine ? "Você ainda não tem notas." : "Nenhuma nota aparece neste perfil.")}
       </div>

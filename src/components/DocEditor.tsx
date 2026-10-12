@@ -619,7 +619,7 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
   return (
     <div className="doc-wrap">
       <div className="doc-bar">
-        {confirmLeave ? (
+        {docRef.kind !== "nota" && (confirmLeave ? (
           <>
             <span style={{ fontSize: 13 }}>Há alterações não salvas. Sair mesmo assim?</span>
             <button className="danger" onClick={() => { setDirty(false); router.push(backHref); }}>Sair sem salvar</button>
@@ -629,9 +629,9 @@ export function DocEditor({ id, data, version, canEdit, docRef = { kind: "inicia
           <button className="ghost" onClick={() => (dirty ? setConfirmLeave(true) : router.push(backHref))}>
             <ArrowLeft size={16} /> Voltar
           </button>
-        )}
+        ))}
         {canEdit && (<>
-          <span className="doc-sep" />
+          {docRef.kind !== "nota" && <span className="doc-sep" />}
           {confirmReset ? (
             <>
               <span style={{ fontSize: 13 }}>Descartar o que foi editado e refazer?</span>

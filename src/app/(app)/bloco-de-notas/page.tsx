@@ -42,7 +42,7 @@ export default async function BlocoDeNotas({ searchParams }: { searchParams: Pro
         {notes.map((x) => (
           <Link key={x.id} href={`/bloco-de-notas?n=${x.id}`} className={`note-card${x.id === currentId ? " on" : ""}`}>
             <strong>{x.title}</strong>
-            <span>{new Date(x.at).toLocaleDateString("pt-BR")} · {x.vis === "publico" ? "Público" : "Serviço"}</span>
+            <span>{new Date(x.at).toLocaleDateString("pt-BR")} · {x.vis === "publico" ? "Público" : "Rascunho"}</span>
           </Link>
         ))}
       </div>
