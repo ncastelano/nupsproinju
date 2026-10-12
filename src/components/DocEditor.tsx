@@ -142,8 +142,9 @@ const toItem = (b: Block): Item => {
   return { uid: uidSeq++, kind: "p", jc: b.jc, sp: b.sp, ind: b.ind, sz: b.sz, font: b.font, html: runsHtml(b.runs, b.font), img: b.img };
 };
 
-export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, viewFirst = false, onSave, onSaved }: {
+export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, viewFirst = false, editExtra, onSave, onSaved }: {
   id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string; bare?: boolean;
+  editExtra?: React.ReactNode; // blocos que só aparecem dentro da edição (permissões, áudios); sem permissão de editar, aparecem direto
   viewFirst?: boolean; // abre só para ler; "Editar" (embaixo do documento) liga a edição e a barra de ferramentas
   onSave?: (payload: { blocks: Block[]; comments: DocComment[]; page: { top: number; bottom: number; left: number; right: number } }) => Promise<SaveResult>;
   onSaved?: () => void;
@@ -991,6 +992,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
         </div>
       )}
       {viewFirst && bar}
+      {editExtra && (editing || !canEditProp) && <div className="grid" style={{ gap: 14 }}>{editExtra}</div>}
     </div>
   );
 }
