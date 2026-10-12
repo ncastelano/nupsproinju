@@ -807,3 +807,5 @@ dialog.model-dialog .doc-scroll { padding-bottom: 8px; }
 
 .choice-overlay, .choice-panel, .choice-list, .model-dialog-body { overscroll-behavior: contain; }
 .choice-list { scrollbar-width: thin; }
+.model-section { display: grid; gap: 6px; }
+.model-notice { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--brand-dark); background: var(--brand-soft); border-radius: 999px; padding: 4px 12px; width: fit-content; max-width: 100%; }

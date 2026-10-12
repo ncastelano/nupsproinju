@@ -1,6 +1,6 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { Download, FileText, ListChecks, Loader2, Upload, X } from "lucide-react";
+import { Download, FileText, ListChecks, Loader2, Lock, Upload, X } from "lucide-react";
 import { DocEditor } from "@/components/DocEditor";
 import { getModelDoc, replaceModel } from "@/app/(app)/modelos/actions";
 import type { DocData } from "@/lib/docxDoc";
@@ -63,6 +63,8 @@ export function ModelPanel({
   const ok = msg?.startsWith("ok:") ? msg.slice(3) : null;
 
   return (
+    <section className="model-section">
+      <div className="model-notice"><Lock size={14} /> Área restrita: somente administradores veem e alteram os modelos-base deste formulário.</div>
     <div className="model-row">
       <button type="button" className="model-chip" onClick={() => setOpen("doc")}>
         <span className="model-ico"><FileText size={20} /></span>
@@ -125,5 +127,6 @@ export function ModelPanel({
         </div>
       </Dialog>
     </div>
+    </section>
   );
 }
