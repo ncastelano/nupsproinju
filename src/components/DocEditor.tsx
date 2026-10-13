@@ -247,7 +247,10 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const [hdr, setHdr] = useState(data.header);   // cabeçalho (logo) mostrado na folha
   const pendingLogo = useRef<{ src?: string; w: number; h: number } | null>(null); // logo novo ainda não salvo
   const logoRef = useRef<HTMLInputElement>(null);
-  const [others, setOthers] = useState<string[]>([]); // quem mais está editando este documento agora
+  const [others, setOthers] = useState<string[]>([]);
+  const [typers, setTypers] = useState<string[]>([]); // quem está digitando agora (aviso flutuante)
+  const lastType = useRef(0);
+  const presenceRef = useRef<() => void>(() => {}); // quem mais está editando este documento agora
   const [stale, setStale] = useState(false);          // outra pessoa salvou uma versão mais nova
   const watch = !bare && (docRef.kind === "inicial" || docRef.kind === "acomp" || docRef.kind === "fisc");
   const refs = useRef(new Map<string, HTMLDivElement>());
@@ -262,17 +265,19 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     let alive = true;
     const tick = async () => {
       try {
-        const r = await pingEditing(id, docRef, canEditProp && editing);
+        const r = await pingEditing(id, docRef, canEditProp && editing, canEditProp && editing && Date.now() - lastType.current < 2500);
         if (!alive) return;
         setOthers(r.others);
+        setTypers(r.typing);
         if (r.version && base.current && r.version !== base.current && !(canEditProp && editing)) {
           // só olhando: atualiza sozinho quando alguém salva uma versão nova
           if (!dirtyRef.current) void tickRef.current(true); else setStale(true);
         }
       } catch { /* sem rede: tenta de novo no próximo ciclo */ }
     };
+    presenceRef.current = () => { void tick(); };
     tick();
-    const t = setInterval(tick, editing ? 10_000 : 6_000);
+    const t = setInterval(tick, 3_000);
     return () => { alive = false; clearInterval(t); if (canEditProp && editing) pingEditing(id, docRef, false).catch(() => {}); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watch, editing, canEditProp, id]);
@@ -443,7 +448,14 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length, margins]);
 
-  const touch = () => { editSeq.current++; setDirty(true); setMsg(null); schedule(); };
+  const touch = () => {
+    editSeq.current++; setDirty(true); setMsg(null); schedule();
+    // avisa logo que começou a digitar (no máximo um aviso a cada 1,5 s)
+    const now = Date.now();
+    const first = now - lastType.current > 1500;
+    lastType.current = now;
+    if (first) presenceRef.current();
+  };
   const idxOf = (uid: number) => items.findIndex((x) => x.uid === uid);
   const key = (uid: number) => `p${uid}`;
   const ckey = (uid: number, r: number, c: number) => `t${uid}:${r}:${c}`;
@@ -981,6 +993,11 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
           {others.map((n) => <span key={n} className="presence-who"><Pencil size={14} /> <strong>{n}</strong>: editando<span className="dots">...</span></span>)}
           {stale && <span>Outra pessoa salvou uma versão mais nova{dirty ? "; se você salvar, será preciso atualizar antes" : ""}.</span>}
           {stale && !dirty && <button type="button" className="ghost" onClick={() => window.location.reload()}>Atualizar</button>}
+        </div>
+      )}
+      {typers.length > 0 && (
+        <div className="typing-toast" role="status" aria-live="polite">
+          <Pencil size={14} /> <strong>{typers.join(", ")}</strong> {typers.length === 1 ? "está digitando" : "estão digitando"}<span className="dots">...</span>
         </div>
       )}
       {viewFirst && editing && (
