@@ -29,7 +29,7 @@ export default async function EditarFormularioPage({
   const questions = (data ?? []) as Question[];
 
   return (
-    <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
+    <div className="grid" style={{ gap: 14 }}>
       <Link href={back} className="row"><ArrowLeft size={16} /> Voltar ao formulário</Link>
       <h1 style={{ margin: 0 }}>Editar perguntas · {FORM_TITLE[formKey]}</h1>
       <p style={{ margin: 0, color: "var(--muted)" }}>

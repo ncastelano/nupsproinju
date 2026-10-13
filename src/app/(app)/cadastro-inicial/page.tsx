@@ -50,7 +50,7 @@ export default async function FormularioPage({
   }
 
   return (
-    <div className="grid" style={{ gap: 16, maxWidth: 760 }}>
+    <div className="grid" style={{ gap: 14 }}>
       <div>
         <h1 style={{ margin: "8px 0 0" }}>{acomp ? "Novo acompanhamento" : "Cadastro inicial"}</h1>
         <p style={{ margin: "4px 0 0", color: "var(--muted)" }}>

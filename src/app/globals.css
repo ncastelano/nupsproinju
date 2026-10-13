@@ -906,3 +906,5 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 .presence-who { display: inline-flex; align-items: center; gap: 6px; }
 .presence-who .dots { animation: blink 1.2s steps(3, end) infinite; }
 @keyframes blink { 0% { opacity: .2; } 50% { opacity: 1; } 100% { opacity: .2; } }
+.nav-logout { display: contents; }
+.nav-logout button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }

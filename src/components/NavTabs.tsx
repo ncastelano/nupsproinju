@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { UserPlus } from "lucide-react";
+import { LogOut, UserPlus } from "lucide-react";
+import { logout } from "@/app/login/actions";
 
 export function NavTabs({ userId, isAdmin, slug, pending = 0 }: { userId: string; isAdmin: boolean; slug: string; pending?: number }) {
   const path = usePathname();
@@ -58,6 +59,9 @@ export function NavTabs({ userId, isAdmin, slug, pending = 0 }: { userId: string
               </button>
             </Link>
           ))}
+          <form action={logout} className="nav-logout">
+            <button type="submit"><LogOut size={15} /> Sair</button>
+          </form>
         </nav>
       </div>
       {/* o aviso fica enquanto houver pedidos aguardando (some só na própria página de Usuários) */}
