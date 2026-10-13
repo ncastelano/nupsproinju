@@ -901,10 +901,44 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const marginKey = MARGINS.find((m) => m.px === margins.left && m.px === margins.right)?.k ?? "normal";
   const resetLabel = docRef.kind === "acomp" ? "Refazer do modelo" : docRef.kind === "fisc" ? "Refazer das respostas" : docRef.kind === "nota" ? "Limpar nota" : "Refazer do cadastro";
 
+  // redimensionar arrastando o canto (logo do cabeçalho e imagens do texto), mantendo a proporção
+  function startResize(e: React.PointerEvent, target: { kind: "logo" } | { kind: "img"; uid: number }) {
+    if (!canEdit) return;
+    e.preventDefault(); e.stopPropagation();
+    const x0 = e.clientX;
+    const maxW = page.w - margins.left - margins.right;
+    const cur = target.kind === "logo"
+      ? header && { w: header.w, h: header.h }
+      : (() => { const it = items.find((x) => x.uid === target.uid); return it && it.kind === "p" && it.img ? { w: it.img.w, h: it.img.h } : null; })();
+    if (!cur) return;
+    let last = { w: cur.w, h: cur.h };
+    const move = (ev: PointerEvent) => {
+      const w = Math.min(Math.max(Math.round(cur.w + (ev.clientX - x0) / scale), 40), maxW);
+      last = { w, h: Math.round((cur.h * w) / cur.w) };
+      if (target.kind === "logo") setHdr((c) => (c ? { ...c, ...last } : c));
+      else setItems((list) => list.map((x) => (x.uid === target.uid && x.kind === "p" && x.img ? { ...x, img: { ...x.img, ...last } } : x)));
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      if (target.kind === "logo") pendingLogo.current = pendingLogo.current?.src ? { src: pendingLogo.current.src, ...last } : { ...last };
+      touch();
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
   const headerBox = (top: number, k: string) => header && (
-    <div key={k} style={{ position: "absolute", left: hx, top, width: header.w, height: header.h, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={header.src} alt="" style={{ position: "absolute", width: hw, height: hh, maxWidth: "none", left: -header.crop.l * hw, top: -header.crop.t * hh }} />
+    <div key={k} className={canEdit && k === "h0" ? "logo-edit" : undefined}
+      style={{ position: "absolute", left: hx, top, width: header.w, height: header.h, pointerEvents: "none", zIndex: 0 }}>
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={header.src} alt="" style={{ position: "absolute", width: hw, height: hh, maxWidth: "none", left: -header.crop.l * hw, top: -header.crop.t * hh }} />
+      </div>
+      {canEdit && k === "h0" && (
+        <span className="img-handle" title="Arraste para redimensionar o logo" style={{ pointerEvents: "auto", right: -7, bottom: -7 }}
+          onPointerDown={(e) => startResize(e, { kind: "logo" })} />
+      )}
     </div>
   );
 
@@ -1150,8 +1184,14 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
                     tabIndex={0} onFocus={() => setActive(it.uid)} onClick={() => setActive(it.uid)}
                     onKeyDown={(e) => onKeyDown(e, it)}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={it.img.src} alt="" width={it.img.w} height={it.img.h} style={{ maxWidth: "100%", height: "auto" }} />
+                    <span style={{ position: "relative", display: "inline-block", maxWidth: "100%" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={it.img.src} alt="" width={it.img.w} height={it.img.h} style={{ maxWidth: "100%", height: "auto", display: "block" }} />
+                      {canEdit && active === it.uid && (
+                        <span className="img-handle" title="Arraste para redimensionar a imagem" style={{ right: -7, bottom: -7 }}
+                          onPointerDown={(e) => startResize(e, { kind: "img", uid: it.uid })} />
+                      )}
+                    </span>
                   </div>
                 );
               }

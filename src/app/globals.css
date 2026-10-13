@@ -1000,3 +1000,8 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
   .doc-bar { z-index: 50; }
 }
 @media (min-width: 1101px) { .doc-bar { z-index: 50; } }
+
+/* Alça para redimensionar o logo e as imagens */
+.img-handle { position: absolute; width: 16px; height: 16px; border-radius: 4px; background: var(--brand); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); cursor: nwse-resize; touch-action: none; z-index: 4; }
+.img-handle:hover { background: var(--brand-dark); }
+.logo-edit { outline: 1px dashed var(--brand); outline-offset: 2px; }
