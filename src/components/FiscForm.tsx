@@ -76,8 +76,7 @@ export function FiscForm({ id, initial, redo, sections, initialProcess = "" }: {
       )}
       <input type="hidden" name="processos_campo" value="1" />
       <div className="card q">
-        <label className="q-label">Número do processo da fiscalização</label>
-        <div className="help">A fiscalização tem o seu próprio processo, separado do Cadastro inicial e dos acompanhamentos.</div>
+        <label className="q-label">Número de processo</label>
         <input type="text" name="processos" value={proc} onChange={(e) => setProc(e.target.value)} placeholder="0000000-00.0000.0.00.0000" autoComplete="off" />
       </div>
       {(sections ?? FISC_SECTIONS).map((sec) => {

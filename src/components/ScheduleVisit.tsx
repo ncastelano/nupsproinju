@@ -36,7 +36,7 @@ export function ScheduleVisit({ people, me }: { people: string[]; me: string }) 
         <ChoiceField name="professionals" title="Profissional(is) responsável(is)" multiple options={people} initial={people.includes(me) ? [me] : []} placeholder="Selecione os profissionais..." />
       </div>
       <label className="field">
-        <span>Número do processo da fiscalização</span>
+        <span>Número de processo</span>
         <input type="text" name="processos" placeholder="0000000-00.0000.0.00.0000" autoComplete="off" />
       </label>
       {msg && msg !== "ok" && <p className="error">{msg}</p>}
