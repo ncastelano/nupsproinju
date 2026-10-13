@@ -1107,6 +1107,17 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
         </>
       )}
 
+      {viewFirst && !editing && !bare && (
+        <div className="doc-view-actions">
+          {canEditProp ? (
+            <button type="button" onClick={() => setEditing(true)}><Pencil size={16} /> Editar</button>
+          ) : (
+            <span style={{ color: "var(--muted)", fontSize: 14 }}>Só quem criou este relatório, ou foi chamado para ajudar, pode editar.</span>
+          )}
+          <button type="button" className="ghost" onClick={() => router.push(backHref)}><ArrowLeft size={16} /> Voltar</button>
+        </div>
+      )}
+      {viewFirst && !editing && !bare && actions}
       <div className="doc-body">
         <div className="doc-scroll" ref={wrapRef}>
           <div className="doc-sheet" style={{ display: "flex", gap: 6, alignItems: "flex-start", width: "max-content", margin: scale < 1 ? "0" : "0 auto" }}>
@@ -1257,17 +1268,6 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
           </aside>
         )}
       </div>
-      {viewFirst && !editing && !bare && (
-        <div className="doc-view-actions">
-          {canEditProp ? (
-            <button type="button" onClick={() => setEditing(true)}><Pencil size={16} /> Editar</button>
-          ) : (
-            <span style={{ color: "var(--muted)", fontSize: 14 }}>Só quem criou este relatório, ou foi chamado para ajudar, pode editar.</span>
-          )}
-          <button type="button" className="ghost" onClick={() => router.push(backHref)}><ArrowLeft size={16} /> Voltar</button>
-        </div>
-      )}
-      {viewFirst && !editing && !bare && actions}
       {viewFirst && !editing && !canEditProp && editExtra && <div className="grid" style={{ gap: 14 }}>{editExtra}</div>}
     </div>
   );
