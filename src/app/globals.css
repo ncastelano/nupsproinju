@@ -916,3 +916,19 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
   .app-header .main-nav > a, .app-header .main-nav > form.nav-logout { flex: 1 1 0; min-width: max-content; display: block; }
   .app-header .main-nav > a > button, .app-header .main-nav > form.nav-logout > button { width: 100%; justify-content: center; }
 }
+
+/* Cartão de processo: número em destaque e o que o processo já tem */
+.proc-card { position: relative; padding: 0; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.proc-card:hover { border-color: var(--brand); box-shadow: 0 10px 24px rgba(7,63,73,.10); transform: translateY(-1px); }
+.proc-link { display: flex; gap: 12px; padding: 14px; color: inherit; text-decoration: none; align-items: flex-start; }
+.proc-ico { flex: none; width: 40px; height: 40px; border-radius: 12px; background: var(--brand-soft); color: var(--brand-dark); display: grid; place-items: center; }
+.proc-body { display: grid; gap: 4px; min-width: 0; }
+.proc-kicker { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.proc-num { font-size: 15.5px; line-height: 1.3; color: var(--brand-dark); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.proc-link:hover .proc-num { color: var(--brand); text-decoration: underline; }
+.proc-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.proc-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.proc-badge.ok { background: #e6f4ea; color: #1b6b34; }
+.proc-badge.none { background: #f1f3f4; color: var(--muted); }
+.proc-badge.brand { background: var(--brand-soft); color: var(--brand-dark); }
+.proc-foot { color: var(--muted); font-size: 12.5px; margin-top: 2px; }

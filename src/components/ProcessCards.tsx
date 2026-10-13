@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckCircle2, FileText, Paperclip, Circle } from "lucide-react";
 
 const day = (iso: string) => {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -25,19 +26,65 @@ export function MiniCard({ href, title, line, sub, draft, tag, children }: {
   );
 }
 
-// Um acompanhamento (relatório de reavaliação) de um processo.
-export function AcompCard({
-  recordId, nomes, processo, n, last, draft = false,
-}: {
-  recordId: string; nomes: string; processo: string; n: number; last?: string; by?: string; at?: string; canDelete?: boolean; draft?: boolean;
+// Cartão de processo: o número do processo em destaque (sem nomes) e o que cada processo já tem.
+type Badge = { text: string; tone: "ok" | "none" | "brand"; icon?: "check" | "none" | "clip" };
+export function ProcCard({ href, kicker, numero, badges = [], foot, draft = false }: {
+  href: string; kicker: string; numero: string; badges?: Badge[]; foot?: string; draft?: boolean;
 }) {
   return (
-    <MiniCard
+    <article className="card proc-card">
+      <Link href={href} className="proc-link">
+        <span className="proc-ico"><FileText size={20} /></span>
+        <span className="proc-body">
+          <small className="proc-kicker">{kicker}</small>
+          <strong className="proc-num">{numero}</strong>
+          {badges.length > 0 && (
+            <span className="proc-badges">
+              {badges.map((b) => (
+                <span key={b.text} className={`proc-badge ${b.tone}`}>
+                  {b.icon === "check" ? <CheckCircle2 size={13} /> : b.icon === "clip" ? <Paperclip size={13} /> : <Circle size={13} />}
+                  {b.text}
+                </span>
+              ))}
+            </span>
+          )}
+          {foot && <span className="proc-foot">{foot}</span>}
+        </span>
+      </Link>
+      {draft && <span className="draft-tag">Rascunho</span>}
+    </article>
+  );
+}
+
+// Cadastro inicial de um processo: mostra se já tem ou não acompanhamento (o acompanhamento é anexo do cadastro).
+export function CadastroCard({ id, numero, draft = false, acomps, last }: {
+  id: string; numero: string; draft?: boolean; acomps: number; last?: string;
+}) {
+  return (
+    <ProcCard
+      href={draft ? `/cadastro-inicial?rascunho=${id}` : `/cadastrados/${id}/documento`}
+      kicker="Cadastro inicial" numero={numero || "—"} draft={draft}
+      badges={draft ? [] : acomps > 0
+        ? [{ text: acomps === 1 ? "Com acompanhamento" : `Com ${acomps} acompanhamentos`, tone: "ok", icon: "check" }]
+        : [{ text: "Sem acompanhamento", tone: "none", icon: "none" }]}
+      foot={last ? `Último relatório: ${day(last)}` : undefined}
+    />
+  );
+}
+
+// Um acompanhamento (relatório de reavaliação): anexo do cadastro inicial do processo.
+export function AcompCard({
+  recordId, processo, n, last, draft = false,
+}: {
+  recordId: string; nomes?: string; processo: string; n: number; last?: string; by?: string; at?: string; canDelete?: boolean; draft?: boolean;
+}) {
+  return (
+    <ProcCard
       href={draft ? `/acompanhamento?processo=${recordId}&n=${n}` : `/cadastrados/${recordId}/acompanhamento/${n}`}
-      title={`Processo ${processo || "—"}`} line={nomes || "(sem nome)"}
-      sub={`Acompanhamento nº ${n}${last ? ` · Último relatório: ${day(last)}` : ""}`} draft={draft}
-    >
-    </MiniCard>
+      kicker={`Acompanhamento nº ${n}`} numero={processo || "—"} draft={draft}
+      badges={[{ text: "Anexo do cadastro inicial", tone: "brand", icon: "clip" }]}
+      foot={last ? `Último relatório: ${day(last)}` : undefined}
+    />
   );
 }
 

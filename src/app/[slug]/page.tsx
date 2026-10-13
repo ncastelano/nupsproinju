@@ -4,7 +4,7 @@ import { Pencil } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { ShareMenu } from "@/components/ShareMenu";
 import { AppShell } from "@/components/AppShell";
-import { AcompCard, FiscCard, MiniCard, brDate } from "@/components/ProcessCards";
+import { AcompCard, CadastroCard, FiscCard, MiniCard, brDate } from "@/components/ProcessCards";
 import { cleanSlug, findBySlug, professionOf } from "@/lib/profiles";
 import { getMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,7 +39,7 @@ export default async function ProfilePage({
   const inside = !!viewer && viewer.status === "approved";
   const mine = inside && viewer!.id === p.id;
 
-  let cad: { id: string; processo: string; nome: string; last: string; draft: boolean }[] = [];
+  let cad: { id: string; processo: string; nome: string; last: string; draft: boolean; nAcomp: number }[] = [];
   let acomps: { rid: string; n: number; processo: string; nome: string; last: string; draft: boolean }[] = [];
   let fiscs: { id: string; unit: string; date: string; last: string; draft: boolean }[] = [];
   let notas: { id: string; title: string; vis: string; at: string }[] = [];
@@ -59,7 +59,7 @@ export default async function ProfilePage({
       const processo = (r.processo as string) ?? "", nome = (r.nomes as string) ?? "";
       if (r.created_by === p.id && (mine || !m.draft)) {
         cad.push({
-          id: r.id as string, processo, nome, draft: !!m.draft,
+          id: r.id as string, processo, nome, draft: !!m.draft, nAcomp: m.acomps.filter((x) => !x.draft).length,
           last: latest(r.created_at as string, ...m.history.filter((h) => !h.doc || h.doc === "inicial").map((h) => h.at))!,
         });
       }
@@ -163,10 +163,7 @@ export default async function ProfilePage({
         {only && <h1 style={{ margin: "8px 0 0" }}>{mine ? "Meus" : `Relatórios de ${first}:`} {({ cadastros: "cadastros iniciais", acompanhamentos: "acompanhamentos", fiscalizacoes: "fiscalizações", notas: "notas" })[only]}</h1>}
 
         {section("cadastros", "CADASTROS INICIAIS", cad.length, cut(cad).map((r) => (
-          <MiniCard
-            key={r.id} href={r.draft ? `/cadastro-inicial?rascunho=${r.id}` : `/cadastrados/${r.id}/documento`}
-            title={`Processo ${r.processo || "—"}`} line={r.nome || "(sem nome)"} sub={`Último relatório: ${brDate(r.last)}`} draft={r.draft}
-          />
+          <CadastroCard key={r.id} id={r.id} numero={r.processo} draft={r.draft} acomps={r.nAcomp} last={r.last} />
         )), "Nenhum cadastro inicial.")}
 
         {section("acompanhamentos", "ACOMPANHAMENTOS", acomps.length, cut(acomps).map((a) => (

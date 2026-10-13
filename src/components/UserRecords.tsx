@@ -8,7 +8,7 @@ import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
-import { AcompCard, FiscCard, MiniCard, brDate } from "@/components/ProcessCards";
+import { AcompCard, CadastroCard, FiscCard, brDate } from "@/components/ProcessCards";
 import { FISC_KEY } from "@/lib/fisc";
 import { ReportSearch } from "@/components/ReportSearch";
 
@@ -165,16 +165,12 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
         >
           {shownCad.map((r) => {
             const meta = metaOf(r.answers as Record<string, unknown>);
-            const nome = r.answers.nomes?.value ?? "(sem nome)";
             return (
-              <MiniCard
-                key={r.id}
-                href={meta.draft ? `/cadastro-inicial?rascunho=${r.id}` : `/cadastrados/${r.id}/documento`}
-                title={`Processo ${r.answers.processo?.value ?? "—"}`} line={nome}
-                sub={`Último relatório: ${brDate(latest(r.created_at, ...meta.history.filter((h) => !h.doc || h.doc === "inicial").map((h) => h.at))!)}`}
-                draft={!!meta.draft}
-              >
-              </MiniCard>
+              <CadastroCard
+                key={r.id} id={r.id} numero={r.answers.processo?.value ?? "—"} draft={!!meta.draft}
+                acomps={meta.acomps.filter((a) => !a.draft).length}
+                last={latest(r.created_at, ...meta.history.filter((h) => !h.doc || h.doc === "inicial").map((h) => h.at))}
+              />
             );
           })}
         </Block>
