@@ -688,7 +688,9 @@ hr.soft { border: 0; border-top: 1px solid var(--line); width: 100%; margin: 8px
 @media (max-width: 1100px) { .doc-body { flex-direction: column; } .doc-comments { width: 100%; position: static; max-height: none; } }
 
 /* Responsivo: nada pode empurrar a tela para fora; o documento rola dentro do próprio quadro */
-html, body { max-width: 100%; overflow-x: hidden; }
+html { max-width: 100%; overflow-x: hidden; }
+/* clip (e não hidden) no body: não vira área de rolagem, então barras "sticky" (menu, barra de edição) grudam na tela */
+body { max-width: 100%; overflow-x: clip; }
 .container, .container > *, .grid > *, .doc-wrap, .doc-body, .doc-scroll, .card { min-width: 0; max-width: 100%; }
 .doc-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 img, svg, video, canvas { max-width: 100%; }
@@ -990,3 +992,11 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 .vruler-handle { position: absolute; left: 3px; width: 24px; height: 12px; padding: 0; border-radius: 3px; background: var(--brand); cursor: ns-resize; box-shadow: none; touch-action: none; }
 .vruler-handle:hover, .vruler-handle.on { background: var(--brand-dark); box-shadow: 0 0 0 3px var(--brand-soft); }
 .vruler-in .ruler-margin { position: absolute; background: #e8eef0; }
+
+/* Barra de edição fixa no topo: compacta (ferramentas numa linha que rola) para não cobrir o documento */
+@media (max-width: 1100px) {
+  .doc-tools { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .doc-tools > * { flex: none; }
+  .doc-bar { z-index: 50; }
+}
+@media (min-width: 1101px) { .doc-bar { z-index: 50; } }
