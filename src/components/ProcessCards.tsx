@@ -90,16 +90,19 @@ export function AcompCard({
 
 // Uma fiscalização: o relatório gerado (ou o rascunho do questionário).
 export function FiscCard({
-  id, unit, date, last, draft = false,
+  id, unit, date, last, draft = false, processes = [],
 }: {
-  id: string; unit: string; date: string; last?: string; professionals?: string[]; respondedBy?: string; respondedAt?: string; canDelete?: boolean; draft?: boolean;
+  id: string; unit: string; date: string; last?: string; professionals?: string[]; respondedBy?: string; respondedAt?: string; canDelete?: boolean; draft?: boolean; processes?: string[];
 }) {
   return (
-    <MiniCard
+    <ProcCard
       href={draft ? `/fiscalizacoes/${id}/responder` : `/fiscalizacoes/${id}`}
-      title={unit || "(sem unidade)"} line={`Visita em ${date ? day(date) : "—"}`}
-      sub={last ? `Último relatório: ${day(last)}` : undefined} draft={draft}
-    >
-    </MiniCard>
+      kicker="Fiscalização" numero={processes.length ? processes.join(" · ") : unit || "(sem unidade)"} draft={draft}
+      badges={[
+        ...(processes.length && unit ? [{ text: unit, tone: "brand" as const, icon: "clip" as const }] : []),
+        ...(!processes.length ? [{ text: "Sem processo vinculado", tone: "none" as const, icon: "none" as const }] : []),
+      ]}
+      foot={`Visita em ${date ? day(date) : "—"}${last ? ` · Último relatório: ${day(last)}` : ""}`}
+    />
   );
 }

@@ -41,7 +41,7 @@ export default async function ProfilePage({
 
   let cad: { id: string; processo: string; nome: string; last: string; draft: boolean; nAcomp: number }[] = [];
   let acomps: { rid: string; n: number; processo: string; nome: string; last: string; draft: boolean }[] = [];
-  let fiscs: { id: string; unit: string; date: string; last: string; draft: boolean }[] = [];
+  let fiscs: { id: string; unit: string; date: string; last: string; draft: boolean; processes: string[] }[] = [];
   let notas: { id: string; title: string; vis: string; at: string }[] = [];
 
   if (inside) {
@@ -80,7 +80,7 @@ export default async function ProfilePage({
       const done = v?.status === "realizada";
       if (!done && !(mine && v?.draft)) continue;
       fiscs.push({
-        id: r.id as string, unit: v?.unit ?? "", date: v?.date ?? "", draft: !done,
+        id: r.id as string, unit: v?.unit ?? "", date: v?.date ?? "", draft: !done, processes: v?.processes ?? [],
         last: latest(v?.responded_at, r.created_at as string, ...m.history.filter((h) => !h.doc || h.doc === "fisc").map((h) => h.at))!,
       });
     }
@@ -171,7 +171,7 @@ export default async function ProfilePage({
         )), "Nenhum acompanhamento.")}
 
         {section("fiscalizacoes", "FISCALIZAÇÕES", fiscs.length, cut(fiscs).map((f) => (
-          <FiscCard key={f.id} id={f.id} unit={f.unit} date={f.date} last={f.last} draft={f.draft} />
+          <FiscCard key={f.id} id={f.id} unit={f.unit} date={f.date} last={f.last} draft={f.draft} processes={f.processes} />
         )), "Nenhuma fiscalização.")}
 
         {section("notas", mine ? "BLOCO DE NOTAS" : "NOTAS", notas.length, cut(notas).map((n) => (

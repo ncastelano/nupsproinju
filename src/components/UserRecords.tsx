@@ -109,7 +109,7 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
   const fiscList = tokens.length
     ? fiscs.filter((f) => {
         const v = f.meta.visit;
-        return hit(blob(["fiscalização", "fiscalizacao", "unidade", ...valuesOf(f.ans), v?.unit, v?.date, ...(v?.professionals ?? []), v?.responded_by, ownerOf(f.owner_id), f.created_at]));
+        return hit(blob(["fiscalização", "fiscalizacao", "unidade", ...valuesOf(f.ans), v?.unit, v?.date, ...(v?.processes ?? []), ...(v?.professionals ?? []), v?.responded_by, ownerOf(f.owner_id), f.created_at]));
       })
     : fiscs;
   const shownCad = only ? cadList : cadList.slice(0, LIMIT);
@@ -199,6 +199,7 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
           {(only ? fiscList : fiscList.slice(0, LIMIT)).map((f) => (
             <FiscCard
               key={f.id} id={f.id} unit={f.meta.visit?.unit ?? ""} date={f.meta.visit?.date ?? ""}
+              processes={f.meta.visit?.processes ?? []}
               professionals={f.meta.visit?.professionals ?? []} respondedBy={f.meta.visit?.responded_by}
               respondedAt={f.meta.visit?.responded_at} canDelete={canRemove(f.owner_id)}
               last={latest(f.meta.visit?.responded_at, f.created_at, ...f.meta.history.filter((h) => !h.doc || h.doc === "fisc").map((h) => h.at))}

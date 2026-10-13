@@ -16,6 +16,7 @@ export type VisitMeta = {
   status: "agendada" | "realizada";
   responded_at?: string; responded_by?: string;
   draft?: boolean; // questionário respondido pela metade (rascunho)
+  processes?: string[]; // números dos processos (Cadastro inicial) a que a fiscalização se refere
 };
 export type AudioEntry = {
   id: string; path: string; mime: string; secs: number; size: number;

@@ -57,7 +57,9 @@ export function QInput({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v
 }
 
 // Questionário da fiscalização: uma pergunta por cartão; as que dependem de outra resposta só aparecem quando cabem.
-export function FiscForm({ id, initial, redo, sections }: { id: string; initial: Vals; redo: boolean; sections?: FSection[] }) {
+export function FiscForm({ id, initial, redo, sections, processOptions = [], initialProcesses = [] }: {
+  id: string; initial: Vals; redo: boolean; sections?: FSection[]; processOptions?: string[]; initialProcesses?: string[];
+}) {
   const [vals, setVals] = useState<Vals>(initial);
   const [msg, action, pending] = useActionState(saveResponses, null);
   const set = (k: string, v: string) => setVals((cur) => ({ ...cur, [k]: v }));
@@ -71,6 +73,15 @@ export function FiscForm({ id, initial, redo, sections }: { id: string; initial:
           Ao salvar, o relatório será refeito a partir das respostas. Edições feitas à mão no documento serão substituídas.
         </p>
       )}
+      <input type="hidden" name="processos_campo" value="1" />
+      <div className="card q">
+        <label className="q-label">Número(s) do(s) processo(s) vinculado(s)</label>
+        <div className="help">Escolha os processos (Cadastro inicial) a que esta fiscalização se refere. Pode marcar mais de um.</div>
+        <ChoiceField
+          name="processos" title="Número(s) do(s) processo(s)" multiple searchable searchPlaceholder="Buscar por número do processo..."
+          options={processOptions} initial={initialProcesses} placeholder="Selecione os processos..."
+        />
+      </div>
       {(sections ?? FISC_SECTIONS).map((sec) => {
         const qs = sec.questions.filter((qn) => visible(qn, get));
         return (

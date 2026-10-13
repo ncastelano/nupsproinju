@@ -16,6 +16,7 @@ export async function scheduleVisit(_: string | null, form: FormData): Promise<s
   const unit = String(form.get("unit") ?? "");
   const date = String(form.get("date") ?? "");
   const professionals = form.getAll("professionals").map((v) => String(v).trim()).filter(Boolean);
+  const processes = form.getAll("processos").map((v) => String(v).trim()).filter(Boolean);
   if (!UNIDADES.includes(unit)) return "Escolha a unidade.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return "Informe a data da visita.";
   if (professionals.length === 0) return "Marque pelo menos um profissional.";
@@ -27,7 +28,7 @@ export async function scheduleVisit(_: string | null, form: FormData): Promise<s
     _meta: {
       shared: [], followups: [], acomps: [], editing: {},
       history: [{ at: new Date().toISOString(), by_id: me.id, by_name: me.name || me.email, scope: "formulario", changes: [], note: "agendou a fiscalização", doc: "fisc" }],
-      visit: { unit, date, professionals, status: "agendada" },
+      visit: { unit, date, professionals, status: "agendada", processes },
     },
   };
   const { error } = await createAdminClient().from("intake_records").insert({ form_key: FISC_KEY, created_by: me.id, answers });
@@ -84,11 +85,14 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
   const unit = next.q1?.value ?? rec.meta.visit?.unit ?? "";
   const date = next.q2?.value ?? rec.meta.visit?.date ?? "";
   const professionals = (next.q3?.value ?? "").split("; ").filter(Boolean);
+  const processes = form.has("processos_campo")
+    ? form.getAll("processos").map((v) => String(v).trim()).filter(Boolean)
+    : rec.meta.visit?.processes ?? [];
   const meta = rec.meta;
   const first = meta.visit?.status !== "realizada";
   if (draft) {
     // rascunho: guarda as respostas e continua como visita a responder
-    meta.visit = { unit, date, professionals, status: meta.visit?.status ?? "agendada", draft: true,
+    meta.visit = { unit, date, professionals, processes, status: meta.visit?.status ?? "agendada", draft: true,
       responded_at: meta.visit?.responded_at, responded_by: meta.visit?.responded_by };
     const note = "salvou o rascunho do questionário";
     const last = meta.history[0];
@@ -103,7 +107,7 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
     redirect("/processos");
   }
   meta.visit = {
-    unit, date, professionals, status: "realizada", draft: false,
+    unit, date, professionals, processes, status: "realizada", draft: false,
     responded_at: new Date().toISOString(), responded_by: me.name || me.email,
   };
   const entry: HistoryEntry = {

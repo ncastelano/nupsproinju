@@ -7,7 +7,7 @@ import { UNIDADES } from "@/lib/fisc";
 import { ChoiceField } from "@/components/ChoiceField";
 
 // Agendar uma visita de fiscalização (unidade, data e profissionais).
-export function ScheduleVisit({ people, me }: { people: string[]; me: string }) {
+export function ScheduleVisit({ people, me, processOptions = [] }: { people: string[]; me: string; processOptions?: string[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [msg, action, pending] = useActionState(scheduleVisit, null);
@@ -34,6 +34,10 @@ export function ScheduleVisit({ people, me }: { people: string[]; me: string }) 
       <div className="field">
         <span style={{ color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>Profissional(is) responsável(is)</span>
         <ChoiceField name="professionals" title="Profissional(is) responsável(is)" multiple options={people} initial={people.includes(me) ? [me] : []} placeholder="Selecione os profissionais..." />
+      </div>
+      <div className="field">
+        <span style={{ color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>Número(s) do(s) processo(s)</span>
+        <ChoiceField name="processos" title="Número(s) do(s) processo(s)" multiple searchable searchPlaceholder="Buscar por número do processo..." options={processOptions} placeholder="Selecione os processos..." />
       </div>
       {msg && msg !== "ok" && <p className="error">{msg}</p>}
       <div className="row">
