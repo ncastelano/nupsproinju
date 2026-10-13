@@ -932,3 +932,15 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 .proc-badge.none { background: #f1f3f4; color: var(--muted); }
 .proc-badge.brand { background: var(--brand-soft); color: var(--brand-dark); }
 .proc-foot { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+
+/* Processo de acompanhamento: cadastro inicial + acompanhamentos no mesmo cartão */
+.proc-multi { padding: 14px; display: grid; gap: 10px; }
+.proc-top { display: flex; gap: 12px; align-items: flex-start; }
+.proc-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.proc-files li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.proc-files li a { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--bg); color: var(--brand-dark); font-weight: 600; font-size: 13.5px; }
+.proc-files li a:hover { background: var(--brand-soft); text-decoration: none; }
+.proc-files li a span { flex: 1; min-width: 0; }
+.proc-files li a em { font-style: normal; color: var(--muted); font-weight: 500; font-size: 12.5px; }
+.proc-draft { flex: none; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.proc-add { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--brand); }

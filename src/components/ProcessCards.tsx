@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, FileText, Paperclip, Circle } from "lucide-react";
+import { CheckCircle2, FileText, Paperclip, Circle, Plus } from "lucide-react";
 
 const day = (iso: string) => {
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -52,6 +52,48 @@ export function ProcCard({ href, kicker, numero, badges = [], foot, draft = fals
         </span>
       </Link>
       {draft && <span className="draft-tag">Rascunho</span>}
+    </article>
+  );
+}
+
+// Processo de acompanhamento: o Cadastro inicial e os acompanhamentos (anexos) juntos, num cartão só.
+export function ProcessoCard({ id, numero, draft = false, cadDate, acomps }: {
+  id: string; numero: string; draft?: boolean; cadDate: string; acomps: { n: number; date: string; draft: boolean }[];
+}) {
+  const done = acomps.filter((a) => !a.draft).length;
+  return (
+    <article className="card proc-card proc-multi">
+      <div className="proc-top">
+        <span className="proc-ico"><FileText size={20} /></span>
+        <span className="proc-body">
+          <small className="proc-kicker">Processo de acompanhamento</small>
+          <strong className="proc-num">{numero || "—"}</strong>
+        </span>
+      </div>
+      {!draft && (
+        <span className="proc-badges">
+          {done > 0
+            ? <span className="proc-badge ok"><CheckCircle2 size={13} /> {done === 1 ? "Com acompanhamento" : `Com ${done} acompanhamentos`}</span>
+            : <span className="proc-badge none"><Circle size={13} /> Sem acompanhamento</span>}
+        </span>
+      )}
+      <ul className="proc-files">
+        <li>
+          <Link href={draft ? `/cadastro-inicial?rascunho=${id}` : `/cadastrados/${id}/documento`}>
+            <FileText size={14} /> <span>Cadastro inicial</span> <em>{day(cadDate)}</em>
+          </Link>
+          {draft && <span className="proc-draft">Rascunho</span>}
+        </li>
+        {acomps.map((a) => (
+          <li key={a.n}>
+            <Link href={a.draft ? `/acompanhamento?processo=${id}&n=${a.n}` : `/cadastrados/${id}/acompanhamento/${a.n}`}>
+              <Paperclip size={14} /> <span>Acompanhamento nº {a.n}</span> <em>{day(a.date)}</em>
+            </Link>
+            {a.draft && <span className="proc-draft">Rascunho</span>}
+          </li>
+        ))}
+      </ul>
+      {!draft && <Link href={`/acompanhamento?processo=${id}`} className="proc-add"><Plus size={14} /> Novo acompanhamento</Link>}
     </article>
   );
 }

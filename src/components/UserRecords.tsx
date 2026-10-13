@@ -8,7 +8,7 @@ import { formatDate } from "@/components/RecordView";
 import { Avatar } from "@/components/Avatar";
 import { metaOf, type RecMeta } from "@/lib/records";
 import { listDocs } from "@/lib/documents";
-import { AcompCard, CadastroCard, FiscCard, brDate } from "@/components/ProcessCards";
+import { FiscCard, ProcessoCard } from "@/components/ProcessCards";
 import { FISC_KEY } from "@/lib/fisc";
 import { ReportSearch } from "@/components/ReportSearch";
 
@@ -68,15 +68,6 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
   const ownerOf = (uid: string) => names.get(uid) ?? "";
   const canRemove = (uid: string) => uid === me.id || me.role === "admin";
 
-  // acompanhamentos (relatórios de reavaliação) de todos os processos
-  const acomps = records.flatMap((r) => {
-    const m = metaOf(r.answers as Record<string, unknown>);
-    return m.acomps.map((a) => ({
-      rid: r.id, nomes: r.answers.nomes?.value ?? "", processo: r.answers.processo?.value ?? "",
-      a, meta: m, owner: ownerOf(r.created_by), canDelete: canRemove(r.created_by),
-    }));
-  }).sort((x, y) => y.a.at.localeCompare(x.a.at));
-
   // fiscalizações já respondidas
   const fiscs = (fiscRes.data ?? [])
     .map((r) => {
@@ -99,20 +90,19 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
     const m = metaOf(r.answers as Record<string, unknown>);
     return blob(["cadastro inicial", ...valuesOf(r.answers), ownerOf(r.created_by), r.created_at, ...m.history.map((h) => `${h.by_name} ${h.note ?? ""}`)]);
   };
-  const cadList = tokens.length ? records.filter((r) => hit(cadBlob(r))) : records;
-  const acompList = tokens.length
-    ? acomps.filter((x) => {
-        const parent = records.find((r) => r.id === x.rid);
-        return hit(blob(["acompanhamento", "reavaliação", parent ? cadBlob(parent) : "", ...Object.values(x.meta.acompData?.[String(x.a.n)] ?? {}), x.a.by_name, x.a.at, x.owner]));
-      })
-    : acomps;
+  // Processo de acompanhamento = Cadastro inicial + os acompanhamentos dele; a busca olha tudo isso junto
+  const procBlob = (r: (typeof records)[number]) => {
+    const m = metaOf(r.answers as Record<string, unknown>);
+    return blob([cadBlob(r), "acompanhamento reavaliação", ...Object.values(m.acompData ?? {}).flatMap((d) => Object.values(d)), ...m.acomps.map((x) => `${x.by_name} ${x.at}`)]);
+  };
+  const procList = tokens.length ? records.filter((r) => hit(procBlob(r))) : records;
   const fiscList = tokens.length
     ? fiscs.filter((f) => {
         const v = f.meta.visit;
-        return hit(blob(["fiscalização", "fiscalizacao", "unidade", ...valuesOf(f.ans), v?.unit, v?.date, ...(v?.processes ?? []), ...(v?.professionals ?? []), v?.responded_by, ownerOf(f.owner_id), f.created_at]));
+        return hit(blob(["fiscalização", "fiscalizacao", "unidade", ...valuesOf(f.ans), v?.unit, v?.date, ...(v?.processes ?? []), v?.responded_by, ownerOf(f.owner_id), f.created_at]));
       })
     : fiscs;
-  const shownCad = only ? cadList : cadList.slice(0, LIMIT);
+  const shownProc = only ? procList : procList.slice(0, LIMIT);
 
   return (
     <div className="grid" style={{ gap: 16 }}>
@@ -120,7 +110,7 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
         <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
             <h1 style={{ margin: "8px 0 0" }}>
-              {only ? { cadastros: "Cadastros iniciais", acompanhamentos: "Acompanhamentos", fiscalizacoes: "Fiscalizações" }[only]
+              {only ? { cadastros: "Processos de acompanhamento", acompanhamentos: "Processos de acompanhamento", fiscalizacoes: "Fiscalizações" }[only]
                 : `Relatórios de ${first}`}
             </h1>
             {!only && (
@@ -158,36 +148,25 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
       })}
 
 
-      {showF && (!only || only === "cadastros") && (
+      {showF && (!only || only === "cadastros" || only === "acompanhamentos") && (
         <Block
-          title="CADASTROS INICIAIS" count={cadList.length} q={q} all="/processos/cadastros-iniciais" full={!!only}
-          empty={<p>Nenhum cadastro inicial ainda.</p>}
+          title="PROCESSOS DE ACOMPANHAMENTO" count={procList.length} q={q} all="/processos/cadastros-iniciais" full={!!only}
+          empty={<p>Nenhum processo ainda. Faça o <Link href="/cadastro-inicial">Cadastro inicial</Link> para começar.</p>}
         >
-          {shownCad.map((r) => {
+          {shownProc.map((r) => {
             const meta = metaOf(r.answers as Record<string, unknown>);
+            const when = (doc: string, starts: string, fallback: string) =>
+              meta.history.filter((h) => h.doc === doc && (h.note ?? "").startsWith(starts)).map((h) => h.at).sort().pop() ?? fallback;
             return (
-              <CadastroCard
+              <ProcessoCard
                 key={r.id} id={r.id} numero={r.answers.processo?.value ?? "—"} draft={!!meta.draft}
-                acomps={meta.acomps.filter((a) => !a.draft).length}
-                last={latest(r.created_at, ...meta.history.filter((h) => !h.doc || h.doc === "inicial").map((h) => h.at))}
+                cadDate={when("inicial", "concluiu o cadastro inicial", r.created_at)}
+                acomps={[...meta.acomps].sort((x, y) => x.n - y.n).map((a) => ({
+                  n: a.n, draft: !!a.draft, date: when(`acomp:${a.n}`, "criou o acompanhamento", a.at),
+                }))}
               />
             );
           })}
-        </Block>
-      )}
-
-      {showF && (!only || only === "acompanhamentos") && (
-        <Block
-          title="ACOMPANHAMENTOS" count={acompList.length} q={q} all="/processos/acompanhamentos" full={!!only}
-          empty={<p>Nenhum acompanhamento ainda. Preencha o formulário em <Link href="/acompanhamento">Acompanhamento</Link> para gerar o relatório.</p>}
-        >
-          {(only ? acompList : acompList.slice(0, LIMIT)).map((x) => (
-            <AcompCard
-              key={`${x.rid}-${x.a.n}`} recordId={x.rid} nomes={x.nomes} processo={x.processo}
-              n={x.a.n} by={x.a.by_name} at={x.a.at} canDelete={x.canDelete} draft={!!x.a.draft}
-              last={latest(x.a.at, ...x.meta.history.filter((h) => h.doc === `acomp:${x.a.n}`).map((h) => h.at))}
-            />
-          ))}
         </Block>
       )}
 
