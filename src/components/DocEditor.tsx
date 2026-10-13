@@ -205,6 +205,58 @@ function Ruler({ pageW, left, right, scale, onChange }: {
   );
 }
 
+// Régua vertical (primeira página): as áreas cinzas são as margens de cima e de baixo; arraste para mudar.
+function VRuler({ pageH, top, bottom, scale, minTop, onChange }: {
+  pageH: number; top: number; bottom: number; scale: number; minTop: number; onChange: (m: { top?: number; bottom?: number }) => void;
+}) {
+  const [drag, setDrag] = useState<"top" | "bottom" | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const cms = Math.floor(pageH / CM);
+  const snap = (px: number) => Math.round(px / (CM / 10)) * (CM / 10);
+  const clampTop = (v: number) => Math.min(Math.max(v, minTop), 240);
+  const clamp = (v: number) => Math.min(Math.max(v, 24), 240);
+
+  useEffect(() => {
+    if (!drag) return;
+    const move = (e: PointerEvent) => {
+      const r = box.current?.getBoundingClientRect();
+      if (!r) return;
+      const y = (e.clientY - r.top) / scale;
+      if (drag === "top") onChange({ top: Math.round(clampTop(snap(y))) });
+      else onChange({ bottom: Math.round(clamp(snap(pageH - y))) });
+    };
+    const up = () => setDrag(null);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag, scale, pageH]);
+
+  const cmVal = (px: number) => (px / CM).toFixed(1).replace(".", ",");
+  return (
+    <div className="doc-vruler" ref={box} style={{ height: pageH * scale }} aria-label="Régua vertical">
+      <div className="vruler-in" style={{ height: pageH, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <div className="ruler-margin" style={{ top: 0, height: top, left: 0, right: 0, width: "auto" }} />
+        <div className="ruler-margin" style={{ bottom: 0, height: bottom, left: 0, right: 0, width: "auto" }} />
+        {Array.from({ length: cms * 2 + 1 }, (_, i) => {
+          const y = (i * CM) / 2;
+          if (y > pageH) return null;
+          const whole = i % 2 === 0;
+          return (
+            <span key={i} className={`vruler-tick${whole ? " whole" : ""}`} style={{ top: y }}>
+              {whole && i > 0 && <b>{i / 2}</b>}
+            </span>
+          );
+        })}
+        <button type="button" className={`vruler-handle${drag === "top" ? " on" : ""}`} style={{ top: top - 6 }}
+          title={`Margem superior: ${cmVal(top)} cm (arraste)`} onPointerDown={(e) => { e.preventDefault(); setDrag("top"); }} />
+        <button type="button" className={`vruler-handle${drag === "bottom" ? " on" : ""}`} style={{ top: pageH - bottom - 6 }}
+          title={`Margem inferior: ${cmVal(bottom)} cm (arraste)`} onPointerDown={(e) => { e.preventDefault(); setDrag("bottom"); }} />
+      </div>
+    </div>
+  );
+}
+
 export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, viewFirst = false, editExtra, actions, onSave, onSaved }: {
   id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string; bare?: boolean;
   actions?: React.ReactNode; // botões do relatório (ficha, compartilhar, baixar, deletar): embaixo ao ler, em cima ao editar
@@ -328,7 +380,8 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     setAvail(wrap.clientWidth); setPageH(pg.offsetHeight);
     return () => ro.disconnect();
   }, []);
-  const scale = fit && avail > 0 ? Math.min(1, avail / data.page.w) : 1;
+  const gutter = canEdit ? 38 : 0; // espaço da régua lateral
+  const scale = fit && avail > 0 ? Math.min(1, (avail - gutter) / data.page.w) : 1;
 
   // guarda a seleção dentro do documento (os controles da barra tiram o foco do texto)
   useEffect(() => {
@@ -1022,13 +1075,21 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
 
       <div className="doc-body">
         <div className="doc-scroll" ref={wrapRef}>
+          <div className="doc-sheet" style={{ display: "flex", gap: 6, alignItems: "flex-start", width: "max-content", margin: scale < 1 ? "0" : "0 auto" }}>
           {canEdit && (
-            <div style={{ width: page.w * scale, margin: scale < 1 ? "0" : "0 auto" }}>
+            <div style={{ flex: "none", paddingTop: 30 }}>
+              <VRuler pageH={page.h} top={margins.top} bottom={margins.bottom} scale={scale} minTop={header ? HEADER_MIN_TOP : 24}
+                onChange={(m) => { setMargins((cur) => ({ ...cur, ...m })); touch(); }} />
+            </div>
+          )}
+          <div>
+          {canEdit && (
+            <div style={{ width: page.w * scale }}>
               <Ruler pageW={page.w} left={margins.left} right={margins.right} scale={scale}
                 onChange={(m) => { setMargins((cur) => ({ ...cur, ...m })); touch(); }} />
             </div>
           )}
-          <div style={{ width: page.w * scale, height: pageH ? pageH * scale : undefined, margin: scale < 1 ? "0" : "0 auto" }}>
+          <div style={{ width: page.w * scale, height: pageH ? pageH * scale : undefined }}>
           <div
             className={`doc-page${docRef.kind === "nota" ? " note-mode" : ""}`} ref={pageRef}
             onMouseDown={(e) => {
@@ -1119,6 +1180,8 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
                 />
               );
             })}
+          </div>
+          </div>
           </div>
           </div>
         </div>

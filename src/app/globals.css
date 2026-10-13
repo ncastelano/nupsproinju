@@ -980,3 +980,13 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 }
 .typing-toast .dots { animation: blink 1.2s steps(3, end) infinite; }
 @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* Régua vertical */
+.doc-vruler { width: 30px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #fff; position: relative; user-select: none; }
+.vruler-in { position: relative; width: 30px; }
+.vruler-tick { position: absolute; right: 0; height: 1px; width: 6px; background: #9aaab0; }
+.vruler-tick.whole { width: 11px; }
+.vruler-tick b { position: absolute; right: 14px; top: -6px; font-size: 10px; font-weight: 600; color: #6d8087; white-space: nowrap; line-height: 12px; }
+.vruler-handle { position: absolute; left: 3px; width: 24px; height: 12px; padding: 0; border-radius: 3px; background: var(--brand); cursor: ns-resize; box-shadow: none; touch-action: none; }
+.vruler-handle:hover, .vruler-handle.on { background: var(--brand-dark); box-shadow: 0 0 0 3px var(--brand-soft); }
+.vruler-in .ruler-margin { position: absolute; background: #e8eef0; }
