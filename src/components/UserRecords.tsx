@@ -95,7 +95,15 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
     const m = metaOf(r.answers as Record<string, unknown>);
     return blob([cadBlob(r), "acompanhamento reavaliação", ...Object.values(m.acompData ?? {}).flatMap((d) => Object.values(d)), ...m.acomps.map((x) => `${x.by_name} ${x.at}`)]);
   };
-  const procList = tokens.length ? records.filter((r) => hit(procBlob(r))) : records;
+  // do mais atual para o mais antigo (última atividade: cadastro, acompanhamentos ou edições)
+  const lastOf = (r: (typeof records)[number]) => {
+    const m = metaOf(r.answers as Record<string, unknown>);
+    return [r.created_at, ...m.history.map((h) => h.at), ...m.acomps.map((a) => a.at)].sort().pop()!;
+  };
+  const sortedRecs = [...records].sort((a, b) => lastOf(b).localeCompare(lastOf(a)));
+  const procList = tokens.length ? sortedRecs.filter((r) => hit(procBlob(r))) : sortedRecs;
+  fiscs.sort((a, b) => (latest(b.meta.visit?.responded_at, b.created_at, ...b.meta.history.map((h) => h.at)) ?? "")
+    .localeCompare(latest(a.meta.visit?.responded_at, a.created_at, ...a.meta.history.map((h) => h.at)) ?? ""));
   const fiscList = tokens.length
     ? fiscs.filter((f) => {
         const v = f.meta.visit;
@@ -161,7 +169,7 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
               <ProcessoCard
                 key={r.id} id={r.id} numero={r.answers.processo?.value ?? "—"} nomes={r.answers.nomes?.value ?? ""} draft={!!meta.draft}
                 cadDate={when("inicial", "concluiu o cadastro inicial", r.created_at)}
-                acomps={[...meta.acomps].sort((x, y) => x.n - y.n).map((a) => ({
+                acomps={[...meta.acomps].sort((x, y) => y.n - x.n).map((a) => ({
                   n: a.n, draft: !!a.draft, date: when(`acomp:${a.n}`, "criou o acompanhamento", a.at),
                 }))}
               />

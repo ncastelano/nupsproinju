@@ -65,7 +65,7 @@ export default async function ProfilePage({
       procs.push({
         id: r.id as string, processo: (r.processo as string) ?? "", nomes: (r.nomes as string) ?? "", draft: !!m.draft,
         cadDate: when("inicial", "concluiu o cadastro inicial", r.created_at as string),
-        acomps: [...m.acomps].filter((a) => mine || !a.draft).sort((x, y) => x.n - y.n)
+        acomps: [...m.acomps].filter((a) => mine || !a.draft).sort((x, y) => y.n - x.n)
           .map((a) => ({ n: a.n, draft: !!a.draft, date: when(`acomp:${a.n}`, "criou o acompanhamento", a.at) })),
         last: latest(r.created_at as string, ...m.history.map((h) => h.at), ...m.acomps.map((a) => a.at))!,
       });
