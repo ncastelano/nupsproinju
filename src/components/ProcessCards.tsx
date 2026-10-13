@@ -34,10 +34,9 @@ export function ProcCard({ href, kicker, numero, badges = [], foot, draft = fals
   return (
     <article className="card proc-card">
       <Link href={href} className="proc-link">
-        <span className="proc-ico"><FileText size={20} /></span>
         <span className="proc-body">
-          <small className="proc-kicker">{kicker}</small>
-          <strong className="proc-num">{numero}</strong>
+          <strong className="proc-num">{kicker}</strong>
+          <small className="proc-names">{numero}</small>
           {badges.length > 0 && (
             <span className="proc-badges">
               {badges.map((b) => (
@@ -64,10 +63,9 @@ export function ProcessoCard({ id, numero, nomes = "", draft = false, cadDate, a
   return (
     <article className="card proc-card proc-multi">
       <div className="proc-top">
-        <span className="proc-ico"><FileText size={20} /></span>
         <span className="proc-body">
-          <small className="proc-kicker">{numero || "—"}</small>
-          <strong className="proc-num">{nomes || "(sem nome)"}</strong>
+          <strong className="proc-num">{numero || "—"}</strong>
+          <small className="proc-names">{nomes || "(sem nome)"}</small>
         </span>
       </div>
       {!draft && (
@@ -95,38 +93,6 @@ export function ProcessoCard({ id, numero, nomes = "", draft = false, cadDate, a
       </ul>
       {!draft && <Link href={`/acompanhamento?processo=${id}`} className="proc-add"><Plus size={14} /> Novo acompanhamento</Link>}
     </article>
-  );
-}
-
-// Cadastro inicial de um processo: mostra se já tem ou não acompanhamento (o acompanhamento é anexo do cadastro).
-export function CadastroCard({ id, numero, draft = false, acomps, last }: {
-  id: string; numero: string; draft?: boolean; acomps: number; last?: string;
-}) {
-  return (
-    <ProcCard
-      href={draft ? `/cadastro-inicial?rascunho=${id}` : `/cadastrados/${id}/documento`}
-      kicker="Cadastro inicial" numero={numero || "—"} draft={draft}
-      badges={draft ? [] : acomps > 0
-        ? [{ text: acomps === 1 ? "Com acompanhamento" : `Com ${acomps} acompanhamentos`, tone: "ok", icon: "check" }]
-        : [{ text: "Sem acompanhamento", tone: "none", icon: "none" }]}
-      foot={last ? `Último relatório: ${day(last)}` : undefined}
-    />
-  );
-}
-
-// Um acompanhamento (relatório de reavaliação): anexo do cadastro inicial do processo.
-export function AcompCard({
-  recordId, processo, n, last, draft = false,
-}: {
-  recordId: string; nomes?: string; processo: string; n: number; last?: string; by?: string; at?: string; canDelete?: boolean; draft?: boolean;
-}) {
-  return (
-    <ProcCard
-      href={draft ? `/acompanhamento?processo=${recordId}&n=${n}` : `/cadastrados/${recordId}/acompanhamento/${n}`}
-      kicker={`Acompanhamento nº ${n}`} numero={processo || "—"} draft={draft}
-      badges={[{ text: "Anexo do cadastro inicial", tone: "brand", icon: "clip" }]}
-      foot={last ? `Último relatório: ${day(last)}` : undefined}
-    />
   );
 }
 
