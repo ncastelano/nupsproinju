@@ -4,7 +4,7 @@ import { Pencil } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { ShareMenu } from "@/components/ShareMenu";
 import { AppShell } from "@/components/AppShell";
-import { AcompCard, CadastroCard, FiscCard, MiniCard, brDate } from "@/components/ProcessCards";
+import { FiscCard, MiniCard, ProcessoCard, brDate } from "@/components/ProcessCards";
 import { cleanSlug, findBySlug, professionOf } from "@/lib/profiles";
 import { getMember } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: p ? `${p.name} · Núcleo Psicossocial PROINJU` : "Perfil não encontrado" };
 }
 
-type Sec = "cadastros" | "acompanhamentos" | "fiscalizacoes" | "notas";
+type Sec = "processos" | "fiscalizacoes" | "notas";
 
 // Perfil da pessoa: foto, nome e registro. Para quem está logado aparece dentro do sistema (com as abas),
 // com os relatórios dela separados por tipo; visitantes veem só o cartão público.
@@ -33,14 +33,15 @@ export default async function ProfilePage({
   const p = await findBySlug(slug);
   if (!p) notFound();
   const { ver } = await searchParams;
-  const only = (["cadastros", "acompanhamentos", "fiscalizacoes", "notas"] as const).find((k) => k === ver);
+  const only: Sec | undefined = (["processos", "fiscalizacoes", "notas"] as const).find((k) => k === ver)
+    ?? (ver === "cadastros" || ver === "acompanhamentos" ? "processos" : undefined);
 
   const viewer = await getMember();
   const inside = !!viewer && viewer.status === "approved";
   const mine = inside && viewer!.id === p.id;
 
-  let cad: { id: string; processo: string; nome: string; last: string; draft: boolean; nAcomp: number }[] = [];
-  let acomps: { rid: string; n: number; processo: string; nome: string; last: string; draft: boolean }[] = [];
+  // processos de acompanhamento em que a pessoa tem cadastro inicial ou acompanhamento
+  let procs: { id: string; processo: string; draft: boolean; cadDate: string; last: string; acomps: { n: number; date: string; draft: boolean }[] }[] = [];
   let fiscs: { id: string; unit: string; date: string; last: string; draft: boolean; processes: string[] }[] = [];
   let notas: { id: string; title: string; vis: string; at: string }[] = [];
 
@@ -56,22 +57,20 @@ export default async function ProfilePage({
 
     for (const r of all.data ?? []) {
       const m = metaOf({ _meta: r.meta ?? {} });
-      const processo = (r.processo as string) ?? "", nome = (r.nomes as string) ?? "";
-      if (r.created_by === p.id && (mine || !m.draft)) {
-        cad.push({
-          id: r.id as string, processo, nome, draft: !!m.draft, nAcomp: m.acomps.filter((x) => !x.draft).length,
-          last: latest(r.created_at as string, ...m.history.filter((h) => !h.doc || h.doc === "inicial").map((h) => h.at))!,
-        });
-      }
-      for (const a of m.acomps) {
-        if (a.by_id !== p.id || (a.draft && !mine)) continue;
-        acomps.push({
-          rid: r.id as string, n: a.n, processo, nome, draft: !!a.draft,
-          last: latest(a.at, ...m.history.filter((h) => h.doc === `acomp:${a.n}`).map((h) => h.at))!,
-        });
-      }
+      const ownsCad = r.created_by === p.id && (mine || !m.draft);
+      const hasAcomp = m.acomps.some((a) => a.by_id === p.id && (mine || !a.draft));
+      if (!ownsCad && !hasAcomp) continue;
+      const when = (doc: string, starts: string, fallback: string) =>
+        m.history.filter((h) => h.doc === doc && (h.note ?? "").startsWith(starts)).map((h) => h.at).sort().pop() ?? fallback;
+      procs.push({
+        id: r.id as string, processo: (r.processo as string) ?? "", draft: !!m.draft,
+        cadDate: when("inicial", "concluiu o cadastro inicial", r.created_at as string),
+        acomps: [...m.acomps].filter((a) => mine || !a.draft).sort((x, y) => x.n - y.n)
+          .map((a) => ({ n: a.n, draft: !!a.draft, date: when(`acomp:${a.n}`, "criou o acompanhamento", a.at) })),
+        last: latest(r.created_at as string, ...m.history.map((h) => h.at), ...m.acomps.map((a) => a.at))!,
+      });
     }
-    acomps.sort((a, b) => b.last.localeCompare(a.last));
+    procs.sort((a, b) => b.last.localeCompare(a.last));
 
     for (const r of fis.data ?? []) {
       const ans = (r.answers ?? {}) as Record<string, unknown>;
@@ -160,15 +159,11 @@ export default async function ProfilePage({
     <AppShell>
       <div className="grid" style={{ gap: 16 }}>
         {!only && header}
-        {only && <h1 style={{ margin: "8px 0 0" }}>{mine ? "Meus" : `Relatórios de ${first}:`} {({ cadastros: "cadastros iniciais", acompanhamentos: "acompanhamentos", fiscalizacoes: "fiscalizações", notas: "notas" })[only]}</h1>}
+        {only && <h1 style={{ margin: "8px 0 0" }}>{mine ? "Meus" : `Relatórios de ${first}:`} {({ processos: "processos de acompanhamento", fiscalizacoes: "fiscalizações", notas: "notas" })[only]}</h1>}
 
-        {section("cadastros", "CADASTROS INICIAIS", cad.length, cut(cad).map((r) => (
-          <CadastroCard key={r.id} id={r.id} numero={r.processo} draft={r.draft} acomps={r.nAcomp} last={r.last} />
-        )), "Nenhum cadastro inicial.")}
-
-        {section("acompanhamentos", "ACOMPANHAMENTOS", acomps.length, cut(acomps).map((a) => (
-          <AcompCard key={`${a.rid}-${a.n}`} recordId={a.rid} nomes={a.nome} processo={a.processo} n={a.n} last={a.last} draft={a.draft} />
-        )), "Nenhum acompanhamento.")}
+        {section("processos", "PROCESSOS DE ACOMPANHAMENTO", procs.length, cut(procs).map((r) => (
+          <ProcessoCard key={r.id} id={r.id} numero={r.processo} draft={r.draft} cadDate={r.cadDate} acomps={r.acomps} />
+        )), "Nenhum processo de acompanhamento.")}
 
         {section("fiscalizacoes", "FISCALIZAÇÕES", fiscs.length, cut(fiscs).map((f) => (
           <FiscCard key={f.id} id={f.id} unit={f.unit} date={f.date} last={f.last} draft={f.draft} processes={f.processes} />
