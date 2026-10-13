@@ -417,7 +417,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     if (!page || composing.current) return;
     page.querySelectorAll(".pgspacer").forEach((n) => n.remove());
     const { h: pageH } = data.page;
-    const mt = margins.top, mb = margins.bottom;
+    const mt = Math.max(margins.top, hdr ? hdr.y + hdr.h + 12 : 0), mb = margins.bottom; // o texto começa depois do logo, como no Word
     const H = pageH - mt - mb;
     const sc = page.offsetWidth ? page.getBoundingClientRect().width / page.offsetWidth : 1; // escala visual da folha
     const origin = () => page.getBoundingClientRect().top + page.clientTop * sc;
@@ -1148,7 +1148,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
               const r = document.createRange(); r.selectNodeContents(el); r.collapse(false);
               const s = getSelection(); s?.removeAllRanges(); s?.addRange(r);
             }}
-            style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: "top left", margin: 0, width: page.w, minHeight: gaps.length ? gaps[gaps.length - 1] + GAP + page.h : page.h, padding: `${margins.top}px ${margins.right}px ${margins.bottom}px ${margins.left}px` }}
+            style={{ transform: scale < 1 ? `scale(${scale})` : undefined, transformOrigin: "top left", margin: 0, width: page.w, minHeight: gaps.length ? gaps[gaps.length - 1] + GAP + page.h : page.h, padding: `${Math.max(margins.top, header ? header.y + header.h + 12 : 0)}px ${margins.right}px ${margins.bottom}px ${margins.left}px` }}
           >
             {headerBox(header?.y ?? 0, "h0")}
             {gaps.map((y, i) => (

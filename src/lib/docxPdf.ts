@@ -36,7 +36,7 @@ export async function docToPdf(data: DocData): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const fonts = await loadFonts(pdf);
   const W = data.page.w * PX, H = data.page.h * PX;
-  const ML = data.page.left * PX, MR = data.page.right * PX, MT = data.page.top * PX, MB = data.page.bottom * PX;
+  const ML = data.page.left * PX, MR = data.page.right * PX, MT = Math.max(data.page.top, data.header ? data.header.y + data.header.h + 12 : 0) * PX, MB = data.page.bottom * PX; // o texto começa depois do cabeçalho (como no Word)
   const contentW = W - ML - MR;
 
   // cabeçalho
