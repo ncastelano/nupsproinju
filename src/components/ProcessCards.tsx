@@ -76,12 +76,6 @@ export function ProcessoCard({ id, numero, nomes = "", draft = false, cadDate, a
         </span>
       )}
       <ul className="proc-files">
-        <li>
-          <Link href={draft ? `/cadastro-inicial?rascunho=${id}` : `/cadastrados/${id}/documento`}>
-            <FileText size={14} /> <span>Cadastro inicial</span> <em>{day(cadDate)}</em>
-          </Link>
-          {draft && <span className="proc-draft">Rascunho</span>}
-        </li>
         {acomps.map((a) => (
           <li key={a.n}>
             <Link href={a.draft ? `/acompanhamento?processo=${id}&n=${a.n}` : `/cadastrados/${id}/acompanhamento/${a.n}`}>
@@ -90,6 +84,12 @@ export function ProcessoCard({ id, numero, nomes = "", draft = false, cadDate, a
             {a.draft && <span className="proc-draft">Rascunho</span>}
           </li>
         ))}
+        <li>
+          <Link href={draft ? `/cadastro-inicial?rascunho=${id}` : `/cadastrados/${id}/documento`}>
+            <FileText size={14} /> <span>Cadastro inicial</span> <em>{day(cadDate)}</em>
+          </Link>
+          {draft && <span className="proc-draft">Rascunho</span>}
+        </li>
       </ul>
       {!draft && <Link href={`/acompanhamento?processo=${id}`} className="proc-add"><Plus size={14} /> Novo acompanhamento</Link>}
     </article>
