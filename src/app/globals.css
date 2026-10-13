@@ -908,3 +908,11 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 @keyframes blink { 0% { opacity: .2; } 50% { opacity: 1; } 100% { opacity: .2; } }
 .nav-logout { display: contents; }
 .nav-logout button { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+/* Na web o menu ocupa a largura toda: as abas se distribuem por igual */
+@media (min-width: 761px) {
+  .app-header .inner { max-width: none; padding-left: 24px; padding-right: 24px; }
+  .app-header .main-nav { display: flex; width: 100%; gap: 8px; }
+  .app-header .main-nav > a, .app-header .main-nav > form.nav-logout { flex: 1 1 0; min-width: max-content; display: block; }
+  .app-header .main-nav > a > button, .app-header .main-nav > form.nav-logout > button { width: 100%; justify-content: center; }
+}
