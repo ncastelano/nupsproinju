@@ -16,7 +16,7 @@ export async function scheduleVisit(_: string | null, form: FormData): Promise<s
   const unit = String(form.get("unit") ?? "");
   const date = String(form.get("date") ?? "");
   const professionals = form.getAll("professionals").map((v) => String(v).trim()).filter(Boolean);
-  const processes = form.getAll("processos").map((v) => String(v).trim()).filter(Boolean);
+  const processes = form.getAll("processos").map((v) => String(v).trim().slice(0, 60)).filter(Boolean);
   if (!UNIDADES.includes(unit)) return "Escolha a unidade.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return "Informe a data da visita.";
   if (professionals.length === 0) return "Marque pelo menos um profissional.";
@@ -86,7 +86,7 @@ export async function saveResponses(_: string | null, form: FormData): Promise<s
   const date = next.q2?.value ?? rec.meta.visit?.date ?? "";
   const professionals = (next.q3?.value ?? "").split("; ").filter(Boolean);
   const processes = form.has("processos_campo")
-    ? form.getAll("processos").map((v) => String(v).trim()).filter(Boolean)
+    ? form.getAll("processos").map((v) => String(v).trim().slice(0, 60)).filter(Boolean)
     : rec.meta.visit?.processes ?? [];
   const meta = rec.meta;
   const first = meta.visit?.status !== "realizada";

@@ -100,7 +100,7 @@ export function FiscCard({
       kicker="Fiscalização" numero={processes.length ? processes.join(" · ") : unit || "(sem unidade)"} draft={draft}
       badges={[
         ...(processes.length && unit ? [{ text: unit, tone: "brand" as const, icon: "clip" as const }] : []),
-        ...(!processes.length ? [{ text: "Sem processo vinculado", tone: "none" as const, icon: "none" as const }] : []),
+        ...(!processes.length ? [{ text: "Sem número de processo", tone: "none" as const, icon: "none" as const }] : []),
       ]}
       foot={`Visita em ${date ? day(date) : "—"}${last ? ` · Último relatório: ${day(last)}` : ""}`}
     />

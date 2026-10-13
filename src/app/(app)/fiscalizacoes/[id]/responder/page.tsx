@@ -7,7 +7,6 @@ import { FISC_KEY } from "@/lib/fisc";
 import { FiscForm } from "@/components/FiscForm";
 import { loadSections } from "@/lib/questionnaires";
 import { DiscardDraft } from "@/components/DiscardDraft";
-import { loadProcessNumbers } from "@/lib/processOptions";
 
 // Questionário da visita (Fiscalização Mensal de Unidade de Acolhimento).
 export default async function ResponderPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +30,7 @@ export default async function ResponderPage({ params }: { params: Promise<{ id: 
       </div>
       <FiscForm
         id={id} initial={initial} redo={v?.status === "realizada"} sections={await loadSections("fisc")}
-        processOptions={[...new Set([...(await loadProcessNumbers()), ...(v?.processes ?? [])])]} initialProcesses={v?.processes ?? []}
+        initialProcess={(v?.processes ?? []).join("; ")}
       />
       {v?.status !== "realizada" && (acc.owner || acc.admin) && <div><DiscardDraft kind="fiscalizacao" id={id} /></div>}
     </div>

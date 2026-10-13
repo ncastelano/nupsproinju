@@ -57,9 +57,10 @@ export function QInput({ q, vals, set }: { q: FQ; vals: Vals; set: (k: string, v
 }
 
 // Questionário da fiscalização: uma pergunta por cartão; as que dependem de outra resposta só aparecem quando cabem.
-export function FiscForm({ id, initial, redo, sections, processOptions = [], initialProcesses = [] }: {
-  id: string; initial: Vals; redo: boolean; sections?: FSection[]; processOptions?: string[]; initialProcesses?: string[];
+export function FiscForm({ id, initial, redo, sections, initialProcess = "" }: {
+  id: string; initial: Vals; redo: boolean; sections?: FSection[]; initialProcess?: string;
 }) {
+  const [proc, setProc] = useState(initialProcess);
   const [vals, setVals] = useState<Vals>(initial);
   const [msg, action, pending] = useActionState(saveResponses, null);
   const set = (k: string, v: string) => setVals((cur) => ({ ...cur, [k]: v }));
@@ -75,12 +76,9 @@ export function FiscForm({ id, initial, redo, sections, processOptions = [], ini
       )}
       <input type="hidden" name="processos_campo" value="1" />
       <div className="card q">
-        <label className="q-label">Número(s) do(s) processo(s) vinculado(s)</label>
-        <div className="help">Escolha os processos (Cadastro inicial) a que esta fiscalização se refere. Pode marcar mais de um.</div>
-        <ChoiceField
-          name="processos" title="Número(s) do(s) processo(s)" multiple searchable searchPlaceholder="Buscar por número do processo..."
-          options={processOptions} initial={initialProcesses} placeholder="Selecione os processos..."
-        />
+        <label className="q-label">Número do processo da fiscalização</label>
+        <div className="help">A fiscalização tem o seu próprio processo, separado do Cadastro inicial e dos acompanhamentos.</div>
+        <input type="text" name="processos" value={proc} onChange={(e) => setProc(e.target.value)} placeholder="0000000-00.0000.0.00.0000" autoComplete="off" />
       </div>
       {(sections ?? FISC_SECTIONS).map((sec) => {
         const qs = sec.questions.filter((qn) => visible(qn, get));

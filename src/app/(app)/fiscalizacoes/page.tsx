@@ -11,7 +11,6 @@ import { RecordActivity } from "@/components/RecordActivity";
 import { FiscActions } from "@/components/FiscActions";
 import { ScheduleVisit } from "@/components/ScheduleVisit";
 import { FiscForm } from "@/components/FiscForm";
-import { loadProcessNumbers } from "@/lib/processOptions";
 
 type Row = { id: string; owner_id: string; owner: string; created_at: string; meta: RecMeta };
 
@@ -43,7 +42,6 @@ export default async function FiscalizacoesPage() {
     return A?.status === "agendada" ? da.localeCompare(db) : db.localeCompare(da);
   });
 
-  const processOptions = await loadProcessNumbers();
   const people = [...new Set([...PROFISSIONAIS_PADRAO, ...approved.map((p) => p.name as string).filter(Boolean)])];
 
   return (
@@ -62,12 +60,12 @@ export default async function FiscalizacoesPage() {
           sections={fiscSections} questionnaireNote={"Perguntas do formulário de Fiscalização Mensal de Unidade de Acolhimento. As respostas geram o texto do relatório."}
         />
       )}
-      <FiscForm id="" initial={{}} redo={false} sections={fiscSections} processOptions={processOptions} />
+      <FiscForm id="" initial={{}} redo={false} sections={fiscSections} />
 
       <hr className="soft" />
       <h2 className="section" style={{ margin: 0 }}>VISITAS AGENDADAS</h2>
       <p style={{ margin: 0, color: "var(--muted)" }}>Programe uma visita antes e responda o formulário depois, no dia.</p>
-      <ScheduleVisit people={people} me={me.name} processOptions={processOptions} />
+      <ScheduleVisit people={people} me={me.name} />
 
       <h2 className="section" style={{ margin: 0 }}>A RESPONDER ({rows.length})</h2>
       {rows.length === 0 ? (
