@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-// Barra fina no topo (verde claro) enquanto uma página carrega.
+// Barra fina (verde claro) logo embaixo do menu enquanto uma página carrega.
 export function NavProgress() {
   const path = usePathname();
   const search = useSearchParams().toString();
@@ -40,6 +40,18 @@ export function NavProgress() {
   }, [path, search]);
 
   useEffect(() => clear, []);
+
+  // a barra fica colada na borda de baixo do menu (ele pode mudar de altura: aviso de solicitações, tela pequena...)
+  useEffect(() => {
+    const place = () => {
+      const h = document.querySelector<HTMLElement>(".app-header");
+      const b = h ? Math.max(0, Math.round(h.getBoundingClientRect().bottom)) : 0;
+      document.documentElement.style.setProperty("--nav-bottom", `${b}px`);
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [phase, path]);
 
   return <div className={`nav-progress ${phase}`} role="progressbar" aria-hidden={phase === "idle"} />;
 }

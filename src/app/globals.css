@@ -437,7 +437,7 @@ button.light-brand:hover { background: var(--brand); color: #fff; border-color: 
 
 /* Barra de carregamento de página */
 .nav-progress {
-  position: fixed; top: 0; left: 0; height: 4px; width: 0; z-index: 200; pointer-events: none;
+  position: fixed; top: var(--nav-bottom, 0px); left: 0; height: 4px; width: 0; z-index: 59; pointer-events: none;
   background: linear-gradient(90deg, #b6f0c8, #5fd68a);
   box-shadow: 0 0 10px rgba(95, 214, 138, .8);
   border-radius: 0 4px 4px 0; opacity: 0;
