@@ -7,7 +7,7 @@ import { FORM_KEY } from "@/lib/forms";
 import { FISC_KEY } from "@/lib/fisc";
 import { NOTA_KEY } from "@/lib/notes";
 import { accessOf, loadRecord, saveRecord, type HistoryEntry } from "@/lib/records";
-import { cleanBlocks, cleanComments, isTable, parseDocx, serializeDocx, type Block, type DocComment, type Para } from "@/lib/docxDoc";
+import { cleanBlocks, cleanComments, cleanLogo, isTable, parseDocx, serializeDocx, type Block, type DocComment, type Para } from "@/lib/docxDoc";
 import { loadSections } from "@/lib/questionnaires";
 import { OTHER } from "@/lib/fisc";
 import { DOC_BUCKET, INICIAL, generateDoc, docPath, docVersion, loadProcessDoc, refKey, storeProcessDoc, type DocRef } from "@/lib/procDoc";
@@ -79,7 +79,7 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
   if (!rec) return { ok: false, msg: "Processo não encontrado." };
   if (!accessOf(rec, me, refKey(ref)).canEdit || notaDenied(ref, rec, me)) return { ok: false, msg: "Você não tem permissão para editar." };
   // aceita o formato novo {blocks, comments, page} ou só a lista de parágrafos
-  const payload = (paras && typeof paras === "object" && !Array.isArray(paras) ? paras : { blocks: paras }) as { blocks?: unknown; comments?: unknown; page?: Record<string, unknown> };
+  const payload = (paras && typeof paras === "object" && !Array.isArray(paras) ? paras : { blocks: paras }) as { blocks?: unknown; comments?: unknown; page?: Record<string, unknown>; logo?: unknown };
   const clean = cleanBlocks(payload.blocks);
   if (!clean) return { ok: false, msg: "Documento inválido." };
   const pg = payload.page ?? {};
@@ -98,7 +98,8 @@ export async function saveDocument(id: string, paras: unknown, base: string, ref
   const known = new Set(old.comments.map((c) => c.id));
   const comments: DocComment[] = cleanComments(payload.comments).map((c) =>
     known.has(c.id) ? c : { ...c, author: me.name || me.email, date: new Date().toISOString() });
-  const buf = await serializeDocx(doc.buf, clean, { comments, page: pageOpts });
+  const logo = cleanLogo(payload.logo);
+  const buf = await serializeDocx(doc.buf, clean, { comments, page: pageOpts, logo });
   const { error } = await storeProcessDoc(id, buf, ref);
   if (error) return { ok: false, msg: "Não foi possível salvar. Tente de novo." };
   if (changes.length && ref.kind !== "nota") await note(id, `editou ${label(ref)}`, refKey(ref), changes);

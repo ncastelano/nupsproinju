@@ -12,7 +12,7 @@ function sigRuns(runs: Run[]): string {
   let fmt = "";
   for (const r of runs) {
     if (!r.t) continue;
-    const f = `${r.b ? 1 : 0}${r.i ? 1 : 0}${r.u ? 1 : 0}|${r.sz}|${colorOf(r.c)}|${(r.cm ?? []).join(",")}`;
+    const f = `${r.b ? 1 : 0}${r.i ? 1 : 0}${r.u ? 1 : 0}${r.s ? 1 : 0}${r.hl ?? ""}|${r.sz}|${colorOf(r.c)}|${(r.cm ?? []).join(",")}`;
     if (f === fmt) cur += r.t;
     else { if (fmt) out.push(`${fmt}:${cur}`); fmt = f; cur = r.t; }
   }

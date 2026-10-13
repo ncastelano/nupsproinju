@@ -956,3 +956,17 @@ dialog.model-dialog .doc-comments { top: 0; max-height: none; }
 .proc-card.proc-multi:not(:has(.proc-badges)) { grid-template-rows: auto minmax(0, 1fr) auto; }
 .proc-card:not(.proc-multi) { height: 128px; overflow: hidden; }
 .proc-card:not(.proc-multi) .proc-link { height: 100%; }
+
+/* Régua do editor */
+.doc-ruler { height: 24px; margin-bottom: 6px; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: #fff; position: relative; user-select: none; }
+.ruler-in { position: relative; height: 24px; }
+.ruler-margin { position: absolute; top: 0; bottom: 0; background: #e8eef0; }
+.ruler-tick { position: absolute; bottom: 0; width: 1px; height: 6px; background: #9aaab0; }
+.ruler-tick.whole { height: 11px; }
+.ruler-tick b { position: absolute; top: -13px; left: -4px; font-size: 10px; font-weight: 600; color: #6d8087; }
+.ruler-handle { position: absolute; top: 3px; width: 12px; height: 18px; padding: 0; border-radius: 3px; background: var(--brand); cursor: ew-resize; box-shadow: none; touch-action: none; }
+.ruler-handle:hover, .ruler-handle.on { background: var(--brand-dark); box-shadow: 0 0 0 3px var(--brand-soft); }
+.doc-color select { border: 0; background: transparent; padding: 0 2px; max-width: 74px; font-size: 12px; }
+.hl-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; width: max-content; max-width: 260px; }
+.hl-dot { width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+.hl-dot:hover { box-shadow: 0 0 0 2px var(--brand); }

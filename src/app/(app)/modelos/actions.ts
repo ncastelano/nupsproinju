@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { REPORT_BUCKET, markersOf } from "@/lib/report";
-import { cleanBlocks, cleanComments, parseDocx, serializeDocx, type DocData } from "@/lib/docxDoc";
+import { cleanBlocks, cleanComments, cleanLogo, parseDocx, serializeDocx, type DocData } from "@/lib/docxDoc";
 import { MODELS, knownMarkers, readInfoFile, writeInfoFile, type ModelKind } from "@/lib/models";
 import { FORM_KEY } from "@/lib/forms";
 import { INICIAL_TYPES, cleanSections, storeSections } from "@/lib/questionnaires";
@@ -67,7 +67,7 @@ export async function saveModelDoc(
 ): Promise<{ ok: boolean; msg: string; version?: string }> {
   const me = await requireAdmin();
   if (!(kind in MODELS)) return { ok: false, msg: "Tipo de modelo inválido." };
-  const pl = (payload && typeof payload === "object" ? payload : {}) as { blocks?: unknown; comments?: unknown; page?: Record<string, number> };
+  const pl = (payload && typeof payload === "object" ? payload : {}) as { blocks?: unknown; comments?: unknown; page?: Record<string, number>; logo?: unknown };
   const blocks = cleanBlocks(pl.blocks);
   if (!blocks) return { ok: false, msg: "Documento inválido." };
   const mar = (v: unknown) => (typeof v === "number" && v >= 24 && v <= 240 ? v : undefined);
@@ -82,6 +82,7 @@ export async function saveModelDoc(
 
   const buf = await serializeDocx(oldBuf, blocks, {
     comments: cleanComments(pl.comments),
+    logo: cleanLogo(pl.logo),
     page: { top: mar(pg.top), bottom: mar(pg.bottom), left: mar(pg.left), right: mar(pg.right) },
   });
   const up = await st.upload(path, buf, { upsert: true, contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });

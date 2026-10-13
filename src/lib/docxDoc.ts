@@ -5,6 +5,8 @@ import JSZip from "jszip";
 
 export type Run = {
   t: string; b?: boolean; i?: boolean; u?: boolean; sz: number;
+  s?: boolean;      // tachado
+  hl?: "yellow" | "green" | "cyan" | "magenta"; // realce (marca-texto)
   f?: string;       // fonte (quando diferente da do parágrafo)
   c?: string;       // cor em hexadecimal (RRGGBB)
   cm?: number[];    // comentários que cobrem este trecho
@@ -91,9 +93,13 @@ function parsePara(p: string, media: Media, active: Set<number>): Para {
     }
     if (!t) continue;
     const color = rpr.match(/<w:color w:val="([0-9A-Fa-f]{6})"/)?.[1];
+    const hlv = rpr.match(/<w:highlight w:val="([a-zA-Z]+)"/)?.[1];
+    const hl = hlv === "yellow" || hlv === "green" || hlv === "cyan" || hlv === "magenta" ? hlv : undefined;
     const rf = rpr.match(/w:ascii="([^"]*)"/)?.[1];
     runs.push({
       t, b: on(rpr, "b") || undefined, i: on(rpr, "i") || undefined, u: on(rpr, "u") || undefined,
+      s: on(rpr, "strike") || undefined,
+      ...(hl ? { hl } : {}),
       sz: Number(rpr.match(/<w:sz w:val="(\d+)"/)?.[1] ?? sz),
       ...(rf && rf !== font ? { f: rf } : {}),
       ...(color && color.toUpperCase() !== "000000" ? { c: color.toUpperCase() } : {}),
@@ -246,8 +252,8 @@ function paraXml(p: Para, ctx: Ctx): string {
     body += closeComments(ctx, cms);
     for (const id of cms) if (!ctx.open.has(id)) { ctx.open.add(id); body += `<w:commentRangeStart w:id="${id}"/>`; }
     const f = r.f ?? p.font;
-    const rpr = `<w:rPr>${rfonts(f)}${r.b ? "<w:b/><w:bCs/>" : ""}${r.i ? "<w:i/><w:iCs/>" : ""}`
-      + `${r.c ? `<w:color w:val="${r.c}"/>` : ""}<w:sz w:val="${r.sz}"/><w:szCs w:val="${r.sz}"/>${r.u ? '<w:u w:val="single"/>' : ""}</w:rPr>`;
+    const rpr = `<w:rPr>${rfonts(f)}${r.b ? "<w:b/><w:bCs/>" : ""}${r.i ? "<w:i/><w:iCs/>" : ""}${r.s ? "<w:strike/>" : ""}`
+      + `${r.c ? `<w:color w:val="${r.c}"/>` : ""}<w:sz w:val="${r.sz}"/><w:szCs w:val="${r.sz}"/>${r.hl ? `<w:highlight w:val="${r.hl}"/>` : ""}${r.u ? '<w:u w:val="single"/>' : ""}</w:rPr>`;
     const parts = r.t.split(/(\n|\t)/).map((s) =>
       s === "\n" ? "<w:br/>" : s === "\t" ? "<w:tab/>" : s ? `<w:t xml:space="preserve">${esc(s)}</w:t>` : "").join("");
     body += `<w:r>${rpr}${parts}</w:r>`;
@@ -274,7 +280,7 @@ export const emptyPara = (): Para => ({ sp: { line: "276", lineRule: "auto" }, i
 
 // Troca o conteúdo do documento pelo editado, preservando cabeçalho, página e estilos do arquivo.
 export async function serializeDocx(
-  buf: Buffer, blocks: Block[], opts: { comments?: DocComment[]; page?: Partial<PageData> } = {},
+  buf: Buffer, blocks: Block[], opts: { comments?: DocComment[]; page?: Partial<PageData>; logo?: { src?: string; w: number; h: number } } = {},
 ): Promise<Buffer> {
   const zip = await JSZip.loadAsync(buf);
   const xml = await zip.file("word/document.xml")!.async("string");
@@ -301,6 +307,36 @@ export async function serializeDocx(
   const addDefault = (ext: string, type: string) => {
     if (!new RegExp(`<Default[^>]*Extension="${ext}"`, "i").test(ct)) ct = ct.replace("</Types>", `<Default Extension="${ext}" ContentType="${type}"/></Types>`);
   };
+  // troca do logo do cabeçalho: a nova imagem substitui a anterior (mesmo lugar, nova largura)
+  if (opts.logo) {
+    const lm = opts.logo.src ? opts.logo.src.match(/^data:image\/(png|jpeg);base64,(.+)$/) : null;
+    const hid = sect.match(/<w:headerReference[^>]*r:id="([^"]+)"/)?.[1];
+    const hfile = hid && relOf(rels, hid);
+    if (hfile && (lm || !opts.logo.src)) {
+      const hpath = `word/${hfile}`, hrp = `word/_rels/${hfile}.rels`;
+      let hxml = (await zip.file(hpath)?.async("string")) ?? "";
+      let hrels = (await zip.file(hrp)?.async("string")) ?? "";
+      const emb = hxml.match(/r:embed="([^"]+)"/)?.[1];
+      const old = emb && relOf(hrels, emb);
+      if (emb && old) {
+        const cx = Math.round(opts.logo.w * 9525), cy = Math.round(opts.logo.h * 9525);
+        hxml = hxml.replace(/<wp:extent cx="\d+" cy="\d+"\/>/, `<wp:extent cx="${cx}" cy="${cy}"/>`)
+          .replace(/<a:ext cx="\d+" cy="\d+"\/>/, `<a:ext cx="${cx}" cy="${cy}"/>`);
+        if (lm) {
+          const ext = lm[1] === "jpeg" ? "jpg" : "png";
+          const name = `nups_logo.${ext}`;
+          zip.file(`word/media/${name}`, lm[2], { base64: true });
+          addDefault(ext, mime(ext));
+          hrels = hrels.replace(new RegExp(`(<Relationship[^>]*Id="${emb}"[^>]*Target=")[^"]+(")`), `$1media/${name}$2`)
+            .replace(new RegExp(`(<Relationship[^>]*Target=")[^"]+("[^>]*Id="${emb}")`), `$1media/${name}$2`);
+          hxml = hxml.replace(/<a:srcRect[^>]*\/>/, ""); // imagem nova: sem o recorte da antiga
+          zip.file(hrp, hrels);
+          if (`media/${name}` !== old && !rels.includes(`Target="${old}"`)) zip.remove(`word/${old}`);
+        }
+        zip.file(hpath, hxml);
+      }
+    }
+  }
   let mediaN = 0;
   const known = new Set([...rels.matchAll(/Id="(rId\d+)"/g)].map((m) => m[1]));
   const ctx: Ctx = {
@@ -361,10 +397,12 @@ function cleanPara(p: unknown): Para {
     const x = (r ?? {}) as Record<string, unknown>;
     const f = typeof x.f === "string" && /^[\w \-]{1,40}$/.test(x.f) ? x.f : undefined;
     const c = typeof x.c === "string" && /^[0-9A-Fa-f]{6}$/.test(x.c) ? x.c.toUpperCase() : undefined;
+    const hl = x.hl === "yellow" || x.hl === "green" || x.hl === "cyan" || x.hl === "magenta" ? x.hl : undefined;
     const cm = Array.isArray(x.cm) ? x.cm.filter((n) => Number.isInteger(n) && n >= 0).slice(0, 10) as number[] : undefined;
     return {
       t: String(x.t ?? "").slice(0, 50000),
       b: x.b ? true : undefined, i: x.i ? true : undefined, u: x.u ? true : undefined,
+      s: x.s ? true : undefined, ...(hl ? { hl } : {}),
       sz: num(x.sz, 24), ...(f ? { f } : {}), ...(c ? { c } : {}), ...(cm?.length ? { cm } : {}),
     } satisfies Run;
   });
@@ -406,4 +444,13 @@ export function cleanComments(input: unknown): DocComment[] {
 export function cleanParas(input: unknown): Para[] | null {
   const b = cleanBlocks(input);
   return b ? b.filter((x): x is Para => !isTable(x)) : null;
+}
+
+// Novo logo vindo da tela: só PNG/JPEG de tamanho razoável.
+export function cleanLogo(x: unknown): { src?: string; w: number; h: number } | undefined {
+  const lg = (x ?? {}) as { src?: unknown; w?: unknown; h?: unknown };
+  if (typeof lg.w !== "number" || typeof lg.h !== "number" || lg.w < 20 || lg.w > 760 || lg.h < 10 || lg.h > 400) return undefined;
+  if (lg.src === undefined) return { w: lg.w, h: lg.h }; // só muda o tamanho
+  if (typeof lg.src !== "string" || !/^data:image\/(png|jpeg);base64,/.test(lg.src) || lg.src.length > 4_000_000) return undefined;
+  return { src: lg.src, w: lg.w, h: lg.h };
 }

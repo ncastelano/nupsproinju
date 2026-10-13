@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowLeft, Bold, Check, Image as ImageIcon, IndentDecrease, IndentIncrease,
-  Italic, Loader2, MessageSquarePlus, MessageSquareText, Pencil, Plus, RotateCcw, Save, Table2, Trash2, Underline, X,
+  Highlighter, ImagePlus, Italic, Loader2, MessageSquarePlus, MessageSquareText, Pencil, Plus, Redo2, RemoveFormatting, RotateCcw, Save, Strikethrough, Table2, Trash2, Underline, Undo2, X,
 } from "lucide-react";
 import { isTable, type Block, type DocComment, type DocData, type ImgData, type Para, type Run } from "@/lib/docxDoc";
 import { fetchLiveDoc, resetDocument, saveDocument } from "@/app/(app)/cadastrados/[id]/documento/actions";
@@ -18,7 +18,10 @@ type Item = PItem | TItem;
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const FONTS = ["Times New Roman", "Arial", "Calibri", "Georgia", "Verdana", "Courier New"];
 const SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36];
-const LINES = [{ v: "240", t: "1,0" }, { v: "276", t: "1,15" }, { v: "360", t: "1,5" }, { v: "480", t: "2,0" }];
+const LINES = [{ v: "240", t: "1,0" }, { v: "276", t: "1,15" }, { v: "360", t: "1,5" }, { v: "480", t: "2,0" }, { v: "600", t: "2,5" }, { v: "720", t: "3,0" }];
+const GAPS = [{ v: "0", t: "0" }, { v: "120", t: "6 pt" }, { v: "240", t: "12 pt" }, { v: "360", t: "18 pt" }, { v: "480", t: "24 pt" }, { v: "720", t: "36 pt" }];
+const HL: Record<string, string> = { yellow: "#ffff00", green: "#00ff00", cyan: "#00ffff", magenta: "#ff00ff" };
+const CM = 96 / 2.54; // pixels por centímetro
 const MARGINS = [
   { k: "normal", t: "Normal (2,5 cm)", px: 96 },
   { k: "estreita", t: "Estreita (1,3 cm)", px: 48 },
@@ -28,7 +31,8 @@ const HEADER_MIN_TOP = 133; // o cabeçalho do NUPS precisa desse espaço no top
 
 function runsHtml(runs: Run[], pfont: string): string {
   return runs.map((r) => {
-    const st = `${r.b ? "font-weight:700;" : ""}${r.i ? "font-style:italic;" : ""}${r.u ? "text-decoration:underline;" : ""}`
+    const deco = [r.u ? "underline" : "", r.s ? "line-through" : ""].filter(Boolean).join(" ");
+    const st = `${r.b ? "font-weight:700;" : ""}${r.i ? "font-style:italic;" : ""}${deco ? `text-decoration:${deco};` : ""}${r.hl ? `background-color:${HL[r.hl]};` : ""}`
       + `${r.f && r.f !== pfont ? `font-family:'${r.f}';` : ""}${r.c ? `color:#${r.c};` : ""}font-size:${r.sz / 2}pt`;
     const cm = r.cm?.length ? ` class="doc-cm" data-cm="${r.cm.join(",")}"` : "";
     return `<span${cm} style="${st}">${esc(r.t).replace(/\[preencher\]/g, '<mark class="doc-todo">[preencher]</mark>').replace(/\n/g, "<br>")}</span>`;
@@ -59,6 +63,13 @@ const hexOf = (css: string) => {
   return h === "000000" ? undefined : h;
 };
 
+const hlOf = (css: string): Run["hl"] => {
+  const m = css.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!m) return undefined;
+  const h = "#" + [m[1], m[2], m[3]].map((x) => Number(x).toString(16).padStart(2, "0")).join("");
+  return (Object.entries(HL).find(([, v]) => v === h)?.[0] as Run["hl"]) ?? undefined;
+};
+
 // Lê o conteúdo editado e devolve os trechos com formatação (negrito, itálico, sublinhado, fonte, tamanho, cor, comentários).
 function readRuns(el: HTMLElement, pfont: string): Run[] {
   const out: Run[] = [];
@@ -76,13 +87,15 @@ function readRuns(el: HTMLElement, pfont: string): Run[] {
       b: Number(cs.fontWeight) >= 600 || cs.fontWeight === "bold" || undefined,
       i: cs.fontStyle === "italic" || undefined,
       u: cs.textDecorationLine.includes("underline") || undefined,
+      s: cs.textDecorationLine.includes("line-through") || undefined,
+      ...(hlOf(cs.backgroundColor) ? { hl: hlOf(cs.backgroundColor) } : {}),
       sz: Math.max(2, Math.round(parseFloat(cs.fontSize) * 1.5)),
       ...(fam && fam.toLowerCase() !== pfont.toLowerCase() ? { f: fam } : {}),
       ...(hexOf(cs.color) ? { c: hexOf(cs.color) } : {}),
       ...(cm.length ? { cm } : {}),
     };
     const last = out[out.length - 1];
-    const same = last && !!last.b === !!r.b && !!last.i === !!r.i && !!last.u === !!r.u && last.sz === r.sz
+    const same = last && !!last.b === !!r.b && !!last.i === !!r.i && !!last.u === !!r.u && !!last.s === !!r.s && last.hl === r.hl && last.sz === r.sz
       && last.f === r.f && last.c === r.c && (last.cm ?? []).join() === (r.cm ?? []).join();
     if (same) last.t += t; else out.push(r);
   };
@@ -142,6 +155,57 @@ const toItem = (b: Block): Item => {
   return { uid: uidSeq++, kind: "p", jc: b.jc, sp: b.sp, ind: b.ind, sz: b.sz, font: b.font, html: runsHtml(b.runs, b.font), img: b.img };
 };
 
+// Régua em centímetros: as áreas cinzas são as margens; arraste os marcadores para mudar a margem esquerda/direita.
+function Ruler({ pageW, left, right, scale, onChange }: {
+  pageW: number; left: number; right: number; scale: number; onChange: (m: { left?: number; right?: number }) => void;
+}) {
+  const [drag, setDrag] = useState<"left" | "right" | null>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const cms = Math.floor(pageW / CM);
+  const snap = (px: number) => Math.round(px / (CM / 10)) * (CM / 10);
+  const clamp = (v: number) => Math.min(Math.max(v, 0), pageW / 2 - CM);
+
+  useEffect(() => {
+    if (!drag) return;
+    const move = (e: PointerEvent) => {
+      const r = box.current?.getBoundingClientRect();
+      if (!r) return;
+      const x = (e.clientX - r.left) / scale;
+      if (drag === "left") onChange({ left: Math.round(clamp(snap(x))) });
+      else onChange({ right: Math.round(clamp(snap(pageW - x))) });
+    };
+    const up = () => setDrag(null);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drag, scale, pageW]);
+
+  const cmVal = (px: number) => (px / CM).toFixed(1).replace(".", ",");
+  return (
+    <div className="doc-ruler" ref={box} style={{ width: pageW * scale }} aria-label="Régua">
+      <div className="ruler-in" style={{ width: pageW, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <div className="ruler-margin" style={{ left: 0, width: left }} />
+        <div className="ruler-margin" style={{ right: 0, width: right }} />
+        {Array.from({ length: cms * 2 + 1 }, (_, i) => {
+          const x = (i * CM) / 2;
+          if (x > pageW) return null;
+          const whole = i % 2 === 0;
+          return (
+            <span key={i} className={`ruler-tick${whole ? " whole" : ""}`} style={{ left: x }}>
+              {whole && i > 0 && <b>{i / 2}</b>}
+            </span>
+          );
+        })}
+        <button type="button" className={`ruler-handle${drag === "left" ? " on" : ""}`} style={{ left: left - 6 }}
+          title={`Margem esquerda: ${cmVal(left)} cm (arraste)`} onPointerDown={(e) => { e.preventDefault(); setDrag("left"); }} />
+        <button type="button" className={`ruler-handle${drag === "right" ? " on" : ""}`} style={{ left: pageW - right - 6 }}
+          title={`Margem direita: ${cmVal(right)} cm (arraste)`} onPointerDown={(e) => { e.preventDefault(); setDrag("right"); }} />
+      </div>
+    </div>
+  );
+}
+
 export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { kind: "inicial" }, backHref = "/processos", author = "", bare = false, viewFirst = false, editExtra, actions, onSave, onSaved }: {
   id: string; data: DocData; version: string; canEdit: boolean; docRef?: Ref; backHref?: string; author?: string; bare?: boolean;
   actions?: React.ReactNode; // botões do relatório (ficha, compartilhar, baixar, deletar): embaixo ao ler, em cima ao editar
@@ -162,6 +226,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [tableBox, setTableBox] = useState(false);
+  const [hlBox, setHlBox] = useState(false);
   const [tRows, setTRows] = useState(3);
   const [tCols, setTCols] = useState(3);
   const [composer, setComposer] = useState<{ text: string } | null>(null);
@@ -179,6 +244,9 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const liveBusy = useRef(false);
   const dirtyRef = useRef(false);
   const tickRef = useRef<(mergeOnly?: boolean) => Promise<boolean>>(async () => false);
+  const [hdr, setHdr] = useState(data.header);   // cabeçalho (logo) mostrado na folha
+  const pendingLogo = useRef<{ src?: string; w: number; h: number } | null>(null); // logo novo ainda não salvo
+  const logoRef = useRef<HTMLInputElement>(null);
   const [others, setOthers] = useState<string[]>([]); // quem mais está editando este documento agora
   const [stale, setStale] = useState(false);          // outra pessoa salvou uma versão mais nova
   const watch = !bare && (docRef.kind === "inicial" || docRef.kind === "acomp" || docRef.kind === "fisc");
@@ -417,6 +485,38 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const align = (jc: Para["jc"]) => patchPara({ jc });
   const setLine = (v: string) => activeItem?.kind === "p" && patchPara({ sp: { ...activeItem.sp, line: v, lineRule: "auto" } });
   const setAfter = (v: string) => activeItem?.kind === "p" && patchPara({ sp: { ...activeItem.sp, after: v } });
+  const setBefore = (v: string) => activeItem?.kind === "p" && patchPara({ sp: { ...activeItem.sp, before: v } });
+  // espaçamento entre linhas do documento todo (parágrafos e tabelas)
+  function setAllLines(v: string) {
+    if (!canEdit) return;
+    const apply = (sp: Record<string, string>) => ({ ...sp, line: v, lineRule: "auto" });
+    setItems((cur) => cur.map((x) => (x.kind === "p" ? { ...x, sp: apply(x.sp) } : { ...x, cells: x.cells.map((row) => row.map((c) => ({ ...c, sp: apply(c.sp) }))) })));
+    touch();
+  }
+  // troca o logo do cabeçalho (mantém a largura atual, ajusta a altura pela proporção da nova imagem)
+  async function onLogo(file?: File) {
+    if (!file || !canEdit || !header) return;
+    if (!/^image\/(png|jpeg)$/.test(file.type)) { setMsg({ ok: false, text: "Use uma imagem PNG ou JPG para o logo." }); return; }
+    if (file.size > 2_500_000) { setMsg({ ok: false, text: "Imagem muito grande (limite de 2,5 MB)." }); return; }
+    const src = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(file); });
+    const dim = await new Promise<{ w: number; h: number }>((res, rej) => { const im = new window.Image(); im.onload = () => res({ w: im.naturalWidth, h: im.naturalHeight }); im.onerror = rej; im.src = src; });
+    const w = Math.min(Math.max(header.w, 60), page.w - margins.left - margins.right);
+    const h = Math.round((w * dim.h) / dim.w);
+    pendingLogo.current = { src, w, h };
+    setHdr({ ...header, src, w, h, crop: { l: 0, r: 0, t: 0, b: 0 } });
+    touch();
+  }
+  function resizeLogo(factor: number) {
+    if (!canEdit || !header) return;
+    const maxW = page.w - margins.left - margins.right;
+    const w = Math.min(Math.max(Math.round(header.w * factor), 60), maxW);
+    const h = Math.round((header.h * w) / header.w);
+    const next = { ...header, w, h };
+    // se o logo novo ainda não foi salvo, leva a imagem junto; senão o servidor só muda o tamanho
+    pendingLogo.current = pendingLogo.current?.src ? { src: pendingLogo.current.src, w, h } : { w, h };
+    setHdr(next);
+    touch();
+  }
   const indent = (delta: number) => {
     if (activeItem?.kind !== "p") return;
     const cur = Number(activeItem.ind.left ?? 0);
@@ -657,10 +757,12 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
       }
       if (!mergeOnly && dirtyRef.current && !busy) {
         const seq = editSeq.current;
-        const res = await saveDocument(id, { ...collect(), page: margins }, base.current, docRef as never, true);
+        const sentLogo = pendingLogo.current;
+        const res = await saveDocument(id, { ...collect(), page: margins, ...(sentLogo ? { logo: sentLogo } : {}) }, base.current, docRef as never, true);
         if (res.ok) {
           if (res.version) base.current = res.version;
           if (res.blocks) baseBlocks.current = res.blocks;
+          if (sentLogo && pendingLogo.current === sentLogo) pendingLogo.current = null;
           if (editSeq.current === seq) setDirty(false);
         }
       }
@@ -684,10 +786,11 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
           return;
         }
       }
-      const payload = { ...collect(), page: margins };
+      const payload = { ...collect(), page: margins, ...(pendingLogo.current ? { logo: pendingLogo.current } : {}) };
       const r = onSave ? await onSave(payload) : await saveDocument(id, payload, base.current, docRef as never);
       if (r.ok) {
         setDirty(false);
+        pendingLogo.current = null;
         if (r.version) base.current = r.version;
         setStale(false);
         if (docRef.kind === "modelo") { setMsg({ ok: true, text: r.msg }); setBusy(false); onSaved?.(); return; } // o modelo continua aberto
@@ -712,7 +815,8 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     setBusy(false);
   }
 
-  const { page, header } = data;
+  const { page } = data;
+  const header = hdr;
   const hw = header ? header.w / (1 - header.crop.l - header.crop.r) : 0;
   const hh = header ? header.h / (1 - header.crop.t - header.crop.b) : 0;
   const hx = header ? margins.left + header.rel : 0;
@@ -772,6 +876,9 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
 
         {canEdit && (
           <div className="doc-tools">
+            <button className="ghost icon" title="Desfazer (Ctrl+Z)" onMouseDown={preventFocus} onClick={() => exec("undo")}><Undo2 size={16} /></button>
+            <button className="ghost icon" title="Restaurar (Ctrl+Y)" onMouseDown={preventFocus} onClick={() => exec("redo")}><Redo2 size={16} /></button>
+            <span className="doc-sep" />
             <select title="Fonte" defaultValue="" onChange={(e) => { if (e.target.value) exec("fontName", e.target.value); e.target.value = ""; }}>
               <option value="" disabled>Fonte</option>
               {FONTS.map((f) => <option key={f} value={f} style={{ fontFamily: f }}>{f}</option>)}
@@ -783,6 +890,20 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
             <button className="ghost icon" title="Negrito" onMouseDown={preventFocus} onClick={() => exec("bold")}><Bold size={16} /></button>
             <button className="ghost icon" title="Itálico" onMouseDown={preventFocus} onClick={() => exec("italic")}><Italic size={16} /></button>
             <button className="ghost icon" title="Sublinhado" onMouseDown={preventFocus} onClick={() => exec("underline")}><Underline size={16} /></button>
+            <button className="ghost icon" title="Tachado" onMouseDown={preventFocus} onClick={() => exec("strikeThrough")}><Strikethrough size={16} /></button>
+            <div className="doc-pop">
+              <button className="ghost icon" title="Realce (marca-texto)" onMouseDown={preventFocus} onClick={() => setHlBox((v) => !v)}><Highlighter size={16} /></button>
+              {hlBox && (
+                <div className="doc-pop-box hl-box">
+                  {Object.entries(HL).map(([k, c]) => (
+                    <button key={k} type="button" className="hl-dot" title={{ yellow: "Amarelo", green: "Verde", cyan: "Azul claro", magenta: "Rosa" }[k]} style={{ background: c }}
+                      onMouseDown={preventFocus} onClick={() => { exec("hiliteColor", c); setHlBox(false); }} />
+                  ))}
+                  <button type="button" className="ghost" onMouseDown={preventFocus} onClick={() => { exec("hiliteColor", "transparent"); setHlBox(false); }}>Sem realce</button>
+                </div>
+              )}
+            </div>
+            <button className="ghost icon" title="Limpar formatação do trecho" onMouseDown={preventFocus} onClick={() => exec("removeFormat")}><RemoveFormatting size={16} /></button>
             <label className="doc-color" title="Cor da letra">
               <span>A</span>
               <input type="color" defaultValue="#000000" onChange={(e) => exec("foreColor", e.target.value)} />
@@ -795,11 +916,15 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
             <select title="Espaçamento entre linhas" value={activeItem?.kind === "p" ? activeItem.sp.line ?? "276" : "276"} onChange={(e) => setLine(e.target.value)}>
               {LINES.map((l) => <option key={l.v} value={l.v}>Linhas {l.t}</option>)}
             </select>
+            <select title="Espaço antes do parágrafo" value={activeItem?.kind === "p" ? activeItem.sp.before ?? "0" : "0"} onChange={(e) => setBefore(e.target.value)}>
+              {GAPS.map((g) => <option key={g.v} value={g.v}>Antes: {g.t}</option>)}
+            </select>
             <select title="Espaço depois do parágrafo" value={activeItem?.kind === "p" ? activeItem.sp.after ?? "0" : "0"} onChange={(e) => setAfter(e.target.value)}>
-              <option value="0">Depois: 0</option>
-              <option value="120">Depois: 6 pt</option>
-              <option value="240">Depois: 12 pt</option>
-              <option value="360">Depois: 18 pt</option>
+              {GAPS.map((g) => <option key={g.v} value={g.v}>Depois: {g.t}</option>)}
+            </select>
+            <select title="Espaçamento entre linhas do documento todo" value="" onChange={(e) => { if (e.target.value) setAllLines(e.target.value); e.target.value = ""; }}>
+              <option value="" disabled>Documento todo</option>
+              {LINES.map((l) => <option key={l.v} value={l.v}>Tudo: linhas {l.t}</option>)}
             </select>
             <button className="ghost icon" title="Diminuir recuo" onMouseDown={preventFocus} onClick={() => indent(-720)}><IndentDecrease size={16} /></button>
             <button className="ghost icon" title="Aumentar recuo" onMouseDown={preventFocus} onClick={() => indent(720)}><IndentIncrease size={16} /></button>
@@ -830,6 +955,14 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
               </>
             )}
             <button className="ghost" title="Inserir imagem" onMouseDown={preventFocus} onClick={() => fileRef.current?.click()}><ImageIcon size={16} /> Imagem</button>
+            {header && (
+              <>
+                <button className="ghost" title="Trocar o logo do cabeçalho" onMouseDown={preventFocus} onClick={() => logoRef.current?.click()}><ImagePlus size={16} /> Logo</button>
+                <button className="ghost icon" title="Diminuir o logo" onMouseDown={preventFocus} onClick={() => resizeLogo(0.9)}>−</button>
+                <button className="ghost icon" title="Aumentar o logo" onMouseDown={preventFocus} onClick={() => resizeLogo(1.1)}>+</button>
+                <input ref={logoRef} type="file" accept="image/png,image/jpeg" hidden onChange={(e) => { void onLogo(e.target.files?.[0]); e.target.value = ""; }} />
+              </>
+            )}
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/gif" hidden onChange={(e) => { void onImage(e.target.files?.[0]); e.target.value = ""; }} />
             <button className="ghost" title="Comentar o trecho selecionado" onMouseDown={preventFocus} onClick={startComment}><MessageSquarePlus size={16} /> Comentar</button>
             <span className="doc-sep" />
@@ -860,6 +993,12 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
 
       <div className="doc-body">
         <div className="doc-scroll" ref={wrapRef}>
+          {canEdit && (
+            <div style={{ width: page.w * scale, margin: scale < 1 ? "0" : "0 auto" }}>
+              <Ruler pageW={page.w} left={margins.left} right={margins.right} scale={scale}
+                onChange={(m) => { setMargins((cur) => ({ ...cur, ...m })); touch(); }} />
+            </div>
+          )}
           <div style={{ width: page.w * scale, height: pageH ? pageH * scale : undefined, margin: scale < 1 ? "0" : "0 auto" }}>
           <div
             className={`doc-page${docRef.kind === "nota" ? " note-mode" : ""}`} ref={pageRef}
