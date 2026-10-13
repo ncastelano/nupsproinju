@@ -1,5 +1,4 @@
-"use server";
-import { requireMember } from "@/lib/auth";
+import type { Member } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DOC_BUCKET, docVersion, type DocRef } from "@/lib/procDoc";
 
@@ -15,8 +14,7 @@ const refOf = (r: unknown): DocRef => {
 };
 const keyOf = (r: DocRef) => (r.kind === "acomp" ? `acomp:${r.n}` : r.kind);
 
-export async function pingEditing(id: string, refIn: unknown, editing: boolean, typing = false): Promise<{ others: string[]; typing: string[]; version: string }> {
-  const me = await requireMember();
+export async function pingEditing(me: Member, id: string, refIn: unknown, editing: boolean, typing = false): Promise<{ others: string[]; typing: string[]; version: string }> {
   const ref = refOf(refIn);
   const key = keyOf(ref);
   const st = createAdminClient().storage.from(DOC_BUCKET);

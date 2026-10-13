@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { isTable, type Block, type DocComment, type DocData, type ImgData, type Para, type Run } from "@/lib/docxDoc";
 import { fetchLiveDoc, resetDocument, saveDocument } from "@/app/(app)/cadastrados/[id]/documento/actions";
-import { pingEditing } from "@/app/(app)/presence-actions";
 import { merge3, sigBlock } from "@/lib/liveMerge";
 
 type Cell = { html: string; jc?: Para["jc"]; sp: Record<string, string>; ind: Record<string, string>; sz: number; font: string };
@@ -250,6 +249,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
   const [others, setOthers] = useState<string[]>([]);
   const [typers, setTypers] = useState<string[]>([]); // quem está digitando agora (aviso flutuante)
   const lastType = useRef(0);
+  const latestVersion = useRef(version); // versão salva mais recente que a presença informou
   const presenceRef = useRef<() => void>(() => {}); // quem mais está editando este documento agora
   const [stale, setStale] = useState(false);          // outra pessoa salvou uma versão mais nova
   const watch = !bare && (docRef.kind === "inicial" || docRef.kind === "acomp" || docRef.kind === "fisc");
@@ -265,8 +265,15 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     let alive = true;
     const tick = async () => {
       try {
-        const r = await pingEditing(id, docRef, canEditProp && editing, canEditProp && editing && Date.now() - lastType.current < 2500);
+        if (document.visibilityState === "hidden") return;
+        const res = await fetch("/presenca", {
+          method: "POST", headers: { "Content-Type": "application/json" }, cache: "no-store",
+          body: JSON.stringify({ id, ref: docRef, editing: canEditProp && editing, typing: canEditProp && editing && Date.now() - lastType.current < 2500 }),
+        });
+        if (!res.ok) return;
+        const r = (await res.json()) as { others: string[]; typing: string[]; version: string };
         if (!alive) return;
+        latestVersion.current = r.version;
         setOthers(r.others);
         setTypers(r.typing);
         if (r.version && base.current && r.version !== base.current && !(canEditProp && editing)) {
@@ -278,7 +285,10 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     presenceRef.current = () => { void tick(); };
     tick();
     const t = setInterval(tick, 3_000);
-    return () => { alive = false; clearInterval(t); if (canEditProp && editing) pingEditing(id, docRef, false).catch(() => {}); };
+    return () => {
+      alive = false; clearInterval(t);
+      if (canEditProp && editing) void fetch("/presenca", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ id, ref: docRef, editing: false }) }).catch(() => {});
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watch, editing, canEditProp, id]);
 
@@ -750,7 +760,9 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
     if (liveBusy.current || !watch) return false;
     liveBusy.current = true;
     try {
-      const r = await fetchLiveDoc(id, docRef, base.current);
+      // só busca o documento quando a presença avisou de uma versão nova (ou antes de salvar à mão)
+      const changed = mergeOnly || (latestVersion.current !== base.current);
+      const r = changed ? await fetchLiveDoc(id, docRef, base.current) : { ok: true, same: true as const };
       if (r.ok && !r.same && r.blocks && r.version) {
         const theirs = r.blocks;
         const mine = collect();
@@ -772,7 +784,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
         const sentLogo = pendingLogo.current;
         const res = await saveDocument(id, { ...collect(), page: margins, ...(sentLogo ? { logo: sentLogo } : {}) }, base.current, docRef as never, true);
         if (res.ok) {
-          if (res.version) base.current = res.version;
+          if (res.version) { base.current = res.version; latestVersion.current = res.version; }
           if (res.blocks) baseBlocks.current = res.blocks;
           if (sentLogo && pendingLogo.current === sentLogo) pendingLogo.current = null;
           if (editSeq.current === seq) setDirty(false);
@@ -803,7 +815,7 @@ export function DocEditor({ id, data, version, canEdit: canEditProp, docRef = { 
       if (r.ok) {
         setDirty(false);
         pendingLogo.current = null;
-        if (r.version) base.current = r.version;
+        if (r.version) { base.current = r.version; latestVersion.current = r.version; }
         setStale(false);
         if (docRef.kind === "modelo") { setMsg({ ok: true, text: r.msg }); setBusy(false); onSaved?.(); return; } // o modelo continua aberto
         if (docRef.kind === "nota") { setMsg({ ok: true, text: "Nota salva." }); setBusy(false); return; } // a nota continua aberta
