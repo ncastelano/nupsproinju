@@ -57,8 +57,8 @@ export function ProcCard({ href, kicker, numero, badges = [], foot, draft = fals
 }
 
 // Processo de acompanhamento: o Cadastro inicial e os acompanhamentos (anexos) juntos, num cartão só.
-export function ProcessoCard({ id, numero, draft = false, cadDate, acomps }: {
-  id: string; numero: string; draft?: boolean; cadDate: string; acomps: { n: number; date: string; draft: boolean }[];
+export function ProcessoCard({ id, numero, nomes = "", draft = false, cadDate, acomps }: {
+  id: string; numero: string; nomes?: string; draft?: boolean; cadDate: string; acomps: { n: number; date: string; draft: boolean }[];
 }) {
   const done = acomps.filter((a) => !a.draft).length;
   return (
@@ -66,8 +66,8 @@ export function ProcessoCard({ id, numero, draft = false, cadDate, acomps }: {
       <div className="proc-top">
         <span className="proc-ico"><FileText size={20} /></span>
         <span className="proc-body">
-          <small className="proc-kicker">Processo de acompanhamento</small>
-          <strong className="proc-num">{numero || "—"}</strong>
+          <small className="proc-kicker">{numero || "—"}</small>
+          <strong className="proc-num">{nomes || "(sem nome)"}</strong>
         </span>
       </div>
       {!draft && (
@@ -139,11 +139,8 @@ export function FiscCard({
   return (
     <ProcCard
       href={draft ? `/fiscalizacoes/${id}/responder` : `/fiscalizacoes/${id}`}
-      kicker="Fiscalização" numero={processes.length ? processes.join(" · ") : unit || "(sem unidade)"} draft={draft}
-      badges={[
-        ...(processes.length && unit ? [{ text: unit, tone: "brand" as const, icon: "clip" as const }] : []),
-        ...(!processes.length ? [{ text: "Sem número de processo", tone: "none" as const, icon: "none" as const }] : []),
-      ]}
+      kicker={processes.length ? processes.join(" · ") : "Fiscalização"} numero={unit || "(sem unidade)"} draft={draft}
+      badges={!processes.length ? [{ text: "Sem número de processo", tone: "none" as const, icon: "none" as const }] : []}
       foot={`Visita em ${date ? day(date) : "—"}${last ? ` · Último relatório: ${day(last)}` : ""}`}
     />
   );

@@ -41,7 +41,7 @@ export default async function ProfilePage({
   const mine = inside && viewer!.id === p.id;
 
   // processos de acompanhamento em que a pessoa tem cadastro inicial ou acompanhamento
-  let procs: { id: string; processo: string; draft: boolean; cadDate: string; last: string; acomps: { n: number; date: string; draft: boolean }[] }[] = [];
+  let procs: { id: string; processo: string; nomes: string; draft: boolean; cadDate: string; last: string; acomps: { n: number; date: string; draft: boolean }[] }[] = [];
   let fiscs: { id: string; unit: string; date: string; last: string; draft: boolean; processes: string[] }[] = [];
   let notas: { id: string; title: string; vis: string; at: string }[] = [];
 
@@ -63,7 +63,7 @@ export default async function ProfilePage({
       const when = (doc: string, starts: string, fallback: string) =>
         m.history.filter((h) => h.doc === doc && (h.note ?? "").startsWith(starts)).map((h) => h.at).sort().pop() ?? fallback;
       procs.push({
-        id: r.id as string, processo: (r.processo as string) ?? "", draft: !!m.draft,
+        id: r.id as string, processo: (r.processo as string) ?? "", nomes: (r.nomes as string) ?? "", draft: !!m.draft,
         cadDate: when("inicial", "concluiu o cadastro inicial", r.created_at as string),
         acomps: [...m.acomps].filter((a) => mine || !a.draft).sort((x, y) => x.n - y.n)
           .map((a) => ({ n: a.n, draft: !!a.draft, date: when(`acomp:${a.n}`, "criou o acompanhamento", a.at) })),
@@ -162,7 +162,7 @@ export default async function ProfilePage({
         {only && <h1 style={{ margin: "8px 0 0" }}>{mine ? "Meus" : `Relatórios de ${first}:`} {({ processos: "processos de acompanhamento", fiscalizacoes: "fiscalizações", notas: "notas" })[only]}</h1>}
 
         {section("processos", "PROCESSOS DE ACOMPANHAMENTO", procs.length, cut(procs).map((r) => (
-          <ProcessoCard key={r.id} id={r.id} numero={r.processo} draft={r.draft} cadDate={r.cadDate} acomps={r.acomps} />
+          <ProcessoCard key={r.id} id={r.id} numero={r.processo} nomes={r.nomes} draft={r.draft} cadDate={r.cadDate} acomps={r.acomps} />
         )), "Nenhum processo de acompanhamento.")}
 
         {section("fiscalizacoes", "FISCALIZAÇÕES", fiscs.length, cut(fiscs).map((f) => (

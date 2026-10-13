@@ -159,7 +159,7 @@ export async function UserRecords({ id, view, only, q = "" }: { id: string; view
               meta.history.filter((h) => h.doc === doc && (h.note ?? "").startsWith(starts)).map((h) => h.at).sort().pop() ?? fallback;
             return (
               <ProcessoCard
-                key={r.id} id={r.id} numero={r.answers.processo?.value ?? "—"} draft={!!meta.draft}
+                key={r.id} id={r.id} numero={r.answers.processo?.value ?? "—"} nomes={r.answers.nomes?.value ?? ""} draft={!!meta.draft}
                 cadDate={when("inicial", "concluiu o cadastro inicial", r.created_at)}
                 acomps={[...meta.acomps].sort((x, y) => x.n - y.n).map((a) => ({
                   n: a.n, draft: !!a.draft, date: when(`acomp:${a.n}`, "criou o acompanhamento", a.at),
