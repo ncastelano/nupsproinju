@@ -105,8 +105,7 @@ export function FiscCard({
   return (
     <ProcCard
       href={draft ? `/fiscalizacoes/${id}/responder` : `/fiscalizacoes/${id}`}
-      kicker={processes.length ? processes.join(" · ") : "Fiscalização"} numero={unit || "(sem unidade)"} draft={draft}
-      badges={!processes.length ? [{ text: "Sem número de processo", tone: "none" as const, icon: "none" as const }] : []}
+      kicker={processes.length ? processes.join(" · ") : "Sem número de processo"} numero={unit || "(sem unidade)"} draft={draft}
       foot={`Visita em ${date ? day(date) : "—"}${last ? ` · Último relatório: ${day(last)}` : ""}`}
     />
   );
